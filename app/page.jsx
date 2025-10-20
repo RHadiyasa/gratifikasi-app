@@ -1,6 +1,8 @@
+"use client";
 import { SosialisasiPage } from "@/components/sosialisasi";
 import { Link } from "@heroui/link";
 import { Snippet } from "@heroui/snippet";
+import { useEffect } from "react";
 
 // Style utilities
 const title = (props) => {
@@ -35,6 +37,15 @@ const ShieldCheckIcon = ({ size = 20, ...props }) => (
 );
 
 export default function Home() {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      console.log("Ada");
+    } else {
+      console.log("Ga ada ");
+    }
+  }, []);
   return (
     <section className="flex flex-col items-center justify-center text-center w-full ">
       <div className="min-h-screen flex flex-col items-center justify-center">

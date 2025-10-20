@@ -1,3 +1,4 @@
+"use client";
 import {
   Navbar as HeroUINavbar,
   NavbarContent,
@@ -21,13 +22,23 @@ import {
   TwitterIcon,
   GithubIcon,
   DiscordIcon,
-  HeartFilledIcon,
   SearchIcon,
   Logo,
   LoginIcon,
 } from "@/components/icons";
+import { useAuthStore } from "@/store/authStore";
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 export const Navbar = () => {
+  const { isLoggedIn, logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = useCallback(() => {
+    logout();
+    router.push("/");
+  }, [logout, router]);
+
   const searchInput = (
     <Input
       aria-label="Search"
@@ -94,15 +105,21 @@ export const Navbar = () => {
         </NavbarItem>
         <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
         <NavbarItem className="hidden md:flex">
-          <Button
-            as={Link}
-            className="text-sm font-normal text-default-600 bg-default-100"
-            href={"/login"}
-            startContent={<LoginIcon className="text-white" />}
-            variant="flat"
-          >
-            Login UPG
-          </Button>
+          {!isLoggedIn ? (
+            <Button
+              as={Link}
+              className="text-sm font-normal text-default-600 bg-default-100"
+              href={"/login"}
+              startContent={<LoginIcon className="text-white" />}
+              variant="flat"
+            >
+              Login UPG
+            </Button>
+          ) : (
+            <Button onPress={handleLogout} color="danger">
+              Logout
+            </Button>
+          )}
         </NavbarItem>
       </NavbarContent>
 

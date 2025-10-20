@@ -4,10 +4,10 @@ import { Link } from "@heroui/link";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
-
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
+import ClientWrapper from "@/components/clientWrapper";
 
 export const metadata: Metadata = {
   title: {
@@ -15,9 +15,7 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  icons: {
-    icon: "/favicon.ico",
-  },
+  icons: { icon: "/favicon.ico" },
 };
 
 export const viewport: Viewport = {
@@ -38,27 +36,31 @@ export default function RootLayout({
       <body
         className={clsx(
           "min-h-screen text-foreground bg-background font-sans antialiased",
-          fontSans.variable,
+          fontSans.variable
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex flex-col h-screen">
-            <Navbar />
-            <main className="container mx-auto max-w-7xl px-6 flex-grow">
-              {children}
-            </main>
-            <footer className="w-full flex items-center justify-center py-3">
-              <Link
-                isExternal
-                className="flex items-center gap-1 text-current"
-                href="https://itjen.esdm.go.id/id/profil/tugas-fungsi/inspektorat-v"
-                title="Inspektorat Jenderal Home Page"
-              >
-                <span className="text-default-600 text-sm">Powered by Rafi Hadiyasa - </span>
-                <p className="text-primary text-sm">Inspektorat V</p>
-              </Link>
-            </footer>
-          </div>
+          <ClientWrapper>
+            <div className="relative flex flex-col h-screen">
+              <Navbar />
+              <main className="container mx-auto max-w-7xl px-6 flex-grow">
+                {children}
+              </main>
+              <footer className="w-full flex items-center justify-center py-3">
+                <Link
+                  isExternal
+                  className="flex items-center gap-1 text-current"
+                  href="https://itjen.esdm.go.id/id/profil/tugas-fungsi/inspektorat-v"
+                  title="Inspektorat Jenderal Home Page"
+                >
+                  <span className="text-default-600 text-sm">
+                    Powered by Rafi Hadiyasa -{" "}
+                  </span>
+                  <p className="text-primary text-sm">Inspektorat V</p>
+                </Link>
+              </footer>
+            </div>
+          </ClientWrapper>
         </Providers>
       </body>
     </html>

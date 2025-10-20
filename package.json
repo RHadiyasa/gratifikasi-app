@@ -58,18 +58,21 @@
     "framer-motion": "11.18.2",
     "intl-messageformat": "10.7.16",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "mongodb": "^6.20.0",
     "mongoose": "^8.19.1",
     "next": "15.3.1",
     "next-themes": "0.4.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "15.3.4",
     "@react-types/shared": "3.32.1",
     "@tailwindcss/postcss": "4.1.11",
+    "@types/jwt-decode": "^2.2.1",
     "@types/node": "20.5.7",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

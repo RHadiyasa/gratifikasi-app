@@ -3,10 +3,13 @@ import React, { useState } from "react";
 import { Input, Button, Tabs, Tab, Card, CardBody } from "@heroui/react";
 import { loginService } from "@/modules/auth/auth.service";
 import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
+import { useAuthStore } from "@/store/authStore";
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState("login");
   const router = useRouter();
+  const login = useAuthStore((state) => state.login);
 
   // STATE UNTUK LOGIN
   const [nip, setNip] = useState("");
@@ -27,23 +30,30 @@ const LoginPage = () => {
     try {
       const response = await loginService(nip, password);
       if (!response.success) {
-        alert(response.message);
+        toast.error(response.message);
         return;
-      } else {
-        alert("Login Berhasil");
-        router.push("/dashboard");
       }
-      console.log(response);
+
+      login(response.token);
+      toast.success("Login berhasil!");
+
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
     } catch (error) {
       console.error(error);
+      toast.error("Terjadi kesalahan.");
     }
   };
 
   // REGISTER HANDLER
-  const handleRegister = async () => {};
+  const handleRegister = async () => {
+    
+  };
 
   return (
     <div className="flex flex-col items-center justify-center text-foreground h-full">
+      <ToastContainer />
       <div>
         <h1 className="text-center font-bold text-2xl py-10">Login UPG</h1>
         <Card className="w-[400px] shadow-xl rounded-2xl">
