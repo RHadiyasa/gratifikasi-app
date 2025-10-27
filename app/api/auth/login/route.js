@@ -10,9 +10,8 @@ export async function POST(req) {
     const reqBody = await req.json();
     const { nip, password } = reqBody;
 
-    // Check Admin
+    // 🔍 Cek apakah admin terdaftar
     const admin = await UpgAdmin.findOne({ nip });
-
     if (!admin) {
       return NextResponse.json(
         { message: "NIP tidak ditemukan", success: false },
@@ -20,35 +19,47 @@ export async function POST(req) {
       );
     }
 
-    // Checka Password
+    // 🔐 Verifikasi password
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, message: "Invalid login" },
+        { success: false, message: "Password salah" },
         { status: 401 }
       );
     }
 
-    // Generate Token
+    // 🧩 Buat token JWT
     const token = jwt.sign(
       { id: admin._id, nip: admin.nip },
       process.env.TOKEN_SECRET,
       { expiresIn: "2h" }
     );
 
-    return NextResponse.json({
+    // ✅ Buat response dan set cookie
+    const response = NextResponse.json({
       success: true,
       message: "Login Berhasil",
-      token,
-      admin: { id: admin._id, nip: admin.nip, name: admin.name },
+      admin: {
+        id: admin._id,
+        nip: admin.nip,
+        name: admin.name,
+      },
     });
+
+    // Simpan token ke cookie
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 2 * 60 * 60, // 2 jam
+    });
+
+    return response;
   } catch (error) {
     console.error("Error login: ", error);
     return NextResponse.json(
-      {
-        message: "Terjadi Kesalahan Server",
-        success: false,
-      },
+      { message: "Terjadi kesalahan server", success: false },
       { status: 500 }
     );
   }

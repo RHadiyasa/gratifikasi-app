@@ -92,34 +92,28 @@ export const Navbar = () => {
         justify="end"
       >
         <NavbarItem className="hidden sm:flex gap-2">
-          {/* <Link isExternal aria-label="Twitter" href={siteConfig.links.twitter}>
-            <TwitterIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Discord" href={siteConfig.links.discord}>
-            <DiscordIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-            <GithubIcon className="text-default-500" />
-          </Link> */}
           <ThemeSwitch />
         </NavbarItem>
-        {/* <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem> */}
         <NavbarItem className="hidden md:flex">
           {!isLoggedIn ? (
             <Button
               as={Link}
               className="flex items-center justify-center text-sm font-semibold text-foreground bg-default-100"
               href={"/login"}
-              // startContent={<LoginIcon className="text-foreground" />}
               variant="flat"
             >
               <LoginIcon />
               <p>Login UPG</p>
             </Button>
           ) : (
-            <Button onPress={handleLogout} color="danger">
-              Logout
-            </Button>
+            <div className="flex gap-2">
+              <Button as={Link} href={"/dashboard"} variant="solid" color="primary">
+                Dashboard
+              </Button>
+              <Button onPress={handleLogout} variant="solid" color="danger">
+                Logout
+              </Button>
+            </div>
           )}
         </NavbarItem>
       </NavbarContent>
