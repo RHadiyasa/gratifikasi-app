@@ -6,6 +6,7 @@ export async function POST(req) {
   try {
     await connect();
     const body = await req.json();
+    console.log(body)
 
     // save report
     const report = await Report.create(body);

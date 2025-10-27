@@ -38,7 +38,7 @@ const LoginPage = () => {
       toast.success("Login berhasil!");
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/");
       }, 500);
     } catch (error) {
       console.error(error);
