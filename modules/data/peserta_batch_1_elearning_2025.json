@@ -1,0 +1,2702 @@
+[
+  {
+    "id":"d469608c-8a77-4de9-823e-5d572467c73e",
+    "no":1,
+    "nama":"Nurdin Kurniawan",
+    "nip":"198004182009101001",
+    "jabatan":"Pranata Keuangan APBN Terampil",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"edfa4a88-f3fd-4549-96f7-6d7b34bb5e30",
+    "no":2,
+    "nama":"Ajat Munajat S.Kom",
+    "nip":"197702172024211003",
+    "jabatan":"Pranata Komputer Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"5ac4993f-099b-4d9f-8a7f-ae9929456c63",
+    "no":3,
+    "nama":"apt. Kristina Lusty Tohomi S.Farm.",
+    "nip":"199201202024212022",
+    "jabatan":"Apoteker Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"b2d98559-ed0e-4697-83b5-8269bbf0163a",
+    "no":4,
+    "nama":"drg. Naila Zhafirah",
+    "nip":"199702242024212031",
+    "jabatan":"Dokter Gigi Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"0e3bfbb0-3161-4c0c-a920-724a41da2556",
+    "no":5,
+    "nama":"Yolanda A.Md.Kes.",
+    "nip":"199712282024212037",
+    "jabatan":"Terapis Gigi dan Mulut Terampil",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"9247e123-bc0d-4157-beec-986d83ef900f",
+    "no":6,
+    "nama":"Lucius Patria Giri Dwi Astanto S.T.",
+    "nip":"197905062024211003",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"5859c95f-1d5d-4f00-829a-25eaf4248caf",
+    "no":7,
+    "nama":"Tahta Nurmahsya Maharani S.Sos.",
+    "nip":"199306252024212035",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"ef311e26-2acc-426e-9804-1f73cf51acc5",
+    "no":8,
+    "nama":"Try Supanji Akbar S.T.",
+    "nip":"198504302024211006",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"9416c34c-3a11-426a-b45e-1825179c77ab",
+    "no":9,
+    "nama":"Oskarya Tandi S.T.",
+    "nip":"198510302014021001",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"2c596949-2f42-4fbf-90ed-a1dae0cef9d7",
+    "no":10,
+    "nama":"Jamal",
+    "nip":"197503082008111001",
+    "jabatan":"Pengadministrasi Umum",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"9dfbf2ec-3570-4373-b3d7-85171fca2398",
+    "no":11,
+    "nama":"Madsari Irpandani",
+    "nip":"198111062009101003",
+    "jabatan":"Pengadministrasi Umum",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"3cd44d1b-ccc4-4359-9cd3-af6425fe2b94",
+    "no":12,
+    "nama":"Mariana S.ST.",
+    "nip":"197903312006041001",
+    "jabatan":"Analis Ketenagalistrikan",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"4d603977-2c56-4d25-87dd-01ff0f2f7748",
+    "no":13,
+    "nama":"Henry Iskandar Hasibuan S.T.",
+    "nip":"198004122024211008",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"3645f244-77cb-4518-a88a-b6a2d3fbfe83",
+    "no":14,
+    "nama":"Yundi Haekal Azizi S.T., M.T.",
+    "nip":"199004152014021002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"4462dffe-3ef8-4c3e-aa7e-cba9000c1056",
+    "no":15,
+    "nama":"Edy Pratiknyo S.T., M.Tr.T.",
+    "nip":"197206212005021001",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"36f7b0bc-3a20-4c51-a522-1b622b4ae428",
+    "no":16,
+    "nama":"Donny Ramadhan S.T.",
+    "nip":"198605162010121001",
+    "jabatan":"Inspektur Ketenagalistrikan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"4c15e495-c3cd-467b-b1b2-bb75d2cde631",
+    "no":17,
+    "nama":"Mokh Kandari S.T., M.En.",
+    "nip":"198407082014021001",
+    "jabatan":"Inspektur Ketenagalistrikan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"49f1cfa1-587b-4747-b2bb-2c823aeeb1f1",
+    "no":18,
+    "nama":"Raymond Samuel Parlindungan S.T., M.T.",
+    "nip":"198801202014021003",
+    "jabatan":"Inspektur Ketenagalistrikan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"9b50236f-5694-460e-b3a2-ea931c290a42",
+    "no":19,
+    "nama":"Chandra Budi Sukmono S.T., M.T.",
+    "nip":"198306212010121001",
+    "jabatan":"Inspektur Ketenagalistrikan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"70dda2ef-9df3-41f0-9d67-5950dbfdf366",
+    "no":20,
+    "nama":"Harapan Singarimbun S.T",
+    "nip":"198810082014021002",
+    "jabatan":"Penata Perizinan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Ketenagalistrikan",
+    "unit_eselon_i":"Ditjen Gatrik"
+  },
+  {
+    "id":"e24d8222-30a6-41a0-b6b1-7fef5a5c20d7",
+    "no":21,
+    "nama":"Subhana Nurhidayat, S.Hum.",
+    "nip":"198403182009011001",
+    "jabatan":"Pustakawan Ahli Pertama",
+    "unit_eselon_ii":"Biro Hukum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"91eb5a67-4b07-4053-b3ee-37874964b79f",
+    "no":22,
+    "nama":"Aldino Wisnu Oktora, S.H.",
+    "nip":"198710242015031004",
+    "jabatan":"Analis Hukum Ahli Muda",
+    "unit_eselon_ii":"Biro Hukum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"41a2e9ec-5442-43d3-b5ad-d73e3cc165d1",
+    "no":23,
+    "nama":"Alfi Rintisnoasih, S.H.",
+    "nip":"199108152015032005",
+    "jabatan":"Perancang Peraturan Perundang- undangan Ahli Pertama",
+    "unit_eselon_ii":"Biro Hukum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"4c140cb3-1bf0-4d2f-a4c8-dd166ac6818c",
+    "no":24,
+    "nama":"Murniyati, S.E",
+    "nip":"198012122008112001",
+    "jabatan":"Analis Anggaran Ahli Pertama",
+    "unit_eselon_ii":"Biro Keuangan",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"581ef06b-3bc3-488f-bcef-b1ecb0835ef5",
+    "no":25,
+    "nama":"Joko Winarto",
+    "nip":"197407301994031001",
+    "jabatan":"Pranata Keuangan APBN Terampil",
+    "unit_eselon_ii":"Biro Keuangan",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"9ef370ad-7b04-4420-b0e5-86485c03aee4",
+    "no":26,
+    "nama":"Arti Ilhami, S.E.",
+    "nip":"199208122015032008",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Biro Komunikasi, Layanan Informasi Publik dan Kerja Sama",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"e004bc37-d0ac-4245-bc74-2810b8cacdbd",
+    "no":27,
+    "nama":"Dyah Kusuma Dewi, S.I.P.",
+    "nip":"199105292015032001",
+    "jabatan":"Pranata Hubungan Masyarakat Ahli Muda",
+    "unit_eselon_ii":"Biro Komunikasi, Layanan Informasi Publik dan Kerja Sama",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"0896807a-7b91-499d-8d23-bfee1facf2f4",
+    "no":28,
+    "nama":"Leonard Simanjuntak, S.H.",
+    "nip":"198305212024211005",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Biro Organisasi dan Tata Laksana",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"6a8391c1-05a4-4356-af2c-9b6f1fd06f86",
+    "no":29,
+    "nama":"Sendya Novita Sabrie, S.Psi. M.Ak.",
+    "nip":"197307302005022001",
+    "jabatan":"Analis SDM Aparatur Ahli Madya",
+    "unit_eselon_ii":"Biro Organisasi dan Tata Laksana",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"b07209b4-a7ab-488c-b745-514d5e134d21",
+    "no":30,
+    "nama":"Dr. Anastasia Savira, S.E., M.A.",
+    "nip":"198410072014022002",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Biro Perencanaan",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"248376a6-7649-496e-9ef6-0323f3ddbbbf",
+    "no":31,
+    "nama":"Irena Rachmah,S.H",
+    "nip":"198710272015032004",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Biro Sumber Daya Manusia",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"fae3ab67-f9c8-4156-b1ff-69f92a4f82b7",
+    "no":32,
+    "nama":"Surya Lesmana, A.Md.",
+    "nip":"197004201996031001",
+    "jabatan":"Pengolah Data dan Informasi",
+    "unit_eselon_ii":"Biro Perencanaan",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"974effcf-7223-42df-9e63-aa4f88a74665",
+    "no":33,
+    "nama":"Cassinia Nova Sepadyaningsih,S.Psi",
+    "nip":"198611092015032002",
+    "jabatan":"Analis Sumber Daya Manusia Aparatur Ahli Muda",
+    "unit_eselon_ii":"Biro Sumber Daya Manusia",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"d29ea138-537b-4e4e-be5b-f20653bab0eb",
+    "no":34,
+    "nama":"Bestiaman Zandroto,S.H",
+    "nip":"199307162024211015",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Biro Organisasi dan Tata Laksana",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"78c9ff24-cabe-4be7-a586-53f5989b73f5",
+    "no":35,
+    "nama":"Ade Riska Ameliya, S. Psi.",
+    "nip":"198908122015032005",
+    "jabatan":"Analis Kepegawaian Ahli Muda",
+    "unit_eselon_ii":"Biro Sumber Daya Manusia",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"828ade52-2652-4fac-baf5-c79591329446",
+    "no":36,
+    "nama":"Ir. Nanan Tribuana, M.Si.",
+    "nip":"196610251996031001",
+    "jabatan":"Pengelola Pengadaan Barang\/Jasa Ahli Madya",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"868c5081-0e5a-40d4-ae16-d8d81bcf4771",
+    "no":37,
+    "nama":"Eko Andriyanto, S.H.",
+    "nip":"198705202015031003",
+    "jabatan":"Pengelola Pengadaan Barang\/Jasa Ahli Muda",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"f2b7a93e-10f9-4329-8934-eaeebfac4d62",
+    "no":38,
+    "nama":"Rini Rosmini, S. AP",
+    "nip":"199302152022022001",
+    "jabatan":"Pengelola Pengadaan Barang\/Jasa Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"bac629c2-4b4a-47e0-9c69-d72408212114",
+    "no":39,
+    "nama":"Wahyu Hidayat",
+    "nip":"197901092008111001",
+    "jabatan":"Pengadministrasi Sarana dan Prasarana",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"f49e50e7-2a03-46b3-865a-da0b98ce0f79",
+    "no":40,
+    "nama":"drg. Rima Chaeriyana",
+    "nip":"199004062015032004",
+    "jabatan":"Dokter Gigi Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"2bb6a05c-ea7e-468c-bc4d-087508442cc5",
+    "no":41,
+    "nama":"Iffan Wijaya, S.T.",
+    "nip":"199604072022021001",
+    "jabatan":"Pengelola Pengadaan Barang\/Jasa Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"71d033e7-3263-4e75-9d35-5e06aba9d655",
+    "no":42,
+    "nama":"Hardikna Agasta, S.I.Kom.",
+    "nip":"199608082022022001",
+    "jabatan":"Pranata Hubungan Masyarakat Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"87236a8f-d6ee-41de-a7f7-4b1f960431a1",
+    "no":43,
+    "nama":"Eko Wahyu Saputra",
+    "nip":"198211112009101001",
+    "jabatan":"Pengadministrasi Perkantoran",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"055b9b66-17ee-4fe9-a2b9-49e78aae748a",
+    "no":44,
+    "nama":"Nuzril Alfansyah, S.T.",
+    "nip":"198404252014021003",
+    "jabatan":"Analis Pengelolaan Keuangan APBN Ahli Muda",
+    "unit_eselon_ii":"Pusat Data dan Teknologi Informasi Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"9b280f2e-0dc5-4863-9ea9-d0ece0e2d929",
+    "no":45,
+    "nama":"Theodorus Pandhu Bhaskoro Pradono Putro, S.T., M.E., M.Sc",
+    "nip":"198704202014021001",
+    "jabatan":"Analis Data Ilmiah Ahli Muda",
+    "unit_eselon_ii":"Pusat Data dan Teknologi Informasi Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"3cc72441-8468-453b-b119-57dbf665223c",
+    "no":46,
+    "nama":"Budi Rahmat Putra, S.T.",
+    "nip":"198509302010121001",
+    "jabatan":"Pranata Komputer Ahli Pertama",
+    "unit_eselon_ii":"Pusat Data dan Teknologi Informasi Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"80335838-45c3-4ac0-a032-a1b2dce2d3eb",
+    "no":47,
+    "nama":"Dhimas Billi Mahesa Agni, S.T.",
+    "nip":"199010272015031002",
+    "jabatan":"Pranata Komputer Ahli Muda",
+    "unit_eselon_ii":"Pusat Data dan Teknologi Informasi Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"f02213e2-7fb7-42a3-8849-cd27e8f61b7a",
+    "no":48,
+    "nama":"Dinny Oktariza Nasution, S.H",
+    "nip":"198710232024212008",
+    "jabatan":"Analis Hukum Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengelolaan Barang Milik Negara",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"140687d2-bbbd-4546-a694-b27053a01ea3",
+    "no":49,
+    "nama":"Diah Noviyanti, S.T.",
+    "nip":"198311282014022001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Pusat Pengelolaan Barang Milik Negara",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"bb7887d2-f800-4183-9f9c-dce099df4353",
+    "no":50,
+    "nama":"Erik Hendrawan, S.T.",
+    "nip":"198906032014021002",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Pusat Pengelolaan Barang Milik Negara",
+    "unit_eselon_i":"Sekretariat Jenderal"
+  },
+  {
+    "id":"6d29caf2-dda7-4e7c-a129-928ba7c8d619",
+    "no":51,
+    "nama":"Nuryanti Wijayanti, S.H., M.H.",
+    "nip":"197110141998032002",
+    "jabatan":"Analis Hukum Ahli Madya",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"04fd6e3d-1307-43d0-afc6-c9739707229a",
+    "no":52,
+    "nama":"Doddy Harryanto, S.H",
+    "nip":"198302242009011003",
+    "jabatan":"Kepala Bagian Umum",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"c8a7dc2e-90aa-4aa5-bdb6-6376d838bf8d",
+    "no":53,
+    "nama":"Muhamad Ihsan",
+    "nip":"199102272015031002",
+    "jabatan":"Analis Hukum Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"460992e4-7945-4581-91f8-f1b57e35776e",
+    "no":54,
+    "nama":"Thoriq Ramadani, S.I.Kom., M.Tr.A.P",
+    "nip":"198605142015031001",
+    "jabatan":"Pranata Hubungan Masyarakat Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"c9980e9b-b1cc-41f3-ab1f-55ef3c31ec44",
+    "no":55,
+    "nama":"Aruna Widyantara Putra",
+    "nip":"200107122023021001",
+    "jabatan":"Pranata Keuangan APBN Terampil",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"22d93aad-9078-4132-b376-790b12b1e4ec",
+    "no":56,
+    "nama":"dr. Yolanda Olivia Sinaga",
+    "nip":"199407132024212036",
+    "jabatan":"Dokter Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"f6a620c6-9cfc-4e27-bad6-1cef7a843675",
+    "no":57,
+    "nama":"Christian Tanuwijaya, S.T.",
+    "nip":"198606092009121002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"5d110ef0-f958-4ebe-85e6-df5a9e35b9af",
+    "no":58,
+    "nama":"Dede Bachtiar, S.T.",
+    "nip":"198610142010121001",
+    "jabatan":"Analis Kegiatan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"af1095f6-ac4a-4ac8-901a-b0e50034f542",
+    "no":59,
+    "nama":"Darsono, S.Sos, M.M",
+    "nip":"197003091991031003",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"e6a42bd8-004d-4bb2-bff7-c41cfe518073",
+    "no":60,
+    "nama":"Dr. Zulfikar Tanjung, S.H., M.M.",
+    "nip":"198004242004111001",
+    "jabatan":"Penata Kelola Kegiatan Usaha Hilir Migas",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"0e26e6f8-176c-4887-bc90-8fcad0c980ca",
+    "no":61,
+    "nama":"Dedi Armansyah, S.T., M.T.",
+    "nip":"198411172008011001",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"43a58531-7f17-489d-952c-b82b6ca788d2",
+    "no":62,
+    "nama":"Stevano Satria Nathanael",
+    "nip":"199509172024211022",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"5d2da037-e91e-4e6a-a78f-dfd730ee7195",
+    "no":63,
+    "nama":"Andriani Rahayu",
+    "nip":"198301292024212011",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Bahan Bakar Minyak",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"d73764d6-8405-4f7a-80db-c05fd5024471",
+    "no":64,
+    "nama":"Eko Satra Baruna, S.T., M.S.E.",
+    "nip":"197309192005021002",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"6fc8b816-4bfd-4dae-9613-bb270ae36353",
+    "no":65,
+    "nama":"Zulhelmi Thaib, S.Si",
+    "nip":"198606172010121002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"fce3dd62-1025-4492-b5d7-ee8af5ed0496",
+    "no":66,
+    "nama":"Fitri Retnasari, S.T.",
+    "nip":"198905102015032002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"e6d51822-006c-47c1-aaa4-18f4643937fb",
+    "no":67,
+    "nama":"Winny Edika Putri, S.T.",
+    "nip":"199111222014022001",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"9be56b65-260b-4f81-88be-bd5b209e4ef3",
+    "no":68,
+    "nama":"Bara Bimantara Putra, S.T.",
+    "nip":"199107012015031001",
+    "jabatan":"Analis Kegiatan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"f6044e6a-00bd-4139-b0b3-974d4e0f0725",
+    "no":69,
+    "nama":"David Arohman",
+    "nip":"199712022024211006",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"3c3b0d36-ed87-49d3-ad06-18f4a51cc7f5",
+    "no":70,
+    "nama":"Singgih Prabowo, S.H., LL.M.",
+    "nip":"198706172015031001",
+    "jabatan":"Analis Hukum Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Pengatur Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPH Migas"
+  },
+  {
+    "id":"bf431df9-a61e-4c93-a79b-3174a0f0104a",
+    "no":71,
+    "nama":"Ryan Dzulfiqar Ahmad, S.T.",
+    "nip":"198706012023211018",
+    "jabatan":"Surveyor pemetaan ahli pertama",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"ee132be4-0dae-49e8-89ab-7594b325d3e0",
+    "no":72,
+    "nama":"Chitra Okta Hagia, S.T.",
+    "nip":"199110092023212044",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Pusat Survei Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"ebbe40b7-2a5f-4aaa-ab40-b5e621410448",
+    "no":73,
+    "nama":"Dwi Hartanto",
+    "nip":"198309232012121001",
+    "jabatan":"Pengadministrasi Perkantoran",
+    "unit_eselon_ii":"Balai Besar Survei dan Pemetaan Geologi Kelautan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"1a4bf88e-4477-4e2b-9b20-fc943d191c64",
+    "no":74,
+    "nama":"Fatmah Ughi, S.T.",
+    "nip":"198101052023212017",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"4eb91503-ed30-4f88-bc4f-63b1aadbfd1a",
+    "no":75,
+    "nama":"Verdynand Haposan, S.Hum.",
+    "nip":"198502162023211010",
+    "jabatan":"Arsiparis Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"2a7e11b0-6413-4a1a-a910-9147f2cc01e6",
+    "no":76,
+    "nama":"dr. Raden Chantika Nur Annisa",
+    "nip":"199107162024212048",
+    "jabatan":"Dokter Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"85b6bab2-10d1-4c6d-8882-59593c9ba770",
+    "no":77,
+    "nama":"Asti Yudhianingrum, S.Si",
+    "nip":"198308162024212012",
+    "jabatan":"Pamong Budaya Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"5a322d32-1d7c-4b0d-938f-9ee4688ec4bb",
+    "no":78,
+    "nama":"Susi Herawati, S.A.P",
+    "nip":"198504162024212015",
+    "jabatan":"Analis SDM Aparatur Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Badan Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"fb778991-9ac7-4fc9-ba78-f9b95e601c2b",
+    "no":79,
+    "nama":"Rizky Nur Widada",
+    "nip":"199910192024211005",
+    "jabatan":"Surveyor Pemetaan Mahir",
+    "unit_eselon_ii":"Pusat Sumber Daya Mineral Batubara dan Panas Bumi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"308a941c-63e7-4f24-a71e-59d7116a1aaf",
+    "no":80,
+    "nama":"Moh. Budiraharja S.T.",
+    "nip":"196806231991031001",
+    "jabatan":"Surveyor Pemetaan Ahli Madya",
+    "unit_eselon_ii":"Pusat Sumber Daya Mineral Batubara dan Panas Bumi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"3647744e-5a87-46af-9ec5-bf9068abe7d0",
+    "no":81,
+    "nama":"Iudhi Oki Prahesthi S.ST. M.T.",
+    "nip":"198310032006041002",
+    "jabatan":"Penyelidik Bumi Ahli Madya",
+    "unit_eselon_ii":"Pusat Sumber Daya Mineral Batubara dan Panas Bumi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"a3d19d6d-ab09-4f44-b0ca-d215bbeb7fbb",
+    "no":82,
+    "nama":"‌Andi Kurniawan A.Md.A.Pj.",
+    "nip":"‌200108072023021004",
+    "jabatan":"Pengolah Data dan Informasi",
+    "unit_eselon_ii":"Pusat Sumber Daya Mineral Batubara dan Panas Bumi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"9ae449d0-0695-45a2-9990-a1e89779c9f0",
+    "no":83,
+    "nama":"Ardy Setya Prayoga S.T.",
+    "nip":"198911252023211016",
+    "jabatan":"Surveyor Pemetaan Ahli Pertama",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"ff2088a5-6ecc-4620-acbd-4de4b5304e07",
+    "no":84,
+    "nama":"Imam Catur Priambodo, S.Si., M.T.",
+    "nip":"198711072010121002",
+    "jabatan":"Penyelidik Bumi Ahli Madya",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"180f6621-98a9-4fc6-ab8b-68d80503bf7a",
+    "no":85,
+    "nama":"Merry Christina Natalia, S.T.",
+    "nip":"198912222014022001",
+    "jabatan":"Penyelidik Bumi Ahli Muda",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"3658a49c-7088-4c69-bd95-85e5186ceb4f",
+    "no":86,
+    "nama":"Agung Sih Damayanti, S.T.",
+    "nip":"198105252006042001",
+    "jabatan":"Penyelidik Bumi Ahli Muda",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"ea553cc5-f9eb-4999-b6d2-ac3b8a9a81bf",
+    "no":87,
+    "nama":"Indra Pribady Silalahi, S.T.",
+    "nip":"199411172019021003",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"f4abd23c-8040-4871-a177-5c511eb2b134",
+    "no":88,
+    "nama":"Adelgundis Rosi Ramba, S.Sos.",
+    "nip":"198601312005022002",
+    "jabatan":"Pengadministrasi Umum",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"4e866e70-9aea-4586-a231-699aaafd3824",
+    "no":89,
+    "nama":"Yulius Fernando Mukin, S.Sos.",
+    "nip":"198907072015031001",
+    "jabatan":"Kepala Subbagian Umum",
+    "unit_eselon_ii":"Pusat Vulkanologi dan Mitigasi Bencana Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"1c078803-a1f1-4d2e-86f4-63dbc62634e7",
+    "no":90,
+    "nama":"Yora Febri Zal Putri, S.Si",
+    "nip":"199502272019022004",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"8a74757b-e7f9-4151-8676-450ecdc55468",
+    "no":91,
+    "nama":"Denni Filanto, S.T.",
+    "nip":"198807152015031001",
+    "jabatan":"Penyelidik Bumi Ahli Muda",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"3754914d-1723-40c9-8d41-1838735d03ef",
+    "no":92,
+    "nama":"Idham Effendi, S.T., M.Sc.",
+    "nip":"197912142006041001",
+    "jabatan":"Penyelidik Geologi",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"99b38eea-29fc-4244-9c53-cbdbec903a06",
+    "no":93,
+    "nama":"Dicky Maulana",
+    "nip":"197812222008111001",
+    "jabatan":"Pengadministrasi Perkantoran",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"129c41f0-6806-46f2-9b0e-806fcf4aac51",
+    "no":94,
+    "nama":"Dewi Widia Mukti, S.Tr.Kom.",
+    "nip":"199406112023212035",
+    "jabatan":"Analis Sumber Daya Manusi Aparatur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"918ff606-14d5-4e36-833d-f8c3bfe1ba65",
+    "no":95,
+    "nama":"Ida Bagus Aditya Suryawan, S.Kom.",
+    "nip":"199507082022021001",
+    "jabatan":"Pranata Komputer Ahli Pertama",
+    "unit_eselon_ii":"Pusat Air Tanah dan Geologi Tata Lingkungan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"24fd9855-7c79-41b9-a03d-b9b66df14cea",
+    "no":96,
+    "nama":"Cece Sudaryat, S.Kom.",
+    "nip":"197108252007011003",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Pusat Survei Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"8273043f-c5ef-4913-9db4-12fd06f791bd",
+    "no":97,
+    "nama":"Ricky Asmara Nandan, S.E.",
+    "nip":"197611302009101001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Pusat Survei Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"2a5cce25-3488-40f8-9f83-84c9a747194f",
+    "no":98,
+    "nama":"Noor Muhammad Indragiri, S.T., M.T.",
+    "nip":"198106082005021003",
+    "jabatan":"Penyelidik Bumi Ahli Muda",
+    "unit_eselon_ii":"Pusat Survei Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"8f23e045-647c-4891-9f93-248f5ed9ebb5",
+    "no":99,
+    "nama":"IngeTriguri, S.Si.",
+    "nip":"198201032010012022",
+    "jabatan":"Surveyor Pemetaan Ahli Pertama",
+    "unit_eselon_ii":"Pusat Survei Geologi",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"98b17109-11c6-49b4-b995-c33cca35c89b",
+    "no":100,
+    "nama":"Arya Panji Dwiputra, S.Si.",
+    "nip":"199512012022021001",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Balai Besar Survei dan Pemetaan Geologi Kelautan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"6b474566-2c07-480a-9cc1-276bdbca60b7",
+    "no":101,
+    "nama":"Faris Nauval Rasyid, S.T.",
+    "nip":"199709052022021001",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Balai Besar Survei dan Pemetaan Geologi Kelautan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"bc8c2a09-51a6-4839-9f81-08d57c60d752",
+    "no":102,
+    "nama":"Muhammad Zulfikar, S.T., M.T.",
+    "nip":"198905302015031005",
+    "jabatan":"Penyelidik Bumi Ahli Muda",
+    "unit_eselon_ii":"Balai Besar Survei dan Pemetaan Geologi Kelautan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"d1e9e4a0-cd20-4a74-93bd-21b5a766ad1b",
+    "no":103,
+    "nama":"Ali Albab, S.T.",
+    "nip":"198903282015031004",
+    "jabatan":"Penyelidik Bumi Ahli Pertama",
+    "unit_eselon_ii":"Balai Besar Survei dan Pemetaan Geologi Kelautan",
+    "unit_eselon_i":"Badan Geologi"
+  },
+  {
+    "id":"94481ad4-fafa-488e-b8c7-551b55de320d",
+    "no":104,
+    "nama":"Supriyadi, S.E.",
+    "nip":"‌197004052005021001",
+    "jabatan":"Kepala Bagian Rumah Tangga dan Keprotokolan",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"7e757189-2ad8-4d66-8172-f0d66ca83b43",
+    "no":105,
+    "nama":"Nanang Kristanto, S.T., M.A.B.",
+    "nip":"‌198308192009011001",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"f5981b9c-720b-4cbf-80ff-aaaa470db7b3",
+    "no":106,
+    "nama":"Dian Rosdiana, S.Sos, M.E.",
+    "nip":"197203211999032002",
+    "jabatan":"Pranata Hubungan Masyarakat Ahli Muda",
+    "unit_eselon_ii":"Biro Fasilitasi Kebijakan Energi dan Persidangan",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"fc7e4471-93cc-4b06-aa03-9810fc2017f6",
+    "no":107,
+    "nama":"Prima Agung Prasetyawan Suharko, S.T.",
+    "nip":"‌198402282009121002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Biro Fasilitasi Penanggulangan Krisis dan Pengawasan Energi",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"d8a25f86-7570-43ea-8077-73e7eb5063e1",
+    "no":108,
+    "nama":"Tengku Rahmat Putrayuda, S.Kom., M.T.",
+    "nip":"‌197005271994031001",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Biro Fasilitasi Penanggulangan Krisis dan Pengawasan Energi",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"ae5fa062-394a-4e2d-9f4c-1ad8264f3eab",
+    "no":109,
+    "nama":"Sri Wulani, S.M.",
+    "nip":"‌198112302009102001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"f8e0f99b-3fb2-4a38-a025-fac7bbd182c3",
+    "no":110,
+    "nama":"Lili Aulia, A.Md.",
+    "nip":"‌198507162015032003",
+    "jabatan":"Pengolah Data dan Informasi",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"25841d3d-2b7c-4f22-83fe-413522e03649",
+    "no":111,
+    "nama":"Anang Dwiatmoko, S.H., M.H.",
+    "nip":"‌198810062015031004",
+    "jabatan":"Analis Hukum Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"f48942af-22b3-409a-baf2-5b7b3dd85471",
+    "no":112,
+    "nama":"Angga Firmansyah, S.Kom.",
+    "nip":"‌199605272024211018",
+    "jabatan":"Pranata Komputer Ahli Pertama",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"548d9eae-b709-4d5b-979c-8d7d06dbfa4f",
+    "no":113,
+    "nama":"Putri Inna Fatayati, A.Md.M.I.D.",
+    "nip":"‌199307112024212050",
+    "jabatan":"Arsiparis Terampil",
+    "unit_eselon_ii":"Biro Umum",
+    "unit_eselon_i":"Setjen DEN"
+  },
+  {
+    "id":"0514843b-c9a9-406e-8200-a653008f0033",
+    "no":114,
+    "nama":"Rudianto, S.E.",
+    "nip":"196709281995031001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Energi Baru, Terbarukan, dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"e2f692f3-6510-42c2-94c2-720b8a6b8565",
+    "no":115,
+    "nama":"Hartana, S.T.",
+    "nip":"196907102007011001",
+    "jabatan":"Pranata Komputer Ahli Muda",
+    "unit_eselon_ii":"Pusat Data dan Teknologi Informasi Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"f252c44e-2005-42ad-b43f-7523c047e2e8",
+    "no":116,
+    "nama":"Nicko Yoga Permana, S.Kom.",
+    "nip":"198809072015031003",
+    "jabatan":"Pranata Komputer Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Energi Baru, Terbarukan, dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"cde997e1-1fc2-4283-a6c2-d17caf22da62",
+    "no":117,
+    "nama":"Renita Agnevia, S.E., M.B.A.",
+    "nip":"198408212014022003",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Energi Baru, Terbarukan, dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"f9da2904-a1c2-4a74-bfb4-ea584af82f4b",
+    "no":118,
+    "nama":"Yati Astuti, S.E.",
+    "nip":"196908311989032001",
+    "jabatan":"Pranata Keuangan APBN Penyelia",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Energi Baru, Terbarukan, dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"17769715-1390-4bd1-9d66-d39b5c745793",
+    "no":119,
+    "nama":"Patrick Darryl, S.T.",
+    "nip":"198804012014021001",
+    "jabatan":"Analis Barang Milik Negara",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Energi Baru, Terbarukan, dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"b2b3b155-1c21-4b28-8834-510c12cfd392",
+    "no":120,
+    "nama":"Nanang Ariyanto, S.T.",
+    "nip":"198702242014021001",
+    "jabatan":"Inspektur Panas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"f3a87bfb-2ff0-4633-a4bc-5de35b120aa7",
+    "no":121,
+    "nama":"Agri Saputra, S.T.",
+    "nip":"198907282014021002",
+    "jabatan":"Inspektur Panas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"9a57c021-e0c6-4cdf-9723-e42d94df1e8b",
+    "no":122,
+    "nama":"Siti Mutmainnah, S.Si.",
+    "nip":"198505022015032004",
+    "jabatan":"Inspektur Panas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"0986f1a3-d941-486c-a0b7-3e0ae9555c34",
+    "no":123,
+    "nama":"Martha Relitha Sibarani, S.Si., M.Si.",
+    "nip":"196903101997032001",
+    "jabatan":"Inspektur Panas Bumi Ahli Madya",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"8916f483-2909-4179-bc95-15b024cf0bfc",
+    "no":124,
+    "nama":"Joni Rahmatsyah, S.T.",
+    "nip":"197706032009011006",
+    "jabatan":"Inspektur Panas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"37a6c07b-15e9-4bd0-b416-30238e751663",
+    "no":125,
+    "nama":"Yahya Maulana, S.T., M.T.",
+    "nip":"198712022015031005",
+    "jabatan":"Inspektur Panas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Panas Bumi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"14dd130c-0541-4bbc-a466-726f0c74e87b",
+    "no":126,
+    "nama":"Yeni Rachmawati, S.E., M.E.",
+    "nip":"197701012002122001",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"9d09cc4e-d1c1-4891-a5ab-e05c64c34207",
+    "no":127,
+    "nama":"Rizka Devriyani, S.T., M.Sc.Eng.",
+    "nip":"198712052014022001",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"2dfea074-ad5d-4101-80aa-45fd149d9d54",
+    "no":128,
+    "nama":"Ali Zuhdi, S.Si., M.Si.",
+    "nip":"198408312015031003",
+    "jabatan":"Penata Perizinan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"4408c5c2-4a46-4c4c-aa7a-0e466d9135fa",
+    "no":129,
+    "nama":"Hanni Wirawan, S. E., M.E.",
+    "nip":"198612172015031004",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"7e699c6c-0079-4a73-b2be-e9af11366987",
+    "no":130,
+    "nama":"Pradipta Andaru, S.E., M.M.",
+    "nip":"198803082015031005",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"2557ecad-26ef-4c81-948a-c1e0cc6d3ffb",
+    "no":131,
+    "nama":"Rowponti Pakpahan, S.E.",
+    "nip":"198509092014022002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Bioenergi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"2bd25a45-b640-4651-85f8-d5685c508ce3",
+    "no":132,
+    "nama":"Suwondho Arie Prayudho, S.T.",
+    "nip":"198308092010121001",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"4809a195-4174-4466-a824-eadc57bb5865",
+    "no":133,
+    "nama":"Hery Ferdiansyah, S.T., M.Si.",
+    "nip":"198407312009121001",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"f281de28-bb2c-498e-a483-16c6c803354e",
+    "no":134,
+    "nama":"Swedina Yolanda Solompoan, S.T.",
+    "nip":"198707242014022002",
+    "jabatan":"Analis Program EBT",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"9c0772b0-d51a-4230-949e-b700bb8aadf1",
+    "no":135,
+    "nama":"Ahmad Faqih Mahalli, S.T., M.Eng., M.URP.",
+    "nip":"199210202015031003",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"b1601b8a-3c7e-45b7-9042-c72cd95d8b57",
+    "no":136,
+    "nama":"Adhi Devawijaya, S.T., M.T.",
+    "nip":"198609152010121003",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"547a4916-30d0-49c1-88a4-b169940bef2e",
+    "no":137,
+    "nama":"Zulfan Zul, S.T., M.B.A.",
+    "nip":"197907212005021001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Direktorat Aneka Energi Baru dan Energi Terbarukan",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"3656a710-0516-4763-956f-d811b49a3bd8",
+    "no":138,
+    "nama":"Agus Supriadi, S.T.",
+    "nip":"197308042006041002",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"79b46948-779e-47e8-b2e6-bb7a6e42ccc6",
+    "no":139,
+    "nama":"Nuzulia Fajriningrum, S.T., M.Sc.",
+    "nip":"199401312018012001",
+    "jabatan":"Analis Konservasi Energi",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"76641d1b-20f7-4168-b44f-8b39e5dafc47",
+    "no":140,
+    "nama":"Deddy Kurniawan, S.T.",
+    "nip":"198403292014021001",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"f82c4bec-ff1b-41e4-9dde-c6930a591dd6",
+    "no":141,
+    "nama":"Christman Despana, S.T.",
+    "nip":"198612212014021001",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"822801d2-8f3f-4843-ba78-ef61240c2201",
+    "no":142,
+    "nama":"Catur Wahyu Prasetyo, S.T., M.T.",
+    "nip":"197611292003121002",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"8eb72a71-d3e6-4f45-bf02-24435dcc3b3d",
+    "no":143,
+    "nama":"Saparuddin, S.E.",
+    "nip":"197606042000031002",
+    "jabatan":"Pengawas Konservasi Energi",
+    "unit_eselon_ii":"Direktorat Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"862e976a-e306-4077-8359-d29a49dd1664",
+    "no":144,
+    "nama":"Moechammad Ageng Satrio, S.Kom.",
+    "nip":"198604052010121001",
+    "jabatan":"Analis Pengembangan Infrastruktur",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"6517af9a-4e3e-4c45-bd2a-72d92af0d11c",
+    "no":145,
+    "nama":"Ahmad Sofani, S.E.",
+    "nip":"197106202007011001",
+    "jabatan":"Analis Pengembangan Infrastruktur",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"ecf7318a-f863-4ef3-a7e1-a050a334e166",
+    "no":146,
+    "nama":"Gravian Rismaldhy, S.T.",
+    "nip":"199004122015031004",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"0793bd96-1f2e-4eb3-96e7-d44148a4bbe2",
+    "no":147,
+    "nama":"Nova Magdalena Ginting, S.T.",
+    "nip":"199007122015032006",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"b925d151-7007-46f2-9a77-1e16f9463461",
+    "no":148,
+    "nama":"Milton Tumpak Pardamean Nainggolan, S.T.",
+    "nip":"197206192008111001",
+    "jabatan":"Pengawas Keselamatan dan Kesehatan Kerja dan Lindungan Lingkungan",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"a0454752-fcb7-41a7-8313-660315ab030c",
+    "no":149,
+    "nama":"Dwi Prasetya Atmaja, S.T.",
+    "nip":"198802012015031004",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Perencanaan Dan Pembangunan Infrastruktur Energi Baru, Terbarukan, Dan Konservasi Energi",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"4aea73b2-c753-4cde-b09b-be858bcca9ef",
+    "no":150,
+    "nama":"Ir. Eri Wahyu Nugroho",
+    "nip":"196712221994031001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Balai Besar Survei dan Pengujian KEBTKE",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"515c204b-87eb-4442-b070-687a6b91f174",
+    "no":151,
+    "nama":"Raden Prima Hari Febrian, S.Si., M.E.",
+    "nip":"199102052014021002",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Balai Besar Survei dan Pengujian KEBTKE",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"9f7d43ed-bf2d-4aba-b53f-664c151d6b0e",
+    "no":152,
+    "nama":"Tory Laulul Maknun, S.Ak.",
+    "nip":"199612222022022001",
+    "jabatan":"Analis Pengelolaan Keuangan APBN Ahli Pertama",
+    "unit_eselon_ii":"Balai Besar Survei dan Pengujian KEBTKE",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"341547a1-bb77-4b14-b6ee-7ad300c176bb",
+    "no":153,
+    "nama":"Maria Rosalind Munthe, S.Kom.",
+    "nip":"197302162005022001",
+    "jabatan":"Pranata Komputer Ahli Muda",
+    "unit_eselon_ii":"Balai Besar Survei dan Pengujian KEBTKE",
+    "unit_eselon_i":"Ditjen EBTKE"
+  },
+  {
+    "id":"7bed662b-fb6d-407a-870a-376389c40b28",
+    "no":154,
+    "nama":"Muhammad Fauzan, S.T.",
+    "nip":"199008032015031003",
+    "jabatan":"Penata Kelola Pertambangan",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Mineral",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"3d01ff92-d21c-4222-8026-5cf541185bb4",
+    "no":155,
+    "nama":"Muhammad Fauzan Azhimanto, S. Ak.",
+    "nip":"199606082020121001",
+    "jabatan":"Penata Kelola Pertambangan",
+    "unit_eselon_ii":"Direktorat Pembinaan Pengusahaan Mineral",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"a9706435-3ebb-4c58-b07a-2abdf7935a6c",
+    "no":156,
+    "nama":"Wenty Eka Septia, S.T., M.T.",
+    "nip":"199009212015032005",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"ecd713a2-a9d7-4839-adfd-936e4811fece",
+    "no":157,
+    "nama":"Chandra Tambunan, MT",
+    "nip":"197407242008011001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"ce67b560-e2bf-4921-a7a8-0687ea3d6411",
+    "no":158,
+    "nama":"Soelistriani,SH",
+    "nip":"196912191990092001",
+    "jabatan":"Penata Kelola Pertambangan",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"7282d52b-bba2-4d54-aa5c-42eff0ab8c90",
+    "no":159,
+    "nama":"George S. Laimeheriwa",
+    "nip":"197509092005021004",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral Dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"5b923713-70cf-43ae-98f9-77c2fe89fee1",
+    "no":160,
+    "nama":"Dendy Cahyadi",
+    "nip":"198607262015031002",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral Dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"a80c8427-d30c-4cbf-8076-e5199dc9cd3d",
+    "no":161,
+    "nama":"Henri Setiaji",
+    "nip":"198907022014021003",
+    "jabatan":"Analis Anggaran Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral Dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"c99de05b-6659-48b5-95c3-99d7ba963e51",
+    "no":162,
+    "nama":"Grace Christine Lita Serepina Panggabean",
+    "nip":"197912012005022005",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"cdd404f3-dfdb-4dc0-8275-2998ce026936",
+    "no":163,
+    "nama":"Hendry Prayitno",
+    "nip":"197702152005011011",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"5d3ab875-f209-46e5-bb88-c58d3c8967da",
+    "no":164,
+    "nama":"Yusnita Rini Gamas",
+    "nip":"197810282014032001",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"073e1489-2ce2-405b-bb68-7f28dc39d70a",
+    "no":165,
+    "nama":"Haderia Y. Dawing",
+    "nip":"197411052005012007",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"43742a43-6746-4f81-8038-2ba1d47ea9c8",
+    "no":166,
+    "nama":"Moh. Saleh",
+    "nip":"197808152008011012",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"be0252b3-8994-4bfb-92a6-e772fd712dc7",
+    "no":167,
+    "nama":"Muh. Rusli A",
+    "nip":"198107212010011016",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"67377773-c202-411f-aede-1043f42750ff",
+    "no":168,
+    "nama":"T Nadzirin B",
+    "nip":"197803132006041002",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"27d5c52d-7c87-4a16-b6e3-fa8c58ae4f44",
+    "no":169,
+    "nama":"Kaharudin",
+    "nip":"198005122005021002",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"562aed5b-e6e1-440a-b375-513152100496",
+    "no":170,
+    "nama":"Lilik Kurniawan",
+    "nip":"197806212005011010",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"9b9b5545-f384-4791-8173-140c5fae612b",
+    "no":171,
+    "nama":"Ikhwan Elhuda",
+    "nip":"197801162006041002",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"1799c9b2-8970-44f3-9cf1-0b620683ff7a",
+    "no":172,
+    "nama":"Yudi Ernadi",
+    "nip":"197407262002121005",
+    "jabatan":"Inspektur Tambang Ahli Madya",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"3a7b1e93-9ad8-4caa-acf2-3d3cf289b842",
+    "no":173,
+    "nama":"Muhammad Irsan",
+    "nip":"196903221998031003",
+    "jabatan":"Analis Kebijakan Ahli Madya",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"ebce1f07-3e3a-484a-8079-4776e5c58e6d",
+    "no":174,
+    "nama":"Iko Desy Anggraeni",
+    "nip":"197912262009012001",
+    "jabatan":"Pranata Hubungan Masyarakat Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"19edb4d6-6a6f-4a0c-9e13-6277c90cbcf3",
+    "no":175,
+    "nama":"Juwita Ramadhana",
+    "nip":"198705222010122001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"4f50219f-96be-4cd1-bae8-356f31f5997a",
+    "no":176,
+    "nama":"Amoghasakti Abinawa, S.T.",
+    "nip":"199607302024211008",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"7aca6554-56cb-4dad-90dd-a7393058fa0b",
+    "no":177,
+    "nama":"Muhtadi Saputra, S.T.",
+    "nip":"199203222015031002",
+    "jabatan":"Penata Perizinan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"d9fcdf21-8f3f-4672-8b8b-9fcf920e3813",
+    "no":178,
+    "nama":"Shofa Amalia, S.H.",
+    "nip":"199505042018012002",
+    "jabatan":"Penata Perizinan Ahli Pertama",
+    "unit_eselon_ii":"Direktorat Pembinaan Program Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"a6d7b887-ef1b-419e-bedb-a1abd2542a3b",
+    "no":179,
+    "nama":"Siti Faradila Tomu",
+    "nip":"199108182015042002",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral Dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"bd5a6f3b-c6fb-4255-bbec-5e6f7eae6ea8",
+    "no":180,
+    "nama":"Andhini Cahyaningtyas",
+    "nip":"199910062022022001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral Dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"34eb091a-a38e-4182-9c37-bdebbbd0c081",
+    "no":181,
+    "nama":"Ahmad Rafik",
+    "nip":"196704191994031002",
+    "jabatan":"Analis Kebijakan Ahli Muda",
+    "unit_eselon_ii":"Direktorat Penerimaan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"9c67a570-95f0-4ca8-a0fc-b8d37e53663f",
+    "no":182,
+    "nama":"Yusrizal",
+    "nip":"197901262010011013",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"901b4c1c-8654-4ec6-bbe9-0408855d69a3",
+    "no":183,
+    "nama":"Harry Nurdiansyah",
+    "nip":"198011082010011005",
+    "jabatan":"Inspektur Tambang Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Mineral dan Batubara",
+    "unit_eselon_i":"Ditjen Minerba"
+  },
+  {
+    "id":"f8f94317-2b93-4a41-8f51-aec291c585af",
+    "no":184,
+    "nama":"Supriyanto",
+    "nip":"197401152008111001",
+    "jabatan":"Pengolah Data dan Informasi",
+    "unit_eselon_ii":"Sekretariat Badan Pengembangan Sumber Daya Manusia Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"36e4b6fc-bd01-45f5-afb6-e42893860f15",
+    "no":185,
+    "nama":"Hertiyo Sembodo, S.T., M.T.",
+    "nip":"197703072003121003",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Ketenagalistrikan, Energi Baru, Terbarukan dan Konservasi Energi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"087d6851-bde9-4bbf-aaa3-217fd22f5eb5",
+    "no":186,
+    "nama":"Ezrom Max Donnald Tapparan, S.T., M.Sc",
+    "nip":"197306102008011001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Ketenagalistrikan, Energi Baru, Terbarukan dan Konservasi Energi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"0b4a6302-0629-4f70-b1e4-a409f53e3be7",
+    "no":187,
+    "nama":"Putria Wardhani Sanfishdah, S.T.",
+    "nip":"198911212015032005",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Ketenagalistrikan, Energi Baru, Terbarukan dan Konservasi Energi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"35aa1579-1032-4d67-b501-05cf646f73af",
+    "no":188,
+    "nama":"Hendry Guntur Kusumanegara, S.T.",
+    "nip":"198905292014021005",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Ketenagalistrikan, Energi Baru, Terbarukan dan Konservasi Energi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"ea651263-544c-4dba-ab43-f5c6ccf9e842",
+    "no":189,
+    "nama":"Sriwaluyo Handayani, S.Tr.T.",
+    "nip":"197804162006041019",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"9bb3b965-da6a-433e-917e-72259b63361f",
+    "no":190,
+    "nama":"Paryadi, S.T.",
+    "nip":"197803032007011002",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"d3c4971f-d3a0-450e-80a9-7b943dd42a7a",
+    "no":191,
+    "nama":"Dwi Sigit Haryono, A.P.",
+    "nip":"197409262006041010",
+    "jabatan":"Operator Kilang dan Utilitas",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"b9d239e7-0362-4d9a-a8a4-3d0ff2846dc3",
+    "no":192,
+    "nama":"Rahmat Widodo, S.T.",
+    "nip":"199708082022021001",
+    "jabatan":"Instruktur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"d9d09b61-3e9e-4255-b30c-5f6bef15da41",
+    "no":193,
+    "nama":"Restu Anditomo, A.P.",
+    "nip":"197811042008111001",
+    "jabatan":"Pengelola Layanan Operasional",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"1bc73dbe-24d9-425a-8faa-b741178bcd93",
+    "no":194,
+    "nama":"Santi Oktaviani, S.Pd., M.Pd.",
+    "nip":"198610162009012001",
+    "jabatan":"Widyaiswara Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"11c2604d-41de-4b16-beb9-f806327f8b7f",
+    "no":195,
+    "nama":"Irine Yulianingsih, S.T., M.Si.",
+    "nip":"197707222005022001",
+    "jabatan":"Instruktur Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"2005b909-a9da-4471-b768-1edab003cfb0",
+    "no":196,
+    "nama":"Wahyudi Trisnanto, S.T.",
+    "nip":"197311071994031001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"b74cdf06-de58-4794-8ec1-37a874141fc5",
+    "no":197,
+    "nama":"Agus Sugiharto, S.T., M.T.",
+    "nip":"198005162006041001",
+    "jabatan":"Widyaiswara Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"c58e461e-e5c1-4701-ab4c-fbba4debf7e0",
+    "no":198,
+    "nama":"Adi Purnomo, S.T.",
+    "nip":"198102162006041002",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"91982a1d-3149-421c-acf6-8a00fa85e9a6",
+    "no":199,
+    "nama":"Ikhsan Kholis, S.T., M.T.",
+    "nip":"197210222006041001",
+    "jabatan":"Widyaiswara Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"d7167332-1443-4c75-8ecf-7e14229e3f1a",
+    "no":200,
+    "nama":"Arluky Novandy, S.T., M.T.",
+    "nip":"197409192002121002",
+    "jabatan":"Widyaiswara Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"8a898b15-b4d1-45b7-8d46-73b13bc9eae3",
+    "no":201,
+    "nama":"M. Samsul Hadi Alam, S.T.",
+    "nip":"197206172005021001",
+    "jabatan":"Instruktur Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"af083e40-7010-496a-b07e-930cc8489126",
+    "no":202,
+    "nama":"Arsyadi Hidayat, S.T.",
+    "nip":"197502082006041001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"f9d2af45-1947-4f15-bc80-2be3446fd108",
+    "no":203,
+    "nama":"Muhammad Ridwan Ansyori, S.T., M.T.",
+    "nip":"197806282006041023",
+    "jabatan":"Widyaiswara Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"ccd2836a-64f1-493b-998e-57e34a58dae6",
+    "no":204,
+    "nama":"Parnoto, S.T.",
+    "nip":"197411051994031001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"cac3a080-0575-44fd-95f7-6f9b1734fc56",
+    "no":205,
+    "nama":"Sigit Winantyo, S.Tr.T.",
+    "nip":"197705012006041001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"5924882d-53c0-454f-867e-7f46075668f7",
+    "no":206,
+    "nama":"Nani Dyah Pangastuti, S.ST",
+    "nip":"198509202006042005",
+    "jabatan":"Penata Layanan Operasional",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"cdd2af77-48ae-4941-ad1a-0e6422c207ef",
+    "no":207,
+    "nama":"Karwandi, S.T.",
+    "nip":"197604082009011003",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"b0863ce5-7c99-4ca1-8285-c87da0759e44",
+    "no":208,
+    "nama":"Jamaludin, S.T.",
+    "nip":"198101232006041002",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"a929337a-b209-41cf-8dee-023bf9bf20af",
+    "no":209,
+    "nama":"Rinto Parnaedy, S.T.",
+    "nip":"197506182006041018",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"653bc120-b0b2-4a84-9149-791e62b1be92",
+    "no":210,
+    "nama":"Suparmin, S.T.",
+    "nip":"197506182006041001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"ce34fd1e-962f-40e8-8c34-dc4267b70a47",
+    "no":211,
+    "nama":"Yanu Firmanu Rahman, S.ST",
+    "nip":"197901242007101001",
+    "jabatan":"Instruktur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"c01140e1-41d1-4e67-90a4-89c55aa985da",
+    "no":212,
+    "nama":"Fanny Leestiana, S.T.",
+    "nip":"199310142022022001",
+    "jabatan":"Instruktur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"0d7cef3f-5bb4-4d5b-af25-a77a6c09bb2f",
+    "no":213,
+    "nama":"Mochamad Febrian Adhi Patria, S.T.",
+    "nip":"199702152022051001",
+    "jabatan":"Instruktur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"7d4b6ad1-4a9e-4537-b0d1-ccfceb8d663c",
+    "no":214,
+    "nama":"Andri Susilo, S.Tr.T.",
+    "nip":"197511222009101001",
+    "jabatan":"Instruktur Terampil",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"871ce5d6-712e-47dc-b24b-0b636f0bea76",
+    "no":215,
+    "nama":"Mukhamad Faeshol Umam, S.T., M.E., Ph.D.",
+    "nip":"198403132006041001",
+    "jabatan":"Instruktur Ahli Muda",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"2d857015-94b9-4dbb-85ef-30d72953c027",
+    "no":216,
+    "nama":"Indra Kumara Akhmad, S.T.",
+    "nip":"198003272006041001",
+    "jabatan":"Instruktur Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Minyak dan Gas Bumi",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"0b728711-5665-4727-b921-c603e8e0aa7d",
+    "no":217,
+    "nama":"Nandi Hardianto, S.Sos.",
+    "nip":"199105252022021001",
+    "jabatan":"Arsiparis Ahli Pertama",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Aparatur",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"848a7438-c9a3-434b-9967-83243b704ce1",
+    "no":218,
+    "nama":"Astrid Nur Perwita, S.A.P.",
+    "nip":"198109082009012002",
+    "jabatan":"Pranata Keuangan APBN Mahir",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Aparatur",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"9e73cce0-5d31-4ff5-afc2-fdcfb635fe4a",
+    "no":219,
+    "nama":"Azarine Atha Pandani, M.T.",
+    "nip":"199912172024042002",
+    "jabatan":"Asisten Ahli",
+    "unit_eselon_ii":"Politeknik Energi dan Pertambangan Bandung",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"e20750a8-12da-4afd-ba9c-6d0c8f3760ce",
+    "no":220,
+    "nama":"Toni Mulyadi, S.E.",
+    "nip":"197508152009101001",
+    "jabatan":"Analis Pengelola Keuangan APBN Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Badan Pengembangan Sumber Daya Manusia Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"ec568eec-5d0b-4dec-9465-d4a96ee37022",
+    "no":221,
+    "nama":"Herdianto, S.T.",
+    "nip":"198409242014041001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Sekretariat Badan Pengembangan Sumber Daya Manusia Energi dan Sumber Daya Mineral",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"bd79a7cc-75f7-44c1-b6f5-d6958737b817",
+    "no":222,
+    "nama":"Hafid Suharyadi, M.Sc.",
+    "nip":"199102072019021003",
+    "jabatan":"Lektor",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"ede31fe2-2c42-41f3-a708-087f05d5439d",
+    "no":223,
+    "nama":"Umi Yuliatin, M.Sc.",
+    "nip":"198607022018012001",
+    "jabatan":"Lektor",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"f65b3cd3-821c-44cc-a93e-bae8e19b371b",
+    "no":224,
+    "nama":"Arya Dwi Candra, M.Si.",
+    "nip":"199102072019021003",
+    "jabatan":"Lektor",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"b802c326-a1bf-4c52-8ebf-6fc7012b3f3e",
+    "no":225,
+    "nama":"Wahyudi, S.S.T.",
+    "nip":"197002061991031001",
+    "jabatan":"Penelaah Teknis Kebijakan",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"df9c3e14-da52-45ca-a697-75919c546757",
+    "no":226,
+    "nama":"Aldi Ramdhan Ardana, S.E.",
+    "nip":"198904142015031004",
+    "jabatan":"Pranata Keuangan APBN Mahir",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"40911fdb-21d7-4d36-877f-4e6c185bae15",
+    "no":227,
+    "nama":"Yeni Astuti",
+    "nip":"198212232006042002",
+    "jabatan":"Pengadministrasi Perkantoran",
+    "unit_eselon_ii":"Politeknik Energi dan Mineral Akamigas",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"096131a5-8ee1-4aa2-9d66-f629cf0762c5",
+    "no":228,
+    "nama":"Dr. Raden Yudi Pratama, S.T., M.Ed.",
+    "nip":"197508092002121001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Geologi, Mineral, dan Batubara",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"301c3f24-ea47-49e3-8d22-6c7562f910fb",
+    "no":229,
+    "nama":"Ade Hidayat, S.T.",
+    "nip":"196905111995031001",
+    "jabatan":"Instruktur Ahli Madya",
+    "unit_eselon_ii":"Pusat Pengembangan Sumber Daya Manusia Geologi, Mineral, dan Batubara",
+    "unit_eselon_i":"BPSDM"
+  },
+  {
+    "id":"1581cdd1-ec1d-426b-8ed6-b8aab78af28b",
+    "no":230,
+    "nama":"Yosefhino Frederick, S.T.",
+    "nip":"199401052019021002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"441d4279-7de9-46b6-9682-4cae3d9171ec",
+    "no":231,
+    "nama":"Aditya Kusuma Pradana, S.T., M.Sc.",
+    "nip":"198712302014021002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"0725dc8f-da1a-4dc1-a84c-f38837498a72",
+    "no":232,
+    "nama":"Maringan Ezra Butarbutar, S.T., M.T.",
+    "nip":"197202112005021001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"b0582e39-3d3d-4eb4-bc62-41a4c268b9ff",
+    "no":233,
+    "nama":"Rohadi, S.T.",
+    "nip":"198803222014021003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"d6119d29-1cfe-4098-bbba-edc1884d0174",
+    "no":234,
+    "nama":"Ivan Fitrian Putra, S.T.",
+    "nip":"198606242014021004",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"2d041367-5b33-4873-8623-5a4569eb4486",
+    "no":235,
+    "nama":"Marcelina Ati Ary, S.T.",
+    "nip":"197403042005022002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"bfc1d042-c5bf-4b4d-a817-572b8c946080",
+    "no":236,
+    "nama":"Zeki Fithra MS, M.T.",
+    "nip":"198701302014021002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"6ed1afbd-de9a-42d8-873b-574d353789b1",
+    "no":237,
+    "nama":"Arditya Tisha Virgiana, S.T.",
+    "nip":"199009012014022003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"07bef1af-fc82-4a8f-b5de-e6d64badae79",
+    "no":238,
+    "nama":"Bonar Mangara Trijaya Manurung, S.T.",
+    "nip":"199603042019021001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"8fd7de07-1049-4a41-ac84-3dbfb3847087",
+    "no":239,
+    "nama":"Fahrur Rozi Firmansyah, S.T.",
+    "nip":"198911232014021001",
+    "jabatan":"Inspektur Minyak dan Gas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"fa1e3f42-de28-4dbd-bc89-cc8744406430",
+    "no":240,
+    "nama":"Dipo Wirarchi Purboyo, S.T., M.T.",
+    "nip":"198611162015031002",
+    "jabatan":"Inspektur Minyak dan Gas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"4bfe0b73-357e-4ea9-a7fe-b7a6915b64c4",
+    "no":241,
+    "nama":"Tunjung Sugandika, S.T., M.A.B",
+    "nip":"199004162015031004",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"9dace814-0a08-45d4-9b00-5e684cef0f5a",
+    "no":242,
+    "nama":"Lintang Laras Ratri, S.T.",
+    "nip":"198905062015032008",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"9314057f-a1a3-4886-8643-a7ec708893bb",
+    "no":243,
+    "nama":"Ridho Pradana Maha Putra, S.T.",
+    "nip":"198912142014021003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"ae8c3f30-1ef4-4b93-b4f1-13e47ead320a",
+    "no":244,
+    "nama":"Cahyo Adhi Kusumo, S.T.",
+    "nip":"199002202014021003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"64d0c2a7-da45-487e-8476-48b6e4cf4d21",
+    "no":245,
+    "nama":"Nova Perdana Putri, S.Si.",
+    "nip":"198911022010122001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"5cdf0191-c45c-42c1-aa6e-1aacef55b138",
+    "no":246,
+    "nama":"Nadia Laila, S.T.",
+    "nip":"198607112015032002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"33fa5e7c-43e1-4a56-b496-835346472fcb",
+    "no":247,
+    "nama":"Edi Saadudin, S.Si., M.T",
+    "nip":"197812262006041001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hilir Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"09fa0380-dcf7-47e7-8559-7da55a085a5b",
+    "no":248,
+    "nama":"Aulia Fazlur Rachman, S.T.",
+    "nip":"199001172014021002",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"ffffadeb-2a97-4c75-882a-d80bc259a01a",
+    "no":249,
+    "nama":"Ihda Nur Muhtada, S.T.",
+    "nip":"199708012022051001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"06f75659-354e-48c0-8cfc-3a3c880c36e6",
+    "no":250,
+    "nama":"Naufalul Fikri, S.T.",
+    "nip":"199604062019021003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"6a58153d-9d0c-464c-84dc-9dda75bf3be8",
+    "no":251,
+    "nama":"Danang Prihanto, S.Sos.",
+    "nip":"196905271999031001",
+    "jabatan":null,
+    "unit_eselon_ii":"Sekretariat Direktorat Jenderal Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"1430446a-c1b5-45c8-8782-218156e2dda7",
+    "no":252,
+    "nama":"Andri Priyana, S.Si.",
+    "nip":"197603142006041003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Pembinaan Usaha Hulu Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"52c60dc5-b703-4d38-a92c-dffe07b455a7",
+    "no":253,
+    "nama":"Jery Christian Manek, S.T.",
+    "nip":"199001312014021003",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"119e6c9a-5b27-48e1-b44f-2116cc6b0e7f",
+    "no":254,
+    "nama":"Siti Nurbayanah, S.T.",
+    "nip":"199001182014022002",
+    "jabatan":"Inspektur Minyak dan Gas Bumi Ahli Muda",
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"426f5ee6-d2ff-444a-a29a-529d9c180f31",
+    "no":255,
+    "nama":"Bram Sinatra Napitupulu, S.T.",
+    "nip":"198803182014021001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"80bc20fb-320f-41a5-bffa-8f15d440bfbf",
+    "no":256,
+    "nama":"Ari Rahmawan, S.T.",
+    "nip":"197703312005021001",
+    "jabatan":null,
+    "unit_eselon_ii":"Direktorat Teknik dan Lingkungan Minyak dan Gas Bumi",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"ab57ed36-16eb-4f8a-9e4b-7776613c33d0",
+    "no":257,
+    "nama":"Ardi Fajar Ramdhana, S.E., M.Acc.",
+    "nip":"198505232009011002",
+    "jabatan":null,
+    "unit_eselon_ii":"Balai Besar Pengujian Minyak dan Gas Bumi LEMIGAS",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"7309bfeb-0b30-48b5-a5d4-7d91595369e7",
+    "no":258,
+    "nama":"Muh. Kurniawan, S.Si., M.T., Ph.D.",
+    "nip":"197706212005021001",
+    "jabatan":null,
+    "unit_eselon_ii":"Balai Besar Pengujian Minyak dan Gas Bumi LEMIGAS",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"23656f44-771a-4a1d-ac1b-50dfdf920080",
+    "no":259,
+    "nama":"Danang Sismartono, S.T., M.T.",
+    "nip":"198103082006041002",
+    "jabatan":null,
+    "unit_eselon_ii":"Balai Besar Pengujian Minyak dan Gas Bumi LEMIGAS",
+    "unit_eselon_i":"DITJEN MIGAS"
+  },
+  {
+    "id":"1f60d95b-3cea-4e14-b08e-6b86b884ae98",
+    "no":260,
+    "nama":"Cuncun Hikam Siswanto S.H., M.H.",
+    "nip":"197904032004111001",
+    "jabatan":"Kepala Bagian Umum",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"63d4650a-9754-42df-aa81-0c3d7c075470",
+    "no":261,
+    "nama":"Rakhmawati S.T.",
+    "nip":"197708162002122001",
+    "jabatan":"Perencana Ahli Madya",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"d1d94116-2981-430f-8fa1-914e5a8c7c6a",
+    "no":262,
+    "nama":"Purde Soraya S.H., MHRM.",
+    "nip":"198210262006042002",
+    "jabatan":"Analis Hukum Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"ebfbe8a3-4046-4b7f-99d7-bc092727556d",
+    "no":263,
+    "nama":"Diana S.E.",
+    "nip":"197501281994032001",
+    "jabatan":"Kepala Subbagian Perlengkapan dan Rumah Tangga",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"4288f0fb-e33e-4ea8-8d59-7aa0442eddb6",
+    "no":264,
+    "nama":"Widya Pratiwi S.E., M.M.",
+    "nip":"198406212009012001",
+    "jabatan":"Analis Pengelolaan Keuangan APBN Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"61277bc0-acba-4141-ac9e-1b53c2094162",
+    "no":265,
+    "nama":"Hari Tri Subagyo S.Kom., M.E.",
+    "nip":"198203032010121002",
+    "jabatan":"Perencana Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"ceb09263-c8d2-438f-9159-d09f29e1eca9",
+    "no":266,
+    "nama":"Rizka Nilam Arum S.E., M.Acc.",
+    "nip":"198702032010122003",
+    "jabatan":"Analis Pengelolaan Keuangan APBN Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"167d8e0c-de65-447d-a95f-d819b9d5b8d1",
+    "no":267,
+    "nama":"Dewi Artyuni S.E.",
+    "nip":"198206062005022004",
+    "jabatan":"Analis Pengelolaan Keuangan APBN Ahli Muda",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"b7c2850d-d872-4762-99c5-2e2a1c728f1d",
+    "no":268,
+    "nama":"Raras Anggita S.Kom.",
+    "nip":"199510042019022003",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"efee46c6-7f2e-4a18-a4e7-7f2be05d3aaf",
+    "no":269,
+    "nama":"Zulkifli Fadri S.E.",
+    "nip":"197701022009011003",
+    "jabatan":"Perencana Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"1f3a03d8-d6cc-4d77-9718-cd56ca844250",
+    "no":270,
+    "nama":"Ryan Arif Misnadin M.Cs.",
+    "nip":"199204122019021002",
+    "jabatan":"Pranata Komputer Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"dc2f568a-429c-4bdd-965d-61ae7f806284",
+    "no":271,
+    "nama":"Dodi Triyatmoko S.E.",
+    "nip":"197504182009101001",
+    "jabatan":"Pengelola Kepegawaian",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"c84ebfcb-6934-470e-9d78-4399b35afbdd",
+    "no":272,
+    "nama":"Jayadih",
+    "nip":"197503072007011001",
+    "jabatan":"Pengolah Data",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"81c34a77-7c3b-4b74-a8d4-ed3336a5e75b",
+    "no":273,
+    "nama":"Asty Latifatul Fajriyah S.E.",
+    "nip":"199301072019022003",
+    "jabatan":"Auditor Ahli Pertama",
+    "unit_eselon_ii":"Inspektorat II",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"9e32c4fe-0fb5-4138-852f-8181802d5adf",
+    "no":274,
+    "nama":"Arvin Reinaldo S.T.",
+    "nip":"199307242019021002",
+    "jabatan":"Auditor Ahli Pertama",
+    "unit_eselon_ii":"Inspektorat V",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"98dd6911-9bc5-451c-b8ac-999384ff3cff",
+    "no":275,
+    "nama":"Sultan Arraihan Ramadhan Widya Syah Alam A.Md., Ak.",
+    "nip":"199912202022021001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat I",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"e9d28a38-aa42-474e-a1e0-f83084d74735",
+    "no":276,
+    "nama":"Yosua Krishandova Wilis A.Md., Ak.",
+    "nip":"200102172022021001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat I",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"56365855-271d-41f5-bb50-62d609e64d20",
+    "no":277,
+    "nama":"Bertha Dania Wigiyanti Kurnianto A.Md., Ak.",
+    "nip":"200007282022022001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat II",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"89207f40-94d6-4002-ad6a-f9c196073567",
+    "no":278,
+    "nama":"Taufik Nur Fitrianto A.Md., Ak.",
+    "nip":"199901212022021001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat III",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"91a0641b-4529-4360-8dee-03fc1a805325",
+    "no":279,
+    "nama":"Monalisa A.Md., Ak.",
+    "nip":"200010182022022001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat III",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"eeb22044-e546-48de-a3a0-2ce8e76b01e1",
+    "no":280,
+    "nama":"Rizka Qurrota ‘Aini A.Md., Ak.",
+    "nip":"200001162022022001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat IV",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"a48e1d45-a05e-4c5f-ae6c-55d926b20a4c",
+    "no":281,
+    "nama":"Ayu Fadilah Putri A.Md., Ak.",
+    "nip":"200009272022022001",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat V",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"09e16f08-9dbd-4df1-b325-273c08d9a320",
+    "no":282,
+    "nama":"Anindya Putri Purwaningrum, A.Md.Ak.",
+    "nip":"200005052022022002",
+    "jabatan":"Auditor Terampil",
+    "unit_eselon_ii":"Inspektorat V",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"d9dfd631-635e-4936-9d1e-0cb40e215ea1",
+    "no":283,
+    "nama":"Amelia Renaz Rachmawati S.H.",
+    "nip":"199506092024212038",
+    "jabatan":"Analis Hukum Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"719d42a1-1fe7-4fbc-b798-0cf926800799",
+    "no":284,
+    "nama":"Novi Tri Lestari S.T.",
+    "nip":"198911132024212038",
+    "jabatan":"Analis SDM Aparatur Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"6ed3e61c-8584-40c7-a88e-0435db5261c2",
+    "no":285,
+    "nama":"dr. Rizky Desebrina",
+    "nip":"199112252024212034",
+    "jabatan":"Dokter Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"7f857a69-1a7c-421e-a93a-95bd1d6fabd9",
+    "no":286,
+    "nama":"Leni Marlina A.Md",
+    "nip":"198906142024212030",
+    "jabatan":"Perawat Terampil",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"0c01a3b5-2f92-464f-828c-4ad0727d3371",
+    "no":287,
+    "nama":"Ariadne Eka Haris Novianti A.Md.Kep",
+    "nip":"199711012024212042",
+    "jabatan":"Perawat Terampil",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"d2387476-da2d-4d8d-90aa-5b5606b58449",
+    "no":288,
+    "nama":"Herlina Novi Amd.KG",
+    "nip":"199411212024212037",
+    "jabatan":"Perawat Gigi Terampil",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"3abdd325-0698-4d58-9b0f-58d2ef9ef75a",
+    "no":289,
+    "nama":"Ilham Rusdiana S.T.",
+    "nip":"198903202024211018",
+    "jabatan":"Analis Kebijakan Ahli Pertama",
+    "unit_eselon_ii":"Sekretariat Inspektorat Jenderal",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"9c5566d2-c2dd-4a3b-bb58-cb2dd1710e81",
+    "no":290,
+    "nama":"Putri Sefty Lustinawati S.Kom.",
+    "nip":"198609272023212038",
+    "jabatan":"Arsiparis Ahli Pertama",
+    "unit_eselon_ii":"Inspektorat IV",
+    "unit_eselon_i":"Inspektorat Jenderal"
+  },
+  {
+    "id":"c1d513ae-94c8-4148-8138-724f7e3aed31",
+    "no":291,
+    "nama":"Radhi Darmansyah",
+    "nip":"231501018",
+    "jabatan":"Kepala Divisi Keuangan Internal",
+    "unit_eselon_ii":"Divisi Keuangan Internal",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"981dc623-4fbe-4959-84f1-35d914b6b659",
+    "no":292,
+    "nama":"Fuadi",
+    "nip":"231505018",
+    "jabatan":"Staf Bidang Penyusunan Laporan Keuangan dan Perencanaan Pengadaan Internal",
+    "unit_eselon_ii":"Divisi Keuangan Internal",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"a42c6e41-c38f-4761-b517-3011387b81a7",
+    "no":293,
+    "nama":"Evi Qhadriaty, ST, MT",
+    "nip":"197310222003122004",
+    "jabatan":"Staf Bidang Pengelolaan Anggaran dan Perbendaharaan",
+    "unit_eselon_ii":"Divisi Keuangan Internal",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"50c22981-14f9-4fd7-8356-558f34603aed",
+    "no":294,
+    "nama":"Junaidi",
+    "nip":"231507119",
+    "jabatan":"Staf Bidang Pengawasan dan Evaluasi Pengadaan KKKS dan Internal",
+    "unit_eselon_ii":"Divisi Pengelolaan Aset dan Rantai Suplai",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"6abae90b-fa54-4e71-ba26-ce3d2b563a6d",
+    "no":295,
+    "nama":"Nabyla Humaira",
+    "nip":"231508723",
+    "jabatan":"Staf Bidang Hukum Kontrak Komersial dan Perundangan",
+    "unit_eselon_ii":"Divisi Hukum, Program dan Pelaporan",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"5c080ec7-d8f0-4bad-b08e-6b8dddc41ab8",
+    "no":296,
+    "nama":"Faisal Hadji",
+    "nip":"231503118",
+    "jabatan":"Staf Bidang Operasi Teknologi Informasi dan Keamanan Informasi",
+    "unit_eselon_ii":"Divisi Manajemen Sistem Teknologi Informasi",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"d334b8a1-c8a0-4250-8fde-fe2a30afaf3b",
+    "no":297,
+    "nama":"Syihan Taufani",
+    "nip":"231503818",
+    "jabatan":"Staf Bidang Penagihan, Pengeluaran, Perbendaharaan dan Perpajakan",
+    "unit_eselon_ii":"Divisi Akuntansi Perpajakan dan Manajemen Risiko",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"cc7823c7-ba01-410b-9484-f2f1e8cd1414",
+    "no":298,
+    "nama":"Rijaluddin",
+    "nip":"231504618",
+    "jabatan":"Staf Bidang Sekretariat Satuan Tugas Bersama Audit KKKS",
+    "unit_eselon_ii":"Divisi Audit Kontraktor Kontrak Kerjasama Eksplorasi dan Eksploitasi",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"65d11779-68ea-4c0e-8adb-0278a6d23921",
+    "no":299,
+    "nama":"Shaivannur",
+    "nip":"231507519",
+    "jabatan":"Staf Bidang Komunikasi, Publikasi dan Hubungan Media",
+    "unit_eselon_ii":"Divisi Formalitas, Hubungan Eksternal dan Sekuriti KKKS",
+    "unit_eselon_i":"BPMA"
+  },
+  {
+    "id":"84c5e820-43fa-4d9c-9cb5-1b272c0d4785",
+    "no":300,
+    "nama":"Arizal",
+    "nip":"231505618",
+    "jabatan":"Staf Bidang Kebandaraan, Perkapalan dan Transportasi",
+    "unit_eselon_ii":null,
+    "unit_eselon_i":"BPMA"
+  }
+]
