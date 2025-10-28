@@ -14,11 +14,11 @@ export const siteConfig = {
     },
     {
       label: "Aturan",
-      href: "/docs",
+      href: "/aturan",
     },
     {
-      label: "UPG",
-      href: "/blog",
+      label: "E-Learning",
+      href: "/e-learning",
     },
     {
       label: "Inspektorat V",
@@ -36,11 +36,11 @@ export const siteConfig = {
     },
     {
       label: "Aturan",
-      href: "/docs",
+      href: "/aturan",
     },
     {
-      label: "UPG",
-      href: "/blog",
+      label: "E-Learning",
+      href: "/e-learning",
     },
     {
       label: "Inspektorat V",
