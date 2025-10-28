@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
-  const token = request.cookies.get("token"); // ambil token dari cookie
-  console.log("token: ", token);
-  // Jika belum login → redirect ke halaman login
-  if (!token && request.nextUrl.pathname.startsWith("/dashboard")) {
+  const token = request.cookies.get("token"); 
+
+  // Jika token tidak ada, redirect ke halaman login
+  if (!token) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -12,7 +12,16 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
-// Tentukan halaman mana saja yang ingin diamankan
+// Tentukan halaman mana saja yang ingin diamankan secara spesifik
 export const config = {
-  matcher: ["/dashboard/:path*"], // semua halaman di bawah /dashboard
+  matcher: [
+    // Mengamankan semua halaman di bawah /dashboard
+    "/dashboard/:path*",
+    
+    // Mengamankan halaman /e-learning/tracker dan semua halaman di bawahnya
+    "/e-learning/tracker/:path*",
+    
+    // Jika Anda juga ingin mengamankan /e-learning/tracker itu sendiri (tanpa path), 
+    // Anda bisa tambahkan: "/e-learning/tracker"
+  ],
 };

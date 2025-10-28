@@ -17,8 +17,8 @@ export const siteConfig = {
       href: "/docs",
     },
     {
-      label: "UPG",
-      href: "/blog",
+      label: "E-Learning",
+      href: "/e-learning",
     },
     {
       label: "Inspektorat V",

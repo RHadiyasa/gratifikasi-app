@@ -66,7 +66,6 @@ export default function Dashboard() {
           title="Total Nilai Gratifikasi"
           value={`Rp ${stats.totalNilai.toLocaleString("id-ID")}`}
           color="bg-green-500"
-          
         />
         <StatCard
           icon={<ClipboardList size={28} />}
