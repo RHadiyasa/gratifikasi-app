@@ -35,6 +35,8 @@ export async function POST(req) {
       { expiresIn: "2h" }
     );
 
+    // localStorage.setItem("Token", token);
+
     // ✅ Buat response dan set cookie
     const response = NextResponse.json({
       success: true,

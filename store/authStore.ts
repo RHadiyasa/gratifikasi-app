@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { jwtDecode } from "jwt-decode";
+import axios from "axios";
 
 interface DecodedToken {
   exp?: number;
@@ -19,20 +20,23 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
 
   checkToken: () => {
-    const token = localStorage.getItem("token");
+    const rawToken = localStorage.getItem("token");
     
-    // 1. Cek keberadaan token
-    if (!token) return set({ isLoggedIn: false, token: null });
+    // 1. Pengecekan Keberadaan dan String (RawToken mungkin null)
+    if (!rawToken || typeof rawToken !== 'string' || rawToken.trim() === '') {
+      return set({ isLoggedIn: false, token: null });
+    }
 
-    // 2. ✅ MODIFIKASI: Cek format token sebelum decoding
-    // Token yang valid harus memiliki 3 bagian (dipisahkan oleh 2 titik)
-    if (token.split(".").length !== 3) {
+    // 2. Cek format (Setelah yakin itu string non-kosong)
+    if (rawToken.split(".").length !== 3) {
       console.error("Token tidak valid: Format JWT salah (missing dots).");
       localStorage.removeItem("token");
       return set({ isLoggedIn: false, token: null });
     }
     
-    // Setelah melewati dua pengecekan di atas, kita bisa yakin token memiliki format yang benar
+    // Sekarang kita yakin rawToken adalah string yang formatnya benar
+    const token = rawToken;
+
     try {
       const decoded: DecodedToken = jwtDecode(token);
 
@@ -41,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.removeItem("token");
         return set({ isLoggedIn: false, token: null });
       }
-
+      
       const isExpired = decoded.exp * 1000 < Date.now();
 
       if (isExpired) {
@@ -51,7 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ isLoggedIn: true, token });
       }
     } catch (error) {
-      // Catch error jika decoding gagal (misalnya, payload rusak)
+      // Catch error jika decoding gagal (misalnya, signature salah)
       console.error("Token tidak valid:", error);
       localStorage.removeItem("token");
       set({ isLoggedIn: false, token: null });
@@ -59,12 +63,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   login: (token: string) => {
-    localStorage.setItem("token", token);
+    // localStorage.setItem("token", token);
     set({ isLoggedIn: true, token });
   },
 
-  logout: () => {
-    localStorage.removeItem("token");
-    set({ isLoggedIn: false, token: null });
+  logout: async () => { // <-- Tetap jadikan async
+    try {
+      // 1. Hapus token dari localStorage (jika ada)
+      localStorage.removeItem("token");
+      
+      // 2. Panggil API untuk menghapus cookie
+      // Axios akan otomatis menggunakan metode POST sesuai route.js
+      await axios.post('/api/auth/logout');
+
+    } catch (error) {
+      console.error("Gagal menghapus cookie saat logout:", error);
+      // Kegagalan API logout tidak boleh menghentikan pembaruan state
+    } finally {
+      // 3. Update state visual (di client)
+      set({ isLoggedIn: false, token: null });
+    }
   },
 }));
