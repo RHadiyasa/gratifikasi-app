@@ -219,13 +219,13 @@ export default function UploadCertificate() {
       {/* --- Input File --- */}
       <div className="w-full max-w-2xl mb-8">
         <label htmlFor="file" className="block text-sm font-medium mb-2">
-          Pilih Dokumen Sertifikat (PDF, JPG, PNG)
+          Pilih Dokumen Sertifikat (PDF)
         </label>
         <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-white/15 hover:shadow-md transition">
           <input
             type="file"
             id="file"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf"
             className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
             onChange={handleFileChange}
             disabled={isUploading}

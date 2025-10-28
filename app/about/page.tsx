@@ -1,9 +1,35 @@
 import { title } from "@/components/primitives";
+import { Button } from "@heroui/button";
+import { Wrench } from "lucide-react";
+import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <div>
-      <h1 className={title()}>About</h1>
-    </div>
+    <div className="flex flex-col items-center justify-center p-6">
+          {/* Container Pesan */}
+          <div className="mt-30 p-10 text-center max-w-lg w-full">
+            {/* Ikon Kunci Pas */}
+            <div className="flex justify-center mb-6">
+              <Wrench className="w-16 h-16 text-yellow-700 dark:text-yellow-400 animate-bounce" />
+            </div>
+    
+            {/* Judul Utama */}
+            <h1 className="text-4xl font-extrabold text-foreground mb-4">
+              🚧 Sorry bgt ya ges yaaa 🚧
+            </h1>
+    
+            {/* Deskripsi */}
+            <p className="text-lg text-foreground">Still under construction</p>
+    
+            {/* Opsional: Tombol Kembali */}
+            <Button
+              as={Link}
+              href="/"
+              className="mt-8 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300"
+            >
+              Kembali ke Halaman Sebelumnya
+            </Button>
+          </div>
+        </div>
   );
 }
