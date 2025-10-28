@@ -66,6 +66,7 @@ export default function Dashboard() {
           title="Total Nilai Gratifikasi"
           value={`Rp ${stats.totalNilai.toLocaleString("id-ID")}`}
           color="bg-green-500"
+          
         />
         <StatCard
           icon={<ClipboardList size={28} />}
@@ -154,7 +155,7 @@ const StatCard = ({ icon, title, value, color }) => (
   >
     <div>
       <p className="text-sm opacity-80">{title}</p>
-      <h3 className="text-2xl font-bold">{value}</h3>
+      <h3 className="text-xl font-bold">{value}</h3>
     </div>
     {icon}
   </div>
