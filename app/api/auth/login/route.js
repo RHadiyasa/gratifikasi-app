@@ -7,10 +7,8 @@ import bcrypt from "bcryptjs";
 export async function POST(req) {
   try {
     await connect();
-    const reqBody = await req.json();
-    const { nip, password } = reqBody;
+    const { nip, password } = await req.json();
 
-    // 🔍 Cek apakah admin terdaftar
     const admin = await UpgAdmin.findOne({ nip });
     if (!admin) {
       return NextResponse.json(
@@ -19,25 +17,20 @@ export async function POST(req) {
       );
     }
 
-    // 🔐 Verifikasi password
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, message: "Password salah" },
+        { message: "Password salah", success: false },
         { status: 401 }
       );
     }
 
-    // 🧩 Buat token JWT
     const token = jwt.sign(
       { id: admin._id, nip: admin.nip },
       process.env.TOKEN_SECRET,
       { expiresIn: "2h" }
     );
 
-    // localStorage.setItem("Token", token);
-
-    // ✅ Buat response dan set cookie
     const response = NextResponse.json({
       success: true,
       message: "Login Berhasil",
@@ -48,7 +41,6 @@ export async function POST(req) {
       },
     });
 
-    // Simpan token ke cookie
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
