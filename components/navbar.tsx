@@ -34,6 +34,8 @@ export const Navbar = () => {
   const { isLoggedIn, logout } = useAuthStore();
   const router = useRouter();
 
+  console.log("login: ", isLoggedIn);
+
   const handleLogout = useCallback(() => {
     logout();
     router.push("/");
@@ -107,7 +109,12 @@ export const Navbar = () => {
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button as={Link} href={"/dashboard"} variant="solid" color="primary">
+              <Button
+                as={Link}
+                href={"/dashboard"}
+                variant="solid"
+                color="primary"
+              >
                 Dashboard
               </Button>
               <Button onPress={handleLogout} variant="solid" color="danger">

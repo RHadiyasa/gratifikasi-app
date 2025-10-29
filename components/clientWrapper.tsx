@@ -3,10 +3,12 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
 
 const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { checkToken } = useAuthStore();
+  const { checkAuth } = useAuthStore();
+
   useEffect(() => {
-    checkToken();
-  }, [checkToken]);
+    checkAuth();
+  }, [checkAuth]);
+
   return <>{children}</>;
 };
 
