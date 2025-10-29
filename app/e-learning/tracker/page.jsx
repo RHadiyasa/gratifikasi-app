@@ -12,7 +12,7 @@ import { usePesertaData } from "@/hooks/usePesertaData";
 const TrackingParticipantPage = () => {
   // Menggunakan Custom Hook untuk semua logika data
   const { groupedData, summary, isLoading, error } = usePesertaData();
-  console.log("Group: ", groupedData)
+  // console.log("Group: ", groupedData)
 
   if (isLoading) {
     return (

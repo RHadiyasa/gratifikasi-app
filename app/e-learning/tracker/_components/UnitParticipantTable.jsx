@@ -49,6 +49,7 @@ const getPresignedUrlFromBackend = async (s3Key) => {
 export const UnitParticipantTable = ({ unitName, participants }) => {
   const [currentPage, setCurrentPage] = useState(1); // State untuk melacak loading tombol secara global (bisa disempurnakan per baris)
   const [isButtonLoading, setIsButtonLoading] = useState(false);
+  const [loadingKey, setLoadingKey] = useState(null);
 
   const totalPages = Math.ceil(participants.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -67,18 +68,16 @@ export const UnitParticipantTable = ({ unitName, participants }) => {
       return;
     }
 
-    setIsButtonLoading(true); // Mulai loading
+    setLoadingKey(s3Key); // ⬅️ hanya tombol dengan key ini yang loading
 
     try {
-      // 1. Dapatkan Presigned URL dari API backend
-      const publicUrl = await getPresignedUrlFromBackend(s3Key); // 2. Buka URL yang sudah ditandatangani di tab baru
-
+      const publicUrl = await getPresignedUrlFromBackend(s3Key);
       window.open(publicUrl, "_blank");
     } catch (error) {
       console.error("Error saat mendapatkan Presigned URL:", error);
       alert(`Gagal memuat dokumen: ${error.message}.`);
     } finally {
-      setIsButtonLoading(false); // Selesai loading
+      setLoadingKey(null); // ⬅️ hentikan loading
     }
   };
 
@@ -98,7 +97,6 @@ export const UnitParticipantTable = ({ unitName, participants }) => {
             <TableColumn>No.</TableColumn>
             <TableColumn>Nama Peserta</TableColumn>
             <TableColumn>NIP</TableColumn>
-            <TableColumn>Unit Eselon I</TableColumn>
             <TableColumn>Status Sertifikat</TableColumn>
             <TableColumn>Preview PDF</TableColumn>
           </TableHeader>
@@ -108,9 +106,8 @@ export const UnitParticipantTable = ({ unitName, participants }) => {
                 <TableCell>{startIndex + index + 1}</TableCell>
                 <TableCell className="font-medium">{peserta.nama}</TableCell>
                 <TableCell>{peserta.nip}</TableCell>
-                <TableCell>{peserta.unit_eselon_i}</TableCell>
                 <TableCell>
-                  {peserta.status === "uploaded" ? (
+                  {peserta.statusCourse === "Sudah" ? (
                     <span className="text-green-600 font-medium">
                       ✅ Sudah Upload
                     </span>
@@ -120,21 +117,23 @@ export const UnitParticipantTable = ({ unitName, participants }) => {
                 </TableCell>
                 <TableCell>
                   {/* --- IMPLEMENTASI TOMBOL PREVIEW DENGAN S3_KEY --- */}
-                  {peserta.status === "uploaded" && peserta.s3_key ? (
+                  {peserta.statusCourse === "Sudah" && peserta.s3_key ? (
                     <Button
                       size="sm"
                       variant="primary"
                       onClick={() => handlePreviewPdf(peserta.s3_key)}
-                      disabled={isButtonLoading}
+                      disabled={loadingKey === peserta.s3_key} // hanya tombol ini yang disable
                       startContent={
-                        isButtonLoading ? (
+                        loadingKey === peserta.s3_key ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <FileText className="w-4 h-4" />
                         )
                       }
                     >
-                      {isButtonLoading ? "Loading..." : "Lihat Dokumen"}
+                      {loadingKey === peserta.s3_key
+                        ? "Loading..."
+                        : "Lihat Dokumen"}
                     </Button>
                   ) : (
                     <span className="text-gray-400 text-sm italic">

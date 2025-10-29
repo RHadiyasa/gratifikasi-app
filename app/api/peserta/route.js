@@ -1,5 +1,3 @@
-// src/app/api/peserta/route.js
-
 import { NextResponse } from "next/server";
 import dataPeserta from "@/modules/data/peserta_batch_1_elearning_2025.json";
 import { connect } from "@/config/dbconfig";

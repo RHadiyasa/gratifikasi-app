@@ -382,7 +382,7 @@ export default function LaporPage() {
           <ModalContent>
             {(onClose) => (
               <>
-                <ModalHeader className="text-xl text-center">
+                <ModalHeader className="text-2xl text-center font-semibold">
                   Permohonan kompensasi Objek Gratifikasi
                 </ModalHeader>
                 <ModalBody>
@@ -394,7 +394,7 @@ export default function LaporPage() {
                     dapat dibatalkan sepihak oleh pelapor.
                   </p>
                   <RadioGroup
-                    label="Boleh iya/tidak"
+                    label=""
                     value={form.kompensasiPelaporan ? "true" : "false"}
                     onValueChange={(value) =>
                       handleChange("kompensasiPelaporan", value === "true")
@@ -416,8 +416,19 @@ export default function LaporPage() {
                     </Radio>
                   </RadioGroup>
                 </ModalBody>
-                <ModalFooter>
-                  <Button onPress={handleSubmit} className="w-full" variant="shadow" color="primary">Submit Laporan</Button>
+                <ModalFooter className="flex flex-col">
+                  <p className="text-xs text-center text-foreground/50 italic">
+                    Fitur Aktualisasi sementara di Non-Aktifkan hingga Kegiatan E-Learning Gratifikasi selesai
+                  </p>
+                  <Button
+                    onPress={handleSubmit}
+                    variant="shadow"
+                    color="primary"
+                    isDisabled
+                    fullWidth
+                  >
+                    (Fitur Non Aktif)
+                  </Button>
                 </ModalFooter>
               </>
             )}

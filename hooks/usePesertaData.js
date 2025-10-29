@@ -1,6 +1,6 @@
 // src/components/TrackingPeserta/usePesertaData.js
 
-import { pesertaBatchOneService } from "@/service/peserta.service";
+import { getAllParticipants, pesertaBatchOneService } from "@/service/peserta.service";
 import { useState, useEffect, useMemo } from "react";
 
 // Fungsi untuk meringkas data (dipindahkan dari page.jsx)
@@ -11,7 +11,7 @@ const summarizeData = (groupedData) => {
 
   Object.entries(groupedData).forEach(([unitName, participants]) => {
     const uploadedCount = participants.filter(
-      (p) => p.status === "uploaded"
+      (p) => p.statusCourse === "Sudah"
     ).length;
     const totalCount = participants.length;
     const notUploadedCount = totalCount - uploadedCount;
@@ -48,7 +48,7 @@ export const usePesertaData = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const dataPeserta = await pesertaBatchOneService();
+        const dataPeserta = await getAllParticipants();
 
         const grouped = dataPeserta.reduce((acc, peserta) => {
           const unit = peserta.unit_eselon_i || "Lain-lain";
@@ -58,7 +58,7 @@ export const usePesertaData = () => {
           acc[unit].push({
             ...peserta,
             nip: peserta.nip || "N/A",
-            status: peserta.status || "Belum Upload",
+            status: peserta.status || "Belum",
           });
           return acc;
         }, {});

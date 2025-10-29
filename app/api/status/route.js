@@ -1,13 +1,14 @@
 // src/app/api/status/route.js
 import { NextResponse } from "next/server";
 import { connect } from "@/config/dbconfig";
-import Status from "@/modules/models/statusModel";
+import ElearningParticipant from "@/modules/models/ParticipantModel";
 
 export async function POST(req) {
   try {
-    // 1. Selalu panggil connect() di awal
+    // 1️⃣ Koneksi ke MongoDB
     await connect();
 
+    // 2️⃣ Ambil body dari request
     const { nip, s3_key } = await req.json();
 
     if (!nip || !s3_key) {
@@ -17,28 +18,41 @@ export async function POST(req) {
       );
     }
 
-    // 2. Gunakan Model Mongoose (bukan db.collection)
-    // Ini adalah operasi 'upsert' di Mongoose:
-    await Status.findOneAndUpdate(
-      { nip: nip }, // Filter: cari berdasarkan NIP
+    // 3️⃣ Update status peserta
+    const updatedParticipant = await ElearningParticipant.findOneAndUpdate(
+      { nip }, // cari berdasarkan NIP
       {
-        // Data: data yang akan di-set
-        status: "uploaded",
-        s3_key: s3_key,
+        s3_key,
         uploaded_at: new Date(),
+        statusCourse: "Sudah",
       },
-      {
-        upsert: true, // Buat baru jika tidak ada
-        new: true, // Kembalikan dokumen yang baru
-      }
+      { new: true } // kembalikan dokumen setelah update
     );
 
+    // 4️⃣ Jika peserta tidak ditemukan
+    if (!updatedParticipant) {
+      return NextResponse.json(
+        { error: "Peserta dengan NIP tersebut tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    // 5️⃣ Respons sukses
     return NextResponse.json(
-      { success: true, message: "Status berhasil disimpan" },
+      {
+        success: true,
+        message: "Status peserta berhasil diperbarui.",
+        data: {
+          nama: updatedParticipant.nama,
+          nip: updatedParticipant.nip,
+          statusCourse: updatedParticipant.statusCourse,
+          s3_key: updatedParticipant.s3_key,
+        },
+      },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Gagal menyimpan status ke MongoDB:", error.message);
+    console.error("Gagal memperbarui status peserta:", error);
     return NextResponse.json(
       { error: "Internal Server Error", details: error.message },
       { status: 500 }

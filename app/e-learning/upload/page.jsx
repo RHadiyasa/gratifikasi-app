@@ -1,11 +1,9 @@
-// src/app/upload-sertifikat/page.jsx
-
 "use client";
 import React, { useEffect, useState } from "react";
 import { Select, SelectItem } from "@heroui/react";
 import { Button } from "@heroui/button";
 import { Upload, Loader2, CheckCircle } from "lucide-react";
-import { pesertaBatchOneService } from "@/service/peserta.service";
+import { getAllParticipants } from "@/service/peserta.service";
 import axios from "axios"; // <-- 1. IMPORT AXIOS
 
 export default function UploadCertificate() {
@@ -26,7 +24,7 @@ export default function UploadCertificate() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await pesertaBatchOneService();
+        const res = await getAllParticipants();
         const normalized = res.map((p) => ({
           ...p,
           Nama: (p.nama ?? p.Nama ?? p.NAMA ?? "").toString(),
@@ -170,7 +168,7 @@ export default function UploadCertificate() {
   // Render Halaman
   return (
     <div className="flex flex-col items-center justify-center mt-20">
-      <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-300 via-white to-indigo-200 bg-clip-text text-transparent mb-6">
+      <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-300 via-white to-indigo-200 bg-clip-text dark:text-transparent mb-6">
         Upload Sertifikat Anda
       </h1>
 
@@ -246,7 +244,7 @@ export default function UploadCertificate() {
           )
         }
         className="transition-all duration-700 hover:scale-105"
-        onClick={handleUpload}
+        onPress={handleUpload}
         disabled={isUploading || uploadStatus === "success"}
       >
         {isUploading
