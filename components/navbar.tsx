@@ -9,61 +9,41 @@ import {
   NavbarMenuItem,
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
 import { Link } from "@heroui/link";
-import { Input } from "@heroui/input";
 import { link as linkStyles } from "@heroui/theme";
 import NextLink from "next/link";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  TwitterIcon,
-  GithubIcon,
-  DiscordIcon,
-  SearchIcon,
-  Logo,
-  LoginIcon,
-} from "@/components/icons";
+import { Logo, LoginIcon } from "@/components/icons";
 import { useAuthStore } from "@/store/authStore";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LayoutDashboardIcon } from "lucide-react";
 
 export const Navbar = () => {
   const { isLoggedIn, logout } = useAuthStore();
   const router = useRouter();
-
-  console.log("login: ", isLoggedIn);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = useCallback(() => {
     logout();
     router.push("/");
   }, [logout, router]);
 
-  const searchInput = (
-    <Input
-      aria-label="Search"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder="Search..."
-      startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="search"
-    />
-  );
+  const handleMenuItemClick = useCallback(() => {
+    // Tutup menu saat link di klik (khusus mobile)
+    setIsMenuOpen(false);
+  }, []);
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
+    <HeroUINavbar
+      maxWidth="xl"
+      position="sticky"
+      isMenuOpen={isMenuOpen}
+      onMenuOpenChange={setIsMenuOpen}
+    >
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand as="li" className="gap-3 max-w-fit">
           <NextLink className="flex justify-start items-center gap-1" href="/">
@@ -79,7 +59,6 @@ export const Navbar = () => {
                   linkStyles({ color: "foreground" }),
                   "data-[active=true]:text-primary data-[active=true]:font-medium"
                 )}
-                color="foreground"
                 href={item.href}
               >
                 {item.label}
@@ -125,34 +104,61 @@ export const Navbar = () => {
         </NavbarItem>
       </NavbarContent>
 
+      {/* MOBILE SECTION */}
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-          <GithubIcon className="text-default-500" />
-        </Link>
         <ThemeSwitch />
-        <NavbarMenuToggle />
+        <NavbarMenuToggle
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        />
       </NavbarContent>
 
       <NavbarMenu>
-        {searchInput}
         <div className="mx-4 mt-2 flex flex-col gap-2">
           {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
+            <NavbarMenuItem key={`${item.href}-${index}`}>
               <Link
                 color={
                   index === 2
-                    ? "primary"
+                    ? "foreground"
                     : index === siteConfig.navMenuItems.length - 1
-                      ? "danger"
+                      ? "warning"
                       : "foreground"
                 }
-                href="#"
+                href={item.href}
                 size="lg"
+                onClick={handleMenuItemClick} // ✅ Tutup menu setelah klik
               >
                 {item.label}
               </Link>
             </NavbarMenuItem>
           ))}
+          {isLoggedIn ? (
+            <NavbarMenuItem>
+              <div className="grid py-6 gap-3">
+                <Button
+                  as={Link}
+                  href="/dashboard"
+                  color="primary"
+                  size="lg"
+                  variant="shadow"
+                  onPress={handleMenuItemClick}
+                >
+                  Go to Dashboard
+                  <LayoutDashboardIcon />
+                </Button>
+                <Button onPress={handleLogout} color="danger" fullWidth>
+                  Logout
+                </Button>
+              </div>
+            </NavbarMenuItem>
+          ) : (
+            <NavbarMenuItem>
+              <Button as={Link} href="/login" color="primary" fullWidth>
+                Login
+              </Button>
+            </NavbarMenuItem>
+          )}
         </div>
       </NavbarMenu>
     </HeroUINavbar>

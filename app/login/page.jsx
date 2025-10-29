@@ -5,9 +5,11 @@ import { loginService } from "@/modules/auth/auth.service";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import { useAuthStore } from "@/store/authStore";
+import { Loader2 } from "lucide-react"; // ✅ Tambahkan icon loading
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState("login");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
 
@@ -28,6 +30,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true); // ✅ Mulai loading
       const response = await loginService(nip, password);
       if (!response.success) {
         toast.error(response.message);
@@ -39,24 +42,24 @@ const LoginPage = () => {
 
       setTimeout(() => {
         router.push("/");
-      }, 500);
+      }, 800);
     } catch (error) {
       console.error(error);
-      toast.error("Terjadi kesalahan.");
+      toast.error("Terjadi kesalahan saat login.");
+    } finally {
+      setLoading(false); // ✅ Matikan loading setelah selesai
     }
   };
 
-  // REGISTER HANDLER
-  const handleRegister = async () => {
-    
-  };
+  // REGISTER HANDLER (belum digunakan)
+  const handleRegister = async () => {};
 
   return (
     <div className="flex flex-col items-center justify-center text-foreground h-full">
       <ToastContainer />
       <div>
         <h1 className="text-center font-bold text-2xl py-10">Login UPG</h1>
-        <Card className="w-[400px] shadow-xl rounded-2xl">
+        <Card className="w-[300px] md:w-[400px] shadow-xl rounded-2xl">
           <CardBody>
             <Tabs
               aria-label="Login/Register Tabs"
@@ -76,6 +79,7 @@ const LoginPage = () => {
                     value={nip}
                     onChange={(e) => setNip(e.target.value)}
                     required
+                    isDisabled={loading}
                   />
                   <Input
                     label="Password"
@@ -84,15 +88,28 @@ const LoginPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    isDisabled={loading}
                   />
-                  <Button type="submit" color="primary" fullWidth>
-                    Login
+
+                  {/* ✅ Tombol dengan animasi loading */}
+                  <Button
+                    type="submit"
+                    color="primary"
+                    fullWidth
+                    isDisabled={loading}
+                    startContent={
+                      loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : null
+                    }
+                  >
+                    {loading ? "Memproses..." : "Login"}
                   </Button>
                 </form>
               </Tab>
 
               {/* TAB REGISTER */}
-              <Tab key="register" title="Register">
+              <Tab key="register" title="Register" isDisabled>
                 <form
                   onSubmit={handleRegister}
                   className="flex flex-col gap-3 mt-4"

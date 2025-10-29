@@ -15,6 +15,7 @@ import {
   WifiOff,
   RefreshCcw,
   Upload,
+  MonitorCheckIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -106,15 +107,15 @@ export default function DocsPage() {
             gratifikasi dan pencegahan korupsi.
           </motion.p>
         </div>
-        <div className="py-5 animate-appearance-in duration-1000 flex items-center justify-center gap-4">
+        <div className="py-5 animate-appearance-in duration-1000 grid md:flex items-center justify-center gap-4">
           <Button
             as={Link}
             href="/e-learning/upload"
             variant="shadow"
             color="primary"
           >
-            <Upload />
-            Upload Sertifikat
+            <Upload size={20} />
+            <p>Upload Sertifikat</p>
           </Button>
           {isLoggedIn ? (
             <Button
@@ -124,6 +125,7 @@ export default function DocsPage() {
               as={Link}
               href="/e-learning/tracker"
             >
+              <MonitorCheckIcon size={20} />
               Tracking Peserta
             </Button>
           ) : (
