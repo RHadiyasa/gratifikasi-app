@@ -12,8 +12,8 @@ import {
 import { Input, Select, SelectItem, Button } from "@heroui/react";
 import { FileText, Download } from "lucide-react";
 import { getAllParticipants } from "@/service/peserta.service";
-import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
+import { getPresignedUrlFromBackend, getPresignedUrlFromBackendForDownload } from "@/service/aws/predesignUrl.service";
 
 export default function ParticipantList() {
   const [participants, setParticipants] = useState([]);
@@ -135,17 +135,55 @@ export default function ParticipantList() {
   }, [participants]);
 
   // --- 7. Fungsi Tombol ---
-  const handleViewPdf = (s3_key) => {
+  const handleViewPdf = async (s3_key) => {
     if (!s3_key) return alert("Dokumen belum diunggah.");
-    window.open(s3_key, "_blank");
+
+    try {
+      // 1. Dapatkan Presigned URL dari backend
+      const presignedUrl = await getPresignedUrlFromBackend(s3_key);
+
+      // 2. Buka URL yang sudah ditandatangani di tab baru
+      if (presignedUrl) {
+        window.open(presignedUrl, "_blank");
+      } else {
+        alert("Gagal mendapatkan URL dokumen.");
+      }
+    } catch (error) {
+      console.error("Kesalahan saat melihat PDF:", error);
+      alert(`Gagal membuka dokumen: ${error.message}`);
+    }
   };
 
-  const handleDownloadPdf = (s3_key) => {
+  const handleDownloadPdf = async (s3_key) => {
     if (!s3_key) return alert("Dokumen belum diunggah.");
-    const link = document.createElement("a");
-    link.href = s3_key;
-    link.download = s3_key.split("/").pop() || "dokumen.pdf";
-    link.click();
+
+    try {
+      // 1. Dapatkan Presigned URL dari backend
+      const presignedUrl = await getPresignedUrlFromBackendForDownload(s3_key);
+
+      if (presignedUrl) {
+        // 2. Buat elemen <a>
+        const link = document.createElement("a");
+
+        // 3. Set href ke Presigned URL yang VALID
+        link.href = presignedUrl;
+
+        // 4. Set nama file yang diunduh (opsional, Presigned URL biasanya
+        //    sudah menangani Content-Disposition)
+        // Mengambil nama file dari s3_key asli
+        link.download = s3_key.split("/").pop() || "dokumen.pdf";
+
+        // 5. Simulasikan klik
+        document.body.appendChild(link); // Penting untuk beberapa browser
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("Gagal mendapatkan URL dokumen.");
+      }
+    } catch (error) {
+      console.error("Kesalahan saat mengunduh PDF:", error);
+      alert(`Gagal mengunduh dokumen: ${error.message}`);
+    }
   };
 
   if (loading) return <p>Memuat data peserta...</p>;
@@ -236,9 +274,9 @@ export default function ParticipantList() {
           items={paginatedData}
         >
           {(p) => (
-            <TableRow key={p._id}>
+            <TableRow key={p._id} >
               {(columnKey) => (
-                <TableCell>
+                <TableCell className="text-xs">
                   {/* Logika render sel berdasarkan key kolom */}
                   {columnKey === "nama" && p.nama}
                   {columnKey === "nip" && p.nip}
@@ -247,7 +285,7 @@ export default function ParticipantList() {
                   {columnKey === "batch" && p.batch}
                   {columnKey === "statusCourse" && (
                     <span
-                      className={`px-2 py-1 rounded text-white font-medium ${
+                      className={`px-2 py-1 rounded text-white text-xs font-medium ${
                         p.statusCourse === "Sudah"
                           ? "bg-green-600"
                           : "bg-red-500"

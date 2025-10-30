@@ -219,7 +219,7 @@ export default function UploadCertificate() {
         <label htmlFor="file" className="block text-sm font-medium mb-2">
           Pilih Dokumen Sertifikat (PDF)
         </label>
-        <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-white/15 hover:shadow-md transition">
+        <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-black/5 dark:bg-white/15 hover:shadow-md transition">
           <input
             type="file"
             id="file"

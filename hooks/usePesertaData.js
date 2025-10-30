@@ -1,6 +1,6 @@
 // src/components/TrackingPeserta/usePesertaData.js
 
-import { getAllParticipants, pesertaBatchOneService } from "@/service/peserta.service";
+import { getAllParticipants } from "@/service/peserta.service";
 import { useState, useEffect, useMemo } from "react";
 
 // Fungsi untuk meringkas data (dipindahkan dari page.jsx)
