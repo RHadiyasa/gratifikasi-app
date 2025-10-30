@@ -129,7 +129,16 @@ export default function DocsPage() {
               Tracking Peserta
             </Button>
           ) : (
-            <></>
+            <Button
+              variant="shadow"
+              color="success"
+              className="text-white"
+              as={Link}
+              href="/e-learning/participants"
+            >
+              <MonitorCheckIcon size={20} />
+              Tracking Peserta (Public)
+            </Button>
           )}
         </div>
       </section>

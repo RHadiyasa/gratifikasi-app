@@ -3,11 +3,13 @@
 "use client";
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { ListCheckIcon, Loader2 } from "lucide-react";
 import { GlobalSummaryCards } from "./_components/GlobalSummaryCards";
 import { UnitSummaryCardsList } from "./_components/UnitSummaryCardsList";
 import { UnitParticipantTable } from "./_components/UnitParticipantTable";
 import { usePesertaData } from "@/hooks/usePesertaData";
+import { Button } from "@heroui/button";
+import Link from "next/link";
 
 const TrackingParticipantPage = () => {
   // Menggunakan Custom Hook untuk semua logika data
@@ -34,7 +36,7 @@ const TrackingParticipantPage = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6 text-foreground">
+      <h1 className="text-3xl font-bold mb-6 py-6 text-foreground">
         Tracking Peserta Sertifikasi
       </h1>
 
@@ -47,9 +49,15 @@ const TrackingParticipantPage = () => {
       <UnitSummaryCardsList unitSummary={summary.unitSummary} />
 
       {/* 3. TABEL DETAIL PER UNIT */}
-      <h2 className="text-2xl lg:text-4xl font-bold mb-6 text-foreground text-center mt-10">
-        Rincian Peserta per Unit
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl lg:text-4xl font-bold text-foreground text-center py-10">
+          Rincian Peserta per Unit
+        </h2>
+        <Button as={Link} href="/e-learning/participants" variant="shadow" color="primary" className="flex items-center justify-center gap-2">
+          <ListCheckIcon size={20} />
+          <p>Daftar Seluruh Peserta</p>
+        </Button>
+      </div>
 
       {Object.entries(groupedData).map(([unitName, participants]) => (
         <UnitParticipantTable
