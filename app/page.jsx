@@ -47,53 +47,49 @@ export default function Home() {
     }
   }, []);
   return (
-    <section className="flex flex-col items-center justify-center text-center w-full ">
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        {/* Hero Title */}
-        <p className="text-center font-semibold text-xl">Inspektorat V</p>
-        <div className="inline-block max-w-5xl">
-          <h1 className={title()}>Membangun Budaya&nbsp;</h1>
-          <h1 className={title({ color: "violet" })}>Sadar Gratifikasi</h1>
+    <section className="flex flex-col min-h-screen items-center justify-center text-center w-full ">
+      {/* Hero Title */}
+      <p className="text-center font-semibold text-xl">Inspektorat V</p>
+      <div className="inline-block max-w-5xl">
+        <h1 className={title()}>Membangun Budaya&nbsp;</h1>
+        <h1 className={title({ color: "violet" })}>Sadar Gratifikasi</h1>
 
-          <h2 className={subtitle({ class: "mt-4 mx-auto" })}>
-            Laporkan setiap pemberian yang tidak wajar untuk mewujudkan
-            lingkungan kerja yang bersih, transparan, dan berintegritas.
-          </h2>
+        <h2 className={subtitle({ class: "mt-4 mx-auto" })}>
+          Laporkan setiap pemberian yang tidak wajar untuk mewujudkan lingkungan
+          kerja yang bersih, transparan, dan berintegritas.
+        </h2>
+      </div>
+      <div className="flex-row mt-4 items-center justify-center">
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto justify-center">
+          <Link
+            href="/lapor"
+            className="flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto text-white bg-violet-600 rounded-full font-semibold shadow-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-opacity-50 transition-colors"
+          >
+            <ShieldCheckIcon size={20} />
+            Lapor Gratifikasi
+          </Link>
+
+          <Link
+            href="/panduan"
+            className="flex items-center justify-center px-6 py-3 w-full sm:w-auto rounded-full font-semibold border-2 border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          >
+            Lihat Panduan
+          </Link>
         </div>
-        <div className="flex-row mt-4 items-center justify-center">
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto justify-center">
-            <Link
-              href="/lapor"
-              className="flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto text-white bg-violet-600 rounded-full font-semibold shadow-lg hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-opacity-50 transition-colors"
-            >
-              <ShieldCheckIcon size={20} />
-              Lapor Gratifikasi
-            </Link>
 
-            <Link
-              href="/panduan"
-              className="flex items-center justify-center px-6 py-3 w-full sm:w-auto rounded-full font-semibold border-2 border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Lihat Panduan
-            </Link>
-          </div>
-
-          {/* Snippet */}
-          <div className="mt-8">
-            <Snippet hideCopyButton hideSymbol variant="flat" color="warning">
-              <span className="text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">
-                #UntungAdaItjen | Jaga Integritas, Tolak Gratifikasi.
-              </span>
-            </Snippet>
-          </div>
+        {/* Snippet */}
+        <div className="mt-8">
+          <Snippet hideCopyButton hideSymbol variant="flat" color="warning">
+            <span className="text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">
+              #UntungAdaItjen | Jaga Integritas, Tolak Gratifikasi.
+            </span>
+          </Snippet>
         </div>
       </div>
 
       {/* Sosialisasi Section */}
-      <div className="mt-16 w-full max-w-6xl">
-        <SosialisasiPage />
-      </div>
+      <div className="mt-16 w-full max-w-6xl">{/* <SosialisasiPage /> */}</div>
     </section>
   );
 }

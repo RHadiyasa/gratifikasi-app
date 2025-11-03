@@ -51,7 +51,7 @@ export const Navbar = () => {
             <p className="font-bold text-inherit">Lapor Gratifikasi</p>
           </NextLink>
         </NavbarBrand>
-        <ul className="hidden lg:flex gap-4 justify-start ml-2">
+        <ul className="hidden md:flex gap-4 justify-start ml-2">
           {siteConfig.navItems.map((item) => (
             <NavbarItem key={item.href}>
               <NextLink
@@ -69,10 +69,10 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent
-        className="hidden sm:flex basis-1/5 sm:basis-full"
+        className="hidden lg:flex basis-1/5 sm:basis-full"
         justify="end"
       >
-        <NavbarItem className="hidden sm:flex gap-2">
+        <NavbarItem className="hidden md:flex gap-2">
           <ThemeSwitch />
         </NavbarItem>
         <NavbarItem className="hidden md:flex">
@@ -105,7 +105,7 @@ export const Navbar = () => {
       </NavbarContent>
 
       {/* MOBILE SECTION */}
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
+      <NavbarContent className="lg:hidden basis-1 pl-4" justify="end">
         <ThemeSwitch />
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -114,7 +114,7 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarMenu>
-        <div className="mx-4 mt-2 flex flex-col gap-2">
+        <div className="mx-4 flex flex-col gap-2">
           {siteConfig.navMenuItems.map((item, index) => (
             <NavbarMenuItem key={`${item.href}-${index}`}>
               <Link
@@ -128,14 +128,15 @@ export const Navbar = () => {
                 href={item.href}
                 size="lg"
                 onClick={handleMenuItemClick} // ✅ Tutup menu setelah klik
+                className="grid md:hidden"
               >
                 {item.label}
               </Link>
             </NavbarMenuItem>
           ))}
           {isLoggedIn ? (
-            <NavbarMenuItem>
-              <div className="grid py-6 gap-3">
+            <NavbarMenuItem className="grid">
+              <div className="grid py-6 md:py-0 gap-3">
                 <Button
                   as={Link}
                   href="/dashboard"

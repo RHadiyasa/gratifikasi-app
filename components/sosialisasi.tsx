@@ -20,15 +20,9 @@ const AnimatedSection = ({ children, delay = 0 }: any) => (
   </motion.section>
 );
 
-/**
- * Konten diringkas & disederhanakan dari:
- * "Draft Juknis Pengendalian Gratifikasi (V.1)" (dokumen user).
- * Semua istilah penting tetap dipertahankan (definisi, kewajiban, objek, mekanisme, UPG, sanksi).
- */
-
 export const SosialisasiPage = () => {
   return (
-    <main className="min-h-screen bg-background text-foreground mx-auto">
+    <main className="min-h-screen text-foreground mx-auto">
       {/* HERO */}
       <header className="relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center gap-8">
