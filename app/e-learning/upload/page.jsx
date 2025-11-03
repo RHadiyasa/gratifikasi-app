@@ -5,6 +5,7 @@ import { Button } from "@heroui/button";
 import { Upload, Loader2, CheckCircle } from "lucide-react";
 import { getAllParticipants } from "@/service/peserta.service";
 import axios from "axios"; // <-- 1. IMPORT AXIOS
+import { toast, ToastContainer } from "react-toastify";
 
 export default function UploadCertificate() {
   // --- State untuk Dropdown & Data Peserta ---
@@ -165,9 +166,15 @@ export default function UploadCertificate() {
     }
   };
 
+  const handleDisabledUploadButton = () => {
+    toast.error("E-learning sudah berakhir", { position: "top-center", theme:"dark" });
+  };
+
   // Render Halaman
   return (
     <div className="flex flex-col items-center justify-center mt-20">
+      <ToastContainer />
+
       <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-300 via-white to-indigo-200 bg-clip-text dark:text-transparent mb-6">
         Upload Sertifikat Anda
       </h1>
@@ -176,6 +183,7 @@ export default function UploadCertificate() {
       <div className="w-full max-w-2xl mb-6">
         <Select
           label="Unit Eselon 1"
+          isDisabled // Feature Disabled
           placeholder="Pilih Unit Eselon 1"
           selectedKeys={selectedUnit ? [selectedUnit] : []}
           onSelectionChange={(keys) => {
@@ -219,14 +227,17 @@ export default function UploadCertificate() {
         <label htmlFor="file" className="block text-sm font-medium mb-2">
           Pilih Dokumen Sertifikat (PDF)
         </label>
-        <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-black/5 dark:bg-white/15 hover:shadow-md transition">
+        <div
+          onClick={handleDisabledUploadButton}
+          className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-black/5 dark:bg-white/15 hover:shadow-md transition"
+        >
           <input
             type="file"
             id="file"
             accept=".pdf"
             className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
             onChange={handleFileChange}
-            disabled={isUploading}
+            disabled={true}
           />
         </div>
       </div>
@@ -236,6 +247,7 @@ export default function UploadCertificate() {
         color="primary"
         variant="shadow"
         size="lg"
+        isDisabled
         startContent={
           isUploading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -253,6 +265,9 @@ export default function UploadCertificate() {
             ? "Berhasil Diupload!"
             : "Upload Sertifikat"}
       </Button>
+      <p className="py-3 italic text-foreground/30">
+        Fitur tidak tersedia, E-Learning sudah berakhir
+      </p>
 
       {/* --- Pesan Status --- */}
       {uploadStatus === "error" && (
