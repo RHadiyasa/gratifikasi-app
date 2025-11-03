@@ -22,7 +22,6 @@ import { saveAs } from "file-saver";
 
 export default function ParticipantList() {
   const [participants, setParticipants] = useState([]);
-  console.log(participants);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
