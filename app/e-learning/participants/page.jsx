@@ -13,10 +13,16 @@ import { Input, Select, SelectItem, Button } from "@heroui/react";
 import { FileText, Download } from "lucide-react";
 import { getAllParticipants } from "@/service/peserta.service";
 import axios from "axios";
-import { getPresignedUrlFromBackend, getPresignedUrlFromBackendForDownload } from "@/service/aws/predesignUrl.service";
+import {
+  getPresignedUrlFromBackend,
+  getPresignedUrlFromBackendForDownload,
+} from "@/service/aws/predesignUrl.service";
+import * as XLSX from "xlsx"; 
+import { saveAs } from "file-saver";
 
 export default function ParticipantList() {
   const [participants, setParticipants] = useState([]);
+  console.log(participants);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -189,12 +195,77 @@ export default function ParticipantList() {
   if (loading) return <p>Memuat data peserta...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
+  const handleExport = () => {
+    // 💡 Gunakan data LENGKAP tanpa filter (participants)
+    const dataToExport = participants;
+
+    if (dataToExport.length === 0) {
+      return alert("Tidak ada data untuk diekspor.");
+    }
+
+    // 1. Persiapkan data dalam format Array of Objects (SheetJS bisa memproses ini)
+    const worksheetData = dataToExport.map((p) => ({
+      Nama: p.nama || "",
+      NIP: p.nip || "",
+      Jabatan: p.jabatan || "",
+      "Unit Eselon I": p.unit_eselon_i || "",
+      "Unit Eselon II": p.unit_eselon_ii || "",
+      Batch: p.batch || "",
+      Status: p.statusCourse || "",
+      "Tanggal Upload": p.uploaded_at || "",
+      "Tanggal Dibuat (Data)": p.createdAt || "",
+      "S3 Key": p.s3_key || "",
+    }));
+
+    // 2. Buat Worksheet dari Array of Objects
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+    // Opsional: Atur lebar kolom (Wajib jika ingin kolom terlihat rapi)
+    const columnWidths = [
+      { wch: 30 }, // Nama
+      { wch: 20 }, // NIP
+      { wch: 30 }, // Jabatan
+      { wch: 35 }, // Unit Eselon I
+      { wch: 40 }, // Unit Eselon II
+      { wch: 10 }, // Batch
+      { wch: 10 }, // Status
+      { wch: 20 }, // Tanggal Upload
+      { wch: 25 }, // Tanggal Dibuat
+      { wch: 60 }, // S3 Key
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // 3. Buat Workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Peserta");
+
+    // 4. Tulis Workbook ke format ArrayBuffer (diperlukan untuk Blob/FileSaver)
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    // 5. Konversi ArrayBuffer ke Blob
+    const data = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // 6. Simpan/Unduh file menggunakan file-saver
+    const fileName = `Daftar_Lengkap_Peserta_Elearning_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    saveAs(data, fileName);
+  };
+
   return (
     <div className="p-6 space-y-4">
       {loggedin ? (
-        <h2 className="text-xl md:text-2xl font-semibold py-6">
-          Daftar Peserta E-learning ({participants.length} Peserta)
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl md:text-2xl font-semibold py-6">
+            Daftar Peserta E-learning ({participants.length} Peserta)
+          </h2>
+          <Button onPress={handleExport} color="success" className="text-white">
+            Export to Excel
+          </Button>
+        </div>
       ) : (
         <h2 className="text-xl md:text-2xl font-semibold py-6">
           Sudah Upload Sertifikat ({filteredParticipants.length} dari{" "}
@@ -274,7 +345,7 @@ export default function ParticipantList() {
           items={paginatedData}
         >
           {(p) => (
-            <TableRow key={p._id} >
+            <TableRow key={p._id}>
               {(columnKey) => (
                 <TableCell className="text-xs">
                   {/* Logika render sel berdasarkan key kolom */}
