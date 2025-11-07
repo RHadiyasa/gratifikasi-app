@@ -112,12 +112,6 @@ export default function LaporPage() {
       const dataToSend = { ...form, uniqueId };
 
       const res = await reportService(dataToSend);
-
-      // if (!res.success) {
-      //   toast.error("❌ Gagal mengirim laporan");
-      //   return;
-      // }
-
       // 🔹 Generate PDF setelah laporan sukses
       const pdfRes = await generatePdfService(dataToSend);
       if (pdfRes.success) {
@@ -134,7 +128,7 @@ export default function LaporPage() {
   };
 
   return (
-    <div className="mx-auto bg-background shadow-md p-2 space-y-4">
+    <div className="mx-auto lg:mx-40 bg-background p-2 space-y-4">
       <ToastProvider />
       <h1 className="text-3xl font-bold mb-2 text-center py-5">
         Form Pelaporan Gratifikasi
