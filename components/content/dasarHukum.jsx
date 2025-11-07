@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import React from "react";
 
 const DasarHukum = () => {
-  const AnimatedSection = ({ children, delay = 0 }: any) => (
+  const AnimatedSection = ({ children, delay = 0 }) => (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}

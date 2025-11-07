@@ -36,9 +36,21 @@ const TrackingParticipantPage = () => {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6 py-6 text-foreground">
-        Tracking Peserta Sertifikasi
-      </h1>
+      <div className="grid lg:flex items-center justify-between">
+        <h1 className="text-3xl font-bold py-6 text-foreground">
+          Tracking Peserta Sertifikasi
+        </h1>
+        <Button
+          as={Link}
+          href="/e-learning/participants"
+          variant="shadow"
+          color="primary"
+          className="flex items-center justify-center gap-2 mb-5"
+        >
+          <ListCheckIcon size={20} />
+          <p>Daftar Seluruh Peserta</p>
+        </Button>
+      </div>
 
       {/* 1. RINGKASAN GLOBAL ATAS (CARD) */}
       <GlobalSummaryCards summary={summary} />
@@ -53,10 +65,6 @@ const TrackingParticipantPage = () => {
         <h2 className="text-2xl lg:text-4xl font-bold text-foreground text-center py-10">
           Rincian Peserta per Unit
         </h2>
-        <Button as={Link} href="/e-learning/participants" variant="shadow" color="primary" className="flex items-center justify-center gap-2">
-          <ListCheckIcon size={20} />
-          <p>Daftar Seluruh Peserta</p>
-        </Button>
       </div>
 
       {Object.entries(groupedData).map(([unitName, participants]) => (
