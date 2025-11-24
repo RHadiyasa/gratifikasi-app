@@ -54,6 +54,7 @@
     "@heroui/user": "2.2.22",
     "@react-aria/ssr": "3.9.10",
     "@react-aria/visually-hidden": "3.8.28",
+    "@vercel/speed-insights": "^1.2.0",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",

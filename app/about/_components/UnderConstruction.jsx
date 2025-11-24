@@ -1,9 +1,9 @@
-import { title } from "@/components/primitives";
 import { Button } from "@heroui/button";
 import { Wrench } from "lucide-react";
 import Link from "next/link";
+import React from "react";
 
-export default function AboutPage() {
+const UnderConstruction = () => {
   return (
     <div className="flex flex-col items-center justify-center p-6">
       {/* Container Pesan */}
@@ -28,4 +28,6 @@ export default function AboutPage() {
       </div>
     </div>
   );
-}
+};
+
+export default UnderConstruction;
