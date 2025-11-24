@@ -21,9 +21,17 @@ import {
 import { toast } from "react-toastify";
 import { reportService } from "@/service/createReport.service";
 import { generatePdfService } from "@/service/generatePdf.service";
+import {
+  relasiOptions,
+  peristiwaOptions,
+  lokasiOptions,
+  objekOptions,
+} from "@/modules/data/reportOption";
+import { Loader2 } from "lucide-react";
 
 export default function LaporPage() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     secretReport: false,
     reportType: "",
@@ -65,45 +73,17 @@ export default function LaporPage() {
     kompensasiPelaporan: false,
   });
 
-  // 🔹 Relasi Options
-  const relasiOptions = [
-    "Merupakan Pemberan dalam keluarga",
-    "Penyedia Barang & Jasa/Penerima Layanan/terkait Pengawasan/Pemeriksaan",
-    "Antara sesama Pegawai di lingkungan internal instansi",
-    "Identitas Pemberi tidak diketahui",
-    "Lainnya",
-  ];
-
-  const peristiwaOptions = [
-    "Pemberian dalam rangka pisah sambut/pensiun/mutasi jabatan/ulang tahun",
-    "Pemberian terkait dengan pelaksanaan Tugas Pokok dan Fungsi (Tupoksi)",
-    "Pemberian tidak terkait dengan pelaksanaan Tugas Pokok dan Fungsi (Tupoksi)",
-    "Pemberian terkait dengan pernikahan/upacara adat/agama lainnya atau terkait musibah/bencana (Lebih dari 1,000,000 per Orang)",
-    "Keuntungan Investasi/Manfaat dari Koperasi/Hadiah Undian atau Langsung",
-    "Lainnya",
-  ];
-
-  const lokasiOptions = [
-    "Disimpan Pelapor",
-    "Dititipkan di UPG",
-    "Dititipkan di KPK",
-    "Lainnya",
-  ];
-
-  const objekOptions = [
-    "Hidangan/Oleh-oleh/Makanan/Minuman kemasan dengan masa berlaku",
-    "Karangan Bunga/Cindera mata/Plakat/Barang dengan logo instansi pemberi",
-    "Barang lainnya",
-    "Tiket Perjalanan/Fasilitas Penginapan/Fasilitas lainnya",
-    "Uang/Alat tukar lainnya",
-  ];
-
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
+    console.log(form);
+
+    console.log("nama : ", form.nama);
+
     try {
+      setIsLoading(true);
       const uniqueId = `UPG-${new Date()
         .toISOString()
         .slice(0, 10)
@@ -112,7 +92,7 @@ export default function LaporPage() {
       const dataToSend = { ...form, uniqueId };
 
       const res = await reportService(dataToSend);
-      // 🔹 Generate PDF setelah laporan sukses
+      // Generate PDF setelah laporan sukses
       const pdfRes = await generatePdfService(dataToSend);
       if (pdfRes.success) {
         toast.success("✅ Laporan berhasil dikirim & PDF berhasil dibuat!");
@@ -121,14 +101,17 @@ export default function LaporPage() {
       }
 
       console.log("Laporan:", res.data);
+      setIsLoading(false);
     } catch (err) {
       console.error(err);
       toast.error("❌ Terjadi kesalahan saat mengirim laporan");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="mx-auto lg:mx-40 bg-background p-2 space-y-4">
+    <div className="mx-10 lg:mx-40 bg-background p-2 space-y-4">
       <ToastProvider />
       <h1 className="text-3xl font-bold mb-2 text-center py-5">
         Form Pelaporan Gratifikasi
@@ -372,56 +355,208 @@ export default function LaporPage() {
         onChange={(e) => handleChange("uraianGratifikasi", e.target.value)}
       />
       <div className="flex gap-5 items-center justify-between py-4 mx-auto">
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="4xl" scrollBehavior="outside">
           <ModalContent>
             {(onClose) => (
               <>
                 <ModalHeader className="text-2xl text-center font-semibold">
-                  Permohonan kompensasi Objek Gratifikasi
+                  Konfirmasi Data Laporan
                 </ModalHeader>
+
                 <ModalBody>
-                  <p className="text-sm text-center">
-                    Pelapor gratifikasi bersedia untuk menyerahkan uang sebagai
-                    kompensasi atas barang yang diterimanya sebesar nilai yang
-                    tercantum dalam Surat Keputusan Pimpinan KPK. Permintaan
-                    kompensasi yang telah mendapatkan persetujuan KPK tidak
-                    dapat dibatalkan sepihak oleh pelapor.
-                  </p>
-                  <RadioGroup
-                    label=""
-                    value={form.kompensasiPelaporan ? "true" : "false"}
-                    onValueChange={(value) =>
-                      handleChange("kompensasiPelaporan", value === "true")
-                    }
-                    orientation="horizontal"
-                    className="flex items-center gap-4"
-                  >
-                    <Radio
-                      value="true"
-                      className="text-sm font-semibold text-amber-100"
-                    >
-                      Iya
-                    </Radio>
-                    <Radio
-                      value="false"
-                      className="text-sm font-semibold text-amber-100"
-                    >
-                      Tidak
-                    </Radio>
-                  </RadioGroup>
+                  <div className="space-y-6 text-sm">
+                    {/* ======================== */}
+                    {/* DATA PELAPOR & DATA PEMBERI */}
+                    {/* ======================== */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* DATA PELAPOR */}
+                      <div>
+                        <h4 className="font-semibold mb-2">🧍 Data Pelapor</h4>
+
+                        <p>
+                          <span className="font-semibold">Nama:</span>{" "}
+                          {form.nama || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">NIP:</span>{" "}
+                          {form.nip || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">
+                            Tempat, Tanggal Lahir:
+                          </span>{" "}
+                          {form.tempatLahir || "-"}, {form.tanggalLahir || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Instansi:</span>{" "}
+                          {form.instansiPelapor || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Jabatan:</span>{" "}
+                          {form.jabatanPelapor || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Email:</span>{" "}
+                          {form.emailPelapor || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">No. Telp:</span>{" "}
+                          {form.noTelpPelapor || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Alamat:</span>{" "}
+                          {form.alamatPelapor || "-"}
+                        </p>
+                      </div>
+
+                      {/* DATA PEMBERI */}
+                      <div>
+                        <h4 className="font-semibold mb-2">
+                          🎁 Pemberi Gratifikasi
+                        </h4>
+
+                        <p>
+                          <span className="font-semibold">Nama Pemberi:</span>{" "}
+                          {form.namaPemberi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">
+                            Instansi Pemberi:
+                          </span>{" "}
+                          {form.instansiPemberi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Alamat:</span>{" "}
+                          {form.alamatPemberi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Relasi:</span>{" "}
+                          {form.relasi === "Lainnya"
+                            ? form.relasiLainnya
+                            : form.relasi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Alasan:</span>{" "}
+                          {form.alasan || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ======================== */}
+                    {/* OBJEK & KRONOLOGI */}
+                    {/* ======================== */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* OBJEK GRATIFIKASI */}
+                      <div>
+                        <h4 className="font-semibold mb-2">
+                          💰 Data Objek Gratifikasi
+                        </h4>
+
+                        <p>
+                          <span className="font-semibold">Peristiwa:</span>{" "}
+                          {form.peristiwaGratifikasi === "Lainnya"
+                            ? form.peristiwaGratifikasiLainnya
+                            : form.peristiwaGratifikasi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Lokasi:</span>{" "}
+                          {form.lokasiObjekGratifikasi === "Lainnya"
+                            ? form.lokasiObjekGratifikasiLainnya
+                            : form.lokasiObjekGratifikasi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Objek:</span>{" "}
+                          {form.objekGratifikasi
+                            ?.toLowerCase()
+                            .includes("lainnya")
+                            ? form.objekGratifikasiLainnya
+                            : form.objekGratifikasi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Uraian Objek:</span>{" "}
+                          {form.uraianObjekGratifikasi || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">
+                            Perkiraan Nilai:
+                          </span>{" "}
+                          Rp {Number(form.perkiraanNilai).toLocaleString("id-ID")}
+                        </p>
+                      </div>
+
+                      {/* KRONOLOGI */}
+                      <div>
+                        <h4 className="font-semibold mb-2">
+                          📅 Kronologi Gratifikasi
+                        </h4>
+
+                        <p>
+                          <span className="font-semibold">
+                            Tanggal Penerimaan:
+                          </span>{" "}
+                          {form.tanggalPenerimaan || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Tanggal Lapor:</span>{" "}
+                          {form.tanggalLapor || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">
+                            Tempat Penerimaan:
+                          </span>{" "}
+                          {form.tempatPenerimaan || "-"}
+                        </p>
+                        <p>
+                          <span className="font-semibold">
+                            Uraian Gratifikasi:
+                          </span>{" "}
+                          {form.uraianGratifikasi || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Divider />
+
+                    {/* ======================== */}
+                    {/* KOMPENSASI */}
+                    {/* ======================== */}
+                    <div className="pt-2">
+                      <p className="text-sm text-center text-gray-500 italic">
+                        Pelapor gratifikasi bersedia untuk menyerahkan uang
+                        sebagai kompensasi atas barang yang diterimanya sebesar
+                        nilai yang tercantum dalam Surat Keputusan Pimpinan KPK.
+                        Permintaan kompensasi yang telah mendapatkan persetujuan
+                        KPK tidak dapat dibatalkan sepihak oleh pelapor.
+                      </p>
+
+                      <RadioGroup
+                        value={form.kompensasiPelaporan ? "true" : "false"}
+                        onValueChange={(value) =>
+                          handleChange("kompensasiPelaporan", value === "true")
+                        }
+                        orientation="horizontal"
+                        className="flex items-center gap-4 mt-2"
+                      >
+                        <Radio value="true">Iya</Radio>
+                        <Radio value="false">Tidak</Radio>
+                      </RadioGroup>
+                    </div>
+                  </div>
                 </ModalBody>
+
                 <ModalFooter className="flex flex-col">
-                  <p className="text-xs text-center text-foreground/50 italic">
-                    Fitur Aktualisasi sementara di Non-Aktifkan hingga Kegiatan E-Learning Gratifikasi selesai
-                  </p>
                   <Button
                     onPress={handleSubmit}
                     variant="shadow"
                     color="primary"
-                    isDisabled
                     fullWidth
+                    isDisabled={isLoading}
                   >
-                    (Fitur Non Aktif)
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <p>Submit</p>
+                    )}
                   </Button>
                 </ModalFooter>
               </>

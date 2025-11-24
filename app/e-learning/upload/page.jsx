@@ -183,7 +183,7 @@ export default function UploadCertificate() {
       <div className="w-full max-w-2xl mb-6">
         <Select
           label="Unit Eselon 1"
-          isDisabled // Feature Disabled
+          // isDisabled // Feature Disabled
           placeholder="Pilih Unit Eselon 1"
           selectedKeys={selectedUnit ? [selectedUnit] : []}
           onSelectionChange={(keys) => {
@@ -237,7 +237,7 @@ export default function UploadCertificate() {
             accept=".pdf"
             className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
             onChange={handleFileChange}
-            disabled={true}
+            // disabled={true}
           />
         </div>
       </div>
@@ -247,7 +247,7 @@ export default function UploadCertificate() {
         color="primary"
         variant="shadow"
         size="lg"
-        isDisabled
+        // isDisabled
         startContent={
           isUploading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
