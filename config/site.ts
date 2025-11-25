@@ -13,8 +13,8 @@ export const siteConfig = {
       href: "/lapor",
     },
     {
-      label: "Aturan",
-      href: "/aturan",
+      label: "Docs",
+      href: "/docs",
     },
     {
       label: "E-Learning",
@@ -35,8 +35,8 @@ export const siteConfig = {
       href: "/lapor",
     },
     {
-      label: "Aturan",
-      href: "/aturan",
+      label: "Docs",
+      href: "/docs",
     },
     {
       label: "E-Learning",

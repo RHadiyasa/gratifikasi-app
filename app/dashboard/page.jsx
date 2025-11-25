@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardBody } from "@heroui/react";
+import { Button, Card, CardBody, Divider } from "@heroui/react";
 import {
   BarChart,
   Bar,
@@ -11,12 +11,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import {
-  Users,
-  ClipboardList,
-  Coins,
-  ShieldCheck,
-} from "lucide-react";
+import { Users, ClipboardList, Coins, ShieldCheck, List } from "lucide-react";
+import Link from "next/link";
 
 export default function Dashboard() {
   const statusColors = {
@@ -50,7 +46,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-8 space-y-8 min-h-screen">
+    <div className="p-8 mx-20 space-y-8 min-h-screen">
       <h1 className="text-3xl font-bold">Dashboard UPG</h1>
 
       {/* Summary Cards */}
@@ -82,7 +78,7 @@ export default function Dashboard() {
       </div>
 
       {/* Chart */}
-      <Card>
+      <Card className="p-5">
         <CardBody>
           <h2 className="text-xl font-semibold mb-4">Tren Laporan Per Bulan</h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -98,10 +94,13 @@ export default function Dashboard() {
       </Card>
 
       {/* Laporan per Status */}
-      <Card>
+      <Card className="p-5">
         <CardBody>
-          <h2 className="text-xl font-semibold mb-4">
-            Jumlah Laporan per Status
+          <h2 className="py-2 mb-4 flex items-center justify-between">
+            <p className="text-xl font-semibold">Jumlah Laporan per Status</p>
+            <Button color="primary" as={Link} href="/dashboard/report-list">
+              <List size={20} /> Semua Laporan
+            </Button>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(stats.perStatus || {}).map(([status, jumlah]) => {
@@ -109,10 +108,12 @@ export default function Dashboard() {
               return (
                 <div
                   key={status}
-                  className={`p-4 rounded-xl shadow-lg text-white ${color}`}
+                  className={`p-4 rounded-xl shadow-lg text-white ${color} hover:scale-102 animate`}
                 >
-                  <p className="text-sm">{status}</p>
-                  <p className="text-2xl font-bold">{jumlah}</p>
+                  <Button className="bg-transparent text-white flex items-center justify-between w-full hover:scale-105">
+                    <p className="text-base font-bold">{status}</p>
+                    <p className="text-2xl font-bold">{jumlah}</p>
+                  </Button>
                 </div>
               );
             })}
@@ -121,10 +122,12 @@ export default function Dashboard() {
       </Card>
 
       {/* Laporan Terbaru */}
-      <Card>
+      <Card className="p-5">
         <CardBody>
           <h2 className="text-xl font-semibold mb-4">Laporan Terbaru</h2>
-          <div className="divide-y-1">
+          <Divider />
+
+          <div>
             {stats.recentReports.map((r) => (
               <div
                 key={r.uniqueId}

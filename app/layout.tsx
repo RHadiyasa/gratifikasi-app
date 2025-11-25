@@ -48,7 +48,7 @@ export default function RootLayout({
                 {children}
                 <SpeedInsights />
               </main>
-              <footer className="w-full flex items-center justify-center py-3">
+              <footer className="w-full flex items-center justify-center py-5">
                 <Link
                   isExternal
                   className="flex items-center gap-1 text-current"

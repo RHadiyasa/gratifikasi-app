@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connect } from "@/config/dbconfig";
 import Report from "@/modules/models/ReportModel";
+import ReportModel from "@/modules/models/ReportModel";
 
 export async function POST(req) {
   try {
@@ -27,12 +28,17 @@ export async function POST(req) {
   }
 }
 
-export async function GET(req) {
+export async function GET() {
   await connect();
 
   try {
-    
+    const response = await ReportModel.find().sort({ createdAt: -1 }); 
+    return NextResponse.json(response, { status: 200 });
+
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }
