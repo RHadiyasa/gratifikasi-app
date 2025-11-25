@@ -148,10 +148,10 @@ export default function PanduanPage() {
 
             <div className="space-y-3">
               <details className="p-4 bg-white rounded-lg shadow">
-                <summary className="font-semibold cursor-pointer text-background">
+                <summary className="font-semibold cursor-pointer text-foreground">
                   Apakah semua gratifikasi harus dilaporkan?
                 </summary>
-                <div className="mt-2 text-sm leading-relaxed text-background">
+                <div className="mt-2 text-sm leading-relaxed text-foreground">
                   Tidak semua — tetapi jika gratifikasi berkaitan dengan jabatan
                   dan dapat mempengaruhi pelaksanaan tugas, wajib dilaporkan.
                   Jika ragu, laporkan ke UPG.
@@ -159,10 +159,10 @@ export default function PanduanPage() {
               </details>
 
               <details className="p-4 bg-white rounded-lg shadow">
-                <summary className="font-semibold cursor-pointer text-background">
+                <summary className="font-semibold cursor-pointer text-foreground">
                   Berapa lama waktu saya untuk melapor?
                 </summary>
-                <div className="mt-2 text-sm leading-relaxed text-background">
+                <div className="mt-2 text-sm leading-relaxed text-foreground">
                   Laporan harus disampaikan paling lama 10 hari kerja sejak
                   tanggal penerimaan ke UPG; atau paling lama 30 hari kerja
                   langsung ke KPK.
@@ -170,10 +170,10 @@ export default function PanduanPage() {
               </details>
 
               <details className="p-4 bg-white rounded-lg shadow">
-                <summary className="font-semibold cursor-pointer text-background">
+                <summary className="font-semibold cursor-pointer text-foreground">
                   Apa konsekuensi jika tidak melapor?
                 </summary>
-                <div className="mt-2 text-sm leading-relaxed text-background">
+                <div className="mt-2 text-sm leading-relaxed text-foreground">
                   Pegawai yang tidak melaporkan bisa dikenai sanksi disiplin
                   dan/atau pidana sesuai peraturan perundang-undangan.
                 </div>
@@ -206,7 +206,7 @@ export default function PanduanPage() {
         </AnimatedSection>
 
         {/* Footer note */}
-        <footer className="text-center text-xs text-gray-500 py-6">
+        <footer className="text-center text-xs text-gray-500">
           Dokumen sumber: Draft Petunjuk Teknis Pengendalian Gratifikasi —
           Keputusan Inspektur Jenderal (ringkasan untuk tujuan sosialisasi)
         </footer>
