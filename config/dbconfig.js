@@ -12,25 +12,19 @@ export async function connect() {
   }
 
   try {
-    // 2. Buat koneksi BARU
-    // Tambahkan 'await' di sini!
     await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: process.env.MONGODB_DB, // Ambil nama DB dari .env
+      dbName: process.env.MONGODB_DB,
     });
 
-    const connection = mongoose.connection;
+    isConnected = true;
+    console.log("MongoDB berhasil terkoneksi!");
 
-    connection.on("connected", () => {
-      isConnected = true; // Set status jadi true
-      console.log("MongoDB berhasil terkoneksi!");
-    });
-
-    connection.on("error", (err) => {
+    mongoose.connection.on("error", (err) => {
       isConnected = false;
-      console.log("Koneksi MongoDB gagal: " + err);
-      process.exit();
+      console.log("Koneksi MongoDB terputus: " + err);
     });
   } catch (error) {
     console.log("Sesuatu salah di dbConfig:", error);
+    throw error;
   }
 }
