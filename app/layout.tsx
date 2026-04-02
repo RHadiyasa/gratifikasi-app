@@ -35,6 +35,7 @@ export default function RootLayout({
     <html suppressHydrationWarning lang="en">
       <head />
       <body
+        suppressHydrationWarning
         className={clsx(
           "min-h-screen text-foreground bg-background font-sans antialiased",
           fontSans.variable
@@ -47,7 +48,7 @@ export default function RootLayout({
               <main className="container mx-auto px-0 flex-grow">
                 {children}
                 <SpeedInsights />
-              </main>
+              </main> 
               <footer className="w-full flex items-center justify-center py-5">
                 <Link
                   isExternal

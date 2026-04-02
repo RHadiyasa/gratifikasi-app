@@ -13,7 +13,7 @@ import {
 } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 
 export const LockIcon = (props) => {
   return (
@@ -69,7 +69,6 @@ const Team = ({ name, imgUrl }) => {
   };
   return (
     <div>
-      <ToastContainer />
       <Card
         isFooterBlurred
         className="w-full h-[300px] col-span-12 sm:col-span-5 hover:scale-102"
