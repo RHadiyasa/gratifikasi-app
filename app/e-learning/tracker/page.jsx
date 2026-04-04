@@ -3,10 +3,11 @@
 "use client";
 
 import React from "react";
-import { ListCheckIcon, Loader2 } from "lucide-react";
+import { ListCheckIcon } from "lucide-react";
 import { GlobalSummaryCards } from "./_components/GlobalSummaryCards";
 import { UnitSummaryCardsList } from "./_components/UnitSummaryCardsList";
 import { UnitParticipantTable } from "./_components/UnitParticipantTable";
+import { TrackerSkeleton } from "./_components/TrackerSkeleton";
 import { usePesertaData } from "@/hooks/usePesertaData";
 import { Button } from "@heroui/button";
 import Link from "next/link";
@@ -17,12 +18,7 @@ const TrackingParticipantPage = () => {
   // console.log("Group: ", groupedData)
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <Loader2 className="w-8 h-8 animate-spin mr-2" />
-        <span className="text-xl">Memuat data peserta...</span>
-      </div>
-    );
+    return <TrackerSkeleton />;
   }
 
   if (error) {

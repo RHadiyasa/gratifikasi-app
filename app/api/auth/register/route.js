@@ -8,7 +8,8 @@ export async function POST(req) {
 
   try {
     const reqBody = await req.json();
-    const { name, nip, jabatan, unitKerja, email, noTelp, password } = reqBody;
+    const { name, nip, jabatan, unitKerja, email, noTelp, password, role } =
+      reqBody;
 
     // Simple validation
     if (
@@ -22,7 +23,7 @@ export async function POST(req) {
     ) {
       return NextResponse.json(
         { error: "All fields are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,7 +32,7 @@ export async function POST(req) {
     if (existingAdmin) {
       return NextResponse.json(
         { error: "Admin already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,8 +48,8 @@ export async function POST(req) {
       email,
       noTelp,
       password: hashedPassword,
+      role,
     });
-
     await newAdmin.save();
 
     // Hide password

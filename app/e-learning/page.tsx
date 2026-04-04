@@ -187,7 +187,8 @@ const fadeUp = {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ELearningPage() {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, role } = useAuthStore();
+  const canTrack = isLoggedIn && (role === "admin" || role === "upg");
   const [activeTab, setActiveTab] = useState<"steps" | "issues">("steps");
 
   return (
@@ -250,14 +251,14 @@ export default function ELearningPage() {
 
           <Button
             as={Link}
-            href={isLoggedIn ? "/e-learning/tracker" : "/e-learning/participants"}
+            href={canTrack ? "/e-learning/tracker" : "/e-learning/participants"}
             variant="bordered"
             size="lg"
             startContent={<MonitorCheck size={17} />}
             endContent={<ArrowRight size={15} />}
             className="w-full sm:w-auto font-semibold"
           >
-            {isLoggedIn ? "Tracking Peserta (Admin)" : "Lihat Data Peserta"}
+            {canTrack ? "Tracking Peserta" : "Lihat Data Peserta"}
           </Button>
         </motion.div>
 

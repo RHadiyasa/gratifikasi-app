@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { NavigationProgress } from "./NavigationProgress";
 
 const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
   const { checkAuth } = useAuthStore();
@@ -13,6 +14,7 @@ const ClientWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
+      <NavigationProgress />
       <ToastContainer />
       {children}
     </>

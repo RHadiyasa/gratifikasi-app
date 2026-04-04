@@ -1,27 +1,34 @@
 import { create } from "zustand";
 import axios from "axios";
 
+type Role = "upg" | "zi" | "admin" | null;
+
 interface AuthState {
   isLoggedIn: boolean;
+  role: Role;
   checkAuth: () => void;
-  login: () => void;
+  login: (role: string) => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   isLoggedIn: false,
+  role: null,
 
   checkAuth: async () => {
     try {
-      // Panggil endpoint validasi token di backend
-      const { data } = await axios.get("/api/auth/me"); // endpoint untuk cek cookie
-      set({ isLoggedIn: data.success });
+      const { data } = await axios.get("/api/auth/me");
+      if (data.success) {
+        set({ isLoggedIn: true, role: data.role ?? null });
+      } else {
+        set({ isLoggedIn: false, role: null });
+      }
     } catch {
-      set({ isLoggedIn: false });
+      set({ isLoggedIn: false, role: null });
     }
   },
 
-  login: () => set({ isLoggedIn: true }),
+  login: (role: string) => set({ isLoggedIn: true, role: role as Role }),
 
   logout: async () => {
     try {
@@ -29,7 +36,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      set({ isLoggedIn: false });
+      set({ isLoggedIn: false, role: null });
     }
   },
 }));

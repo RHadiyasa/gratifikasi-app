@@ -6,8 +6,12 @@ export async function GET(req) {
     const token = req.cookies.get("token")?.value;
     if (!token) return NextResponse.json({ success: false });
 
-    jwt.verify(token, process.env.TOKEN_SECRET);
-    return NextResponse.json({ success: true });
+    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
+    return NextResponse.json({
+      success: true,
+      role: payload.role ?? "upg",
+      nip: payload.nip,
+    });
   } catch {
     return NextResponse.json({ success: false });
   }
