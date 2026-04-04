@@ -215,8 +215,10 @@ export default function LoginPage() {
         setError(res.message || "NIP atau password salah.");
         return;
       }
-      login();
-      setTimeout(() => { window.location.href = "/dashboard"; }, 500);
+      const roleLabel = { upg: "Tim UPG", zi: "Tim Zona Integritas", admin: "Master Admin" };
+      toast.success(`Login sebagai ${roleLabel[res.role] ?? res.role}`, { autoClose: 2000 });
+      login(res.role);
+      setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
     } catch {
       setError("Terjadi kesalahan server. Coba beberapa saat lagi.");
     } finally {
@@ -254,9 +256,9 @@ export default function LoginPage() {
             <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
               <ShieldCheck size={20} className="text-primary" />
             </div>
-            <h1 className="text-xl font-black mb-1">Masuk ke Dashboard</h1>
+            <h1 className="text-xl font-black mb-1">Masuk</h1>
             <p className="text-xs text-default-400 leading-relaxed">
-              Khusus tim UPG · Inspektorat V Kementerian ESDM
+              Inspektorat V · Kementerian ESDM
             </p>
           </div>
 
@@ -341,7 +343,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-[11px] text-default-300 text-center mt-6 leading-relaxed">
-            Akses terbatas untuk petugas UPG yang telah terdaftar.
+            Akses terbatas untuk petugas yang telah terdaftar.
           </p>
         </div>
       </motion.div>

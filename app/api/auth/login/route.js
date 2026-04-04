@@ -26,7 +26,7 @@ export async function POST(req) {
     }
 
     const token = jwt.sign(
-      { id: admin._id, nip: admin.nip },
+      { id: admin._id, nip: admin.nip, role: admin.role },
       process.env.TOKEN_SECRET,
       { expiresIn: "2h" }
     );
@@ -34,10 +34,12 @@ export async function POST(req) {
     const response = NextResponse.json({
       success: true,
       message: "Login Berhasil",
+      role: admin.role,
       admin: {
         id: admin._id,
         nip: admin.nip,
         name: admin.name,
+        role: admin.role,
       },
     });
 

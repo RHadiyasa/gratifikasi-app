@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { ParticipantsSkeleton } from "./_components/ParticipantsSkeleton";
 import {
   Table,
   TableHeader,
@@ -25,7 +26,7 @@ export default function ParticipantList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [loggedin, setLoggedIn] = useState(false);
+  const [isPrivileged, setIsPrivileged] = useState(false); // admin atau upg
 
   // 🔍 State untuk filter dan pencarian
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,17 +37,18 @@ export default function ParticipantList() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // --- 1. Cek Status Login ---
+  // --- 1. Cek Role ---
   useEffect(() => {
-    const checkCookies = async () => {
+    const checkRole = async () => {
       try {
         const response = await axios.get("/api/auth/me");
-        setLoggedIn(response.data.success || false);
+        const role = response.data.role;
+        setIsPrivileged(response.data.success && (role === "admin" || role === "upg"));
       } catch (e) {
-        setLoggedIn(false);
+        setIsPrivileged(false);
       }
     };
-    checkCookies();
+    checkRole();
   }, []);
 
   // --- 2. Ambil Data dari API ---
@@ -73,7 +75,7 @@ export default function ParticipantList() {
 
     return participants.filter((p) => {
       // **Tambahan Logika: Sembunyikan 'Belum' jika belum login**
-      if (!loggedin && p.statusCourse === "Belum") {
+      if (!isPrivileged && p.statusCourse === "Belum") {
         return false;
       }
 
@@ -98,8 +100,8 @@ export default function ParticipantList() {
     filterUnit,
     filterBatch,
     filterStatus,
-    loggedin,
-  ]); // Tambahkan loggedin sebagai dependency
+    isPrivileged,
+  ]); // Tambahkan isPrivileged sebagai dependency
 
   // --- 4. Pagination Logika ---
   const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
@@ -117,14 +119,14 @@ export default function ParticipantList() {
       { key: "statusCourse", label: "Status" },
     ];
 
-    if (loggedin) {
+    if (isPrivileged) {
       // Kolom tambahan hanya untuk user terautentikasi
       cols.splice(1, 0, { key: "nip", label: "NIP" });
       cols.splice(2, 0, { key: "jabatan", label: "Jabatan" });
       cols.push({ key: "aksi", label: "Aksi" });
     }
     return cols;
-  }, [loggedin]);
+  }, [isPrivileged]);
 
   // --- 6. Dropdown options ---
   const uniqueUnits = useMemo(() => {
@@ -191,8 +193,8 @@ export default function ParticipantList() {
     }
   };
 
-  if (loading) return <p>Memuat data peserta...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading) return <ParticipantsSkeleton />;
+  if (error) return <p className="text-red-500 p-6">{error}</p>;
 
   const handleExport = () => {
     // 💡 Gunakan data LENGKAP tanpa filter (participants)
@@ -256,7 +258,7 @@ export default function ParticipantList() {
 
   return (
     <div className="p-6 space-y-4">
-      {loggedin ? (
+      {isPrivileged ? (
         <div className="flex items-center justify-between">
           <h2 className="text-xl md:text-2xl font-semibold py-6">
             Daftar Peserta E-learning ({participants.length} Peserta)
@@ -306,7 +308,7 @@ export default function ParticipantList() {
         </Select>
 
         {/* Status Course */}
-        {loggedin && (
+        {isPrivileged && (
           // Hanya tampilkan opsi filter Status Course jika user sudah login
           <Select
             label="Status Course"
@@ -371,7 +373,7 @@ export default function ParticipantList() {
                         color="primary"
                         variant="flat"
                         // Jika belum login, tombol Lihat dan Unduh di-disable
-                        isDisabled={!p.s3_key || !loggedin}
+                        isDisabled={!p.s3_key || !isPrivileged}
                         onPress={() => handleViewPdf(p.s3_key)}
                       >
                         <FileText className="w-4 h-4" /> Lihat
@@ -381,7 +383,7 @@ export default function ParticipantList() {
                         color="secondary"
                         variant="flat"
                         // Jika belum login, tombol Lihat dan Unduh di-disable
-                        isDisabled={!p.s3_key || !loggedin}
+                        isDisabled={!p.s3_key || !isPrivileged}
                         onPress={() => handleDownloadPdf(p.s3_key)}
                       >
                         <Download className="w-4 h-4" /> Unduh
