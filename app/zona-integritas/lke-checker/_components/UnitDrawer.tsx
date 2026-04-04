@@ -153,7 +153,7 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex justify-end" role="presentation" onClick={onClose}>
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}

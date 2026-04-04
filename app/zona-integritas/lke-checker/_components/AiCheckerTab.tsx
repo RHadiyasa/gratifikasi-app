@@ -619,8 +619,9 @@ export default function AiCheckerTab() {
               startContent={<Mail size={12} className="text-default-400" />}
             />
 
-            <label className="flex items-center gap-3 cursor-pointer select-none rounded-xl border border-default-200 px-3 py-2.5 hover:bg-default-50 transition-colors">
+            <label aria-label="Deteksi perubahan konten folder" className="flex items-center gap-3 cursor-pointer select-none rounded-xl border border-default-200 px-3 py-2.5 hover:bg-default-50 transition-colors" htmlFor="check-content-change">
               <input
+                id="check-content-change"
                 type="checkbox"
                 className="w-4 h-4 accent-violet-500"
                 checked={checkContentChange}
