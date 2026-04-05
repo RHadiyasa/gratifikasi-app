@@ -3,14 +3,15 @@ import fs from "fs";
 
 function getGoogleAuth() {
   let credentials;
-  if (process.env.GOOGLE_CREDENTIALS_BASE64) {
-    credentials = JSON.parse(
-      Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, "base64").toString("utf8")
-    );
+  if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    credentials = {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    };
   } else if (process.env.GOOGLE_CREDENTIALS_FILE && fs.existsSync(process.env.GOOGLE_CREDENTIALS_FILE)) {
     credentials = JSON.parse(fs.readFileSync(process.env.GOOGLE_CREDENTIALS_FILE, "utf8"));
   } else {
-    throw new Error("GOOGLE_CREDENTIALS_BASE64 atau GOOGLE_CREDENTIALS_FILE tidak ditemukan");
+    throw new Error("Google credentials tidak ditemukan. Set GOOGLE_CLIENT_EMAIL + GOOGLE_PRIVATE_KEY, atau GOOGLE_CREDENTIALS_FILE");
   }
   return new google.auth.GoogleAuth({
     credentials,
