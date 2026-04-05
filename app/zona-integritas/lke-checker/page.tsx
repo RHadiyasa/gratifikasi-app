@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
@@ -16,6 +17,7 @@ import {
   CheckCircle2,
   Search,
   Bot,
+  BarChart2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useZiStore } from "@/store/ziStore";
@@ -49,6 +51,7 @@ export default function LkeCheckerPage() {
     setFilters,
   } = useZiStore();
 
+  const router = useRouter();
   const [tab, setTab] = useState("daftar");
   const [showCompare, setShowCompare] = useState(false);
   const [searchInput, setSearchInput] = useState(filters.search);
@@ -325,6 +328,17 @@ export default function LkeCheckerPage() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1">
+                              <Tooltip content="Lihat detail progress">
+                                <Button
+                                  size="sm"
+                                  variant="flat"
+                                  color="primary"
+                                  isIconOnly
+                                  onPress={() => router.push(`/zona-integritas/lke-checker/${sub._id}`)}
+                                >
+                                  <BarChart2 size={13} />
+                                </Button>
+                              </Tooltip>
                               <SyncButton
                                 id={sub._id}
                                 syncing={isSyncing}
@@ -387,6 +401,7 @@ export default function LkeCheckerPage() {
         onSync={syncSubmission}
         syncingIds={syncingIds}
       />
+
 
       {/* Compare Modal */}
       <AnimatePresence>
