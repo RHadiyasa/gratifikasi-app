@@ -4,7 +4,7 @@ import os from "os";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const reportId = searchParams.get("id");
+  const reportId = searchParams.get("reportId") || searchParams.get("id");
 
   if (!reportId || !/^\d+$/.test(reportId)) {
     return new Response("ID laporan tidak valid", { status: 400 });
