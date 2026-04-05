@@ -224,7 +224,7 @@ export default function DashboardZI() {
               <tbody className="divide-y divide-default-100">
                 {submissions.map((sub) => {
                   const threshold = TARGET_THRESHOLD[sub.target];
-                  const val = sub.nilai_lke?.nilai_akhir ?? null;
+                  const val = sub.nilai_lke_ai?.nilai_akhir ?? null;
                   const achieved = val !== null && val >= threshold;
                   return (
                     <tr
@@ -246,7 +246,7 @@ export default function DashboardZI() {
                       <td className="py-2.5 px-3 text-right tabular-nums">
                         {val !== null ? (
                           <span className={`font-bold ${achieved ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-                            {val.toFixed(2)}
+                            {val.toFixed(2)} 
                           </span>
                         ) : <span className="text-default-300">—</span>}
                       </td>
@@ -311,11 +311,11 @@ export default function DashboardZI() {
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-default-500">Nilai Akhir</p>
                   <p className={`text-3xl font-bold tabular-nums ${
-                    drawerUnit.nilai_lke.nilai_akhir >= TARGET_THRESHOLD[drawerUnit.target]
+                    drawerUnit.nilai_lke_ai.nilai_akhir >= TARGET_THRESHOLD[drawerUnit.target]
                       ? "text-green-600 dark:text-green-400"
                       : "text-red-500"
                   }`}>
-                    {drawerUnit.nilai_lke.nilai_akhir?.toFixed(2) ?? "—"}
+                    {drawerUnit.nilai_lke_ai.nilai_akhir?.toFixed(2) ?? "—"}
                   </p>
                   <p className="text-xs text-default-400">Threshold {drawerUnit.target}: {TARGET_THRESHOLD[drawerUnit.target]}</p>
                 </div>

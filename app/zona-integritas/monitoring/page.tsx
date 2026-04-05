@@ -94,7 +94,7 @@ export default async function MonitoringPage() {
               <tbody className="divide-y divide-default-100">
                 {units.map((sub) => {
                   const threshold = TARGET_THRESHOLD[sub.target]
-                  const val       = sub.nilai_lke?.nilai_akhir ?? null
+                  const val       = sub.nilai_lke_ai?.nilai_akhir ?? null
                   const achieved  = val !== null && val >= threshold
                   return (
                     <tr key={sub._id} className="hover:bg-default-50 transition-colors">
