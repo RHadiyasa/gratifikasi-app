@@ -10,13 +10,18 @@ import LkeSubmission from "@/modules/models/LkeSubmission";
 
 // ── Auth Google ──────────────────────────────────────────
 function getGoogleAuth() {
-  const credFile = process.env.GOOGLE_CREDENTIALS_FILE;
-  if (!credFile || !fs.existsSync(credFile)) {
+  let credentials;
+  if (process.env.GOOGLE_CREDENTIALS_BASE64) {
+    credentials = JSON.parse(
+      Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, "base64").toString("utf8")
+    );
+  } else if (process.env.GOOGLE_CREDENTIALS_FILE && fs.existsSync(process.env.GOOGLE_CREDENTIALS_FILE)) {
+    credentials = JSON.parse(fs.readFileSync(process.env.GOOGLE_CREDENTIALS_FILE, "utf8"));
+  } else {
     throw new Error(
-      "GOOGLE_CREDENTIALS_FILE tidak ditemukan. Cek konfigurasi .env",
+      "GOOGLE_CREDENTIALS_BASE64 atau GOOGLE_CREDENTIALS_FILE tidak ditemukan. Cek konfigurasi .env",
     );
   }
-  const credentials = JSON.parse(fs.readFileSync(credFile, "utf8"));
   return new google.auth.GoogleAuth({
     credentials,
     scopes: [
