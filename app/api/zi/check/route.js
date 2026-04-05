@@ -1,3 +1,5 @@
+export const maxDuration = 300;
+
 import { google } from "googleapis";
 import Anthropic from "@anthropic-ai/sdk";
 import ExcelJS from "exceljs";
