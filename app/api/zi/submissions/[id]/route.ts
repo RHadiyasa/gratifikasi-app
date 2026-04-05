@@ -15,6 +15,19 @@ async function getRole(): Promise<string | null> {
   }
 }
 
+// GET /api/zi/submissions/[id]
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await connect()
+    const { id } = await params
+    const submission = await LkeSubmission.findById(id).lean()
+    if (!submission) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
+    return NextResponse.json({ submission })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
 // PATCH /api/zi/submissions/[id]
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const role = await getRole()
