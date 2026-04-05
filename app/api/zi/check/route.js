@@ -1322,6 +1322,34 @@ export async function POST(req) {
         const visaNewRows = []; // rowData arrays untuk di-append
         const tglCek = new Date().toLocaleString("id-ID");
 
+        // ── Siapkan sheet Visa review sebelum loop ──
+        const BATCH_SIZE = 5;
+        let savedCount = 0;
+        let totalNewRowsWritten = 0;
+        let lastSavedId = null;
+        let vrSheetProps = null;
+        try {
+          vrSheetProps = await ensureVisaReviewSheet(sheets, penilaianId);
+        } catch (e) {
+          send("log", { level: "warn", message: `Gagal siapkan sheet Visa review: ${e.message}` });
+        }
+
+        async function flushBatch() {
+          if (visaExistUpdates.length === 0 && visaNewRows.length === 0) return;
+          try {
+            if (!vrSheetProps) vrSheetProps = await ensureVisaReviewSheet(sheets, penilaianId);
+            const newCount = visaNewRows.length;
+            await writeVisaReviewRows(sheets, penilaianId, [...visaExistUpdates], [...visaNewRows]);
+            savedCount += visaExistUpdates.length + newCount;
+            totalNewRowsWritten += newCount;
+            visaExistUpdates.length = 0;
+            visaNewRows.length = 0;
+            send("batch_saved", { savedCount, lastSavedId });
+          } catch (e) {
+            send("log", { level: "warn", message: `Gagal simpan batch: ${e.message}` });
+          }
+        }
+
         for (let idx = 0; idx < rowsToProcess.length; idx++) {
           const { row, rowNum } = rowsToProcess[idx];
           const id = String(row[COL.ID - 1]).trim();
@@ -1545,41 +1573,38 @@ export async function POST(req) {
             });
           else visaNewRows.push(vrData);
 
+          lastSavedId = id;
+
+          // ── Batch flush setiap BATCH_SIZE item ──
+          if ((visaExistUpdates.length + visaNewRows.length) >= BATCH_SIZE) {
+            send("log", { level: "info", message: `Menyimpan batch ke sheet... (${savedCount + visaExistUpdates.length + visaNewRows.length} tersimpan)` });
+            await flushBatch();
+          }
+
           await delay(600);
         }
 
-
-        // ── Tulis ke Visa review ──
+        // ── Flush sisa item yang belum tersimpan ──
         if (visaExistUpdates.length > 0 || visaNewRows.length > 0) {
           send("log", {
             level: "info",
             message: `Menulis ${visaExistUpdates.length} update + ${visaNewRows.length} baru ke sheet 'Visa review'...`,
           });
           try {
-            const vrSheetProps = await ensureVisaReviewSheet(
-              sheets,
-              penilaianId,
-            );
+            const remainingNew = visaNewRows.length;
             await writeVisaReviewRows(
               sheets,
               penilaianId,
               visaExistUpdates,
               visaNewRows,
             );
-
-            // Set dropdown pada kolom Status Supervisi (G)
-            const existingDataRows = visaRowCount > 0 ? visaRowCount - 1 : 0;
-            const totalVrDataRows = existingDataRows + visaNewRows.length;
-            await setVisaReviewDropdown(
-              sheets,
-              penilaianId,
-              vrSheetProps,
-              totalVrDataRows,
-            );
-
+            savedCount += visaExistUpdates.length + remainingNew;
+            totalNewRowsWritten += remainingNew;
+            visaExistUpdates.length = 0;
+            visaNewRows.length = 0;
             send("log", {
               level: "success",
-              message: `Sheet 'Visa review' diupdate ✓ (dropdown supervisi terpasang)`,
+              message: `Sheet 'Visa review' diupdate ✓`,
             });
           } catch (err) {
             send("log", {
@@ -1587,6 +1612,18 @@ export async function POST(req) {
               message: `Gagal update Visa review: ${err.message}`,
             });
           }
+        }
+
+        // ── Set dropdown setelah semua batch selesai ──
+        try {
+          if (vrSheetProps) {
+            const existingDataRows = visaRowCount > 0 ? visaRowCount - 1 : 0;
+            const totalVrDataRows = existingDataRows + totalNewRowsWritten;
+            await setVisaReviewDropdown(sheets, penilaianId, vrSheetProps, totalVrDataRows);
+            send("log", { level: "success", message: `Dropdown supervisi terpasang ✓` });
+          }
+        } catch (err) {
+          send("log", { level: "warn", message: `Gagal pasang dropdown: ${err.message}` });
         }
 
         // ── Generate Excel ──

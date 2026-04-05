@@ -119,13 +119,16 @@ export default function AiCheckerTab() {
   const [colInfoOpen, setColInfoOpen]           = useState(false);
 
   // Run
-  const [running, setRunning]   = useState(false);
-  const [logs, setLogs]         = useState<LogEntry[]>([]);
-  const [progress, setProgress] = useState({ current: 0, total: 0, revisiCount: 0 });
-  const [summary, setSummary]   = useState<Summary | null>(null);
-  const [reportId, setReportId] = useState<number | null>(null);
-  const [done, setDone]         = useState(false);
-  const [runError, setRunError] = useState<string | null>(null);
+  const [running, setRunning]         = useState(false);
+  const [logs, setLogs]               = useState<LogEntry[]>([]);
+  const [progress, setProgress]       = useState({ current: 0, total: 0, revisiCount: 0 });
+  const [summary, setSummary]         = useState<Summary | null>(null);
+  const [reportId, setReportId]       = useState<number | null>(null);
+  const [done, setDone]               = useState(false);
+  const [runError, setRunError]       = useState<string | null>(null);
+  const [savedCount, setSavedCount]   = useState(0);
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+  const [stoppedMidway, setStoppedMidway] = useState(false);
 
   const logRef   = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -188,6 +191,9 @@ export default function AiCheckerTab() {
     setReportId(null);
     setDone(false);
     setRunError(null);
+    setStoppedMidway(false);
+    setSavedCount(0);
+    setLastSavedId(null);
     setProgress({ current: 0, total: 0, revisiCount: 0 });
 
     abortRef.current = new AbortController();
@@ -212,9 +218,13 @@ export default function AiCheckerTab() {
       const decoder = new TextDecoder();
       let buffer    = "";
 
+      let doneReceived = false;
       while (true) {
         const { done: streamDone, value } = await reader.read();
-        if (streamDone) break;
+        if (streamDone) {
+          if (!doneReceived) setStoppedMidway(true);
+          break;
+        }
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
@@ -229,9 +239,14 @@ export default function AiCheckerTab() {
               setProgress((p) => ({ ...p, current: ev.current, total: ev.total }));
             } else if (ev.type === "total") {
               setProgress((p) => ({ ...p, total: ev.total, revisiCount: ev.revisiCount ?? 0 }));
+            } else if (ev.type === "batch_saved") {
+              setSavedCount(ev.savedCount);
+              if (ev.lastSavedId) setLastSavedId(ev.lastSavedId);
             } else if (ev.type === "done") {
+              doneReceived = true;
               setSummary(ev.summary);
               setReportId(ev.reportId);
+              setSavedCount(ev.summary?.total ?? 0);
               setDone(true);
               fetchSubmissions();
             } else if (ev.type === "error") {
@@ -254,12 +269,17 @@ export default function AiCheckerTab() {
     setSummary(null);
     setDone(false);
     setRunError(null);
+    setStoppedMidway(false);
+    setSavedCount(0);
+    setLastSavedId(null);
     setProgress({ current: 0, total: 0, revisiCount: 0 });
     setStartFromId("");
     setCheckContentChange(false);
   }
 
-  const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+  // Progress bar: jika berhenti di tengah, tunjukkan yang tersimpan vs total
+  const displayCurrent = stoppedMidway ? savedCount : progress.current;
+  const pct = progress.total > 0 ? Math.round((displayCurrent / progress.total) * 100) : 0;
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -663,6 +683,53 @@ export default function AiCheckerTab() {
         )}
       </AnimatePresence>
 
+      {/* ── Warning: proses berhenti di tengah ── */}
+      <AnimatePresence>
+        {stoppedMidway && !done && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-500/5 p-3 space-y-2"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  Proses terhenti sebelum selesai
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                  {savedCount > 0
+                    ? `${savedCount} hasil telah tersimpan ke sheet Visa review.`
+                    : "Belum ada hasil yang tersimpan ke sheet."}
+                  {lastSavedId && ` ID terakhir tersimpan: ${lastSavedId}.`}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {lastSavedId && (
+                <Button
+                  size="sm"
+                  color="warning"
+                  variant="flat"
+                  startContent={<SkipForward size={12} />}
+                  onPress={() => {
+                    setStoppedMidway(false);
+                    setStartFromId(String(parseInt(lastSavedId) + 1));
+                    setLogs([]);
+                    setProgress({ current: 0, total: 0, revisiCount: 0 });
+                  }}
+                >
+                  Lanjutkan dari ID {parseInt(lastSavedId) + 1}
+                </Button>
+              )}
+              <Button size="sm" variant="flat" startContent={<RotateCcw size={12} />} onPress={handleReset}>
+                Mulai Ulang
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Progress & Log ── */}
       <AnimatePresence>
         {(running || logs.length > 0) && (
@@ -671,14 +738,18 @@ export default function AiCheckerTab() {
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-default-500">
                   <span className="flex items-center gap-2">
-                    Progress
+                    {stoppedMidway ? (
+                      <span className="text-amber-500 font-medium">Tersimpan</span>
+                    ) : (
+                      <span>Progress</span>
+                    )}
                     {progress.revisiCount > 0 && (
                       <span className="text-amber-500 font-medium">· {progress.revisiCount} cek ulang revisi</span>
                     )}
                   </span>
-                  <span className="tabular-nums">{progress.current} / {progress.total}</span>
+                  <span className="tabular-nums">{displayCurrent} / {progress.total}</span>
                 </div>
-                <Progress value={pct} color={done ? "success" : "primary"} size="sm" />
+                <Progress value={pct} color={done ? "success" : stoppedMidway ? "warning" : "primary"} size="sm" />
               </div>
             )}
             <div
