@@ -129,9 +129,12 @@ export default function AiCheckerTab() {
   const [savedCount, setSavedCount]   = useState(0);
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [stoppedMidway, setStoppedMidway] = useState(false);
+  const [autoResumeCount, setAutoResumeCount] = useState(0);
 
+  const MAX_AUTO_RESUME = 20;
   const logRef   = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const userAbortedRef = useRef(false);
 
   useEffect(() => {
     if (submissions.length === 0) fetchSubmissions();
@@ -184,6 +187,71 @@ export default function AiCheckerTab() {
     }
   }
 
+  async function runStream(resumeFromId?: string): Promise<{ doneReceived: boolean; streamLastSavedId: string | null }> {
+    abortRef.current = new AbortController();
+    let doneReceived = false;
+    let streamLastSavedId: string | null = null;
+
+    const effectiveStartId = resumeFromId || startFromId;
+
+    const res = await fetch("/api/zi/check", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        submissionId: selectedId,
+        sheetUrl,
+        sheetName,
+        limit,
+        startFromId: effectiveStartId,
+        email,
+        checkContentChange,
+      }),
+      signal: abortRef.current.signal,
+    });
+    if (!res.ok || !res.body) throw new Error("Gagal memulai proses");
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer    = "";
+
+    while (true) {
+      const { done: streamDone, value } = await reader.read();
+      if (streamDone) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const ev = JSON.parse(line.slice(6));
+          if (ev.type === "log") {
+            setLogs((p) => [...p, { level: ev.level, message: ev.message }]);
+            setTimeout(() => logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" }), 50);
+          } else if (ev.type === "progress") {
+            setProgress((p) => ({ ...p, current: ev.current, total: ev.total }));
+          } else if (ev.type === "total") {
+            setProgress((p) => ({ ...p, total: ev.total, revisiCount: ev.revisiCount ?? 0 }));
+          } else if (ev.type === "batch_saved") {
+            setSavedCount(ev.savedCount);
+            streamLastSavedId = ev.lastSavedId ?? streamLastSavedId;
+            if (ev.lastSavedId) setLastSavedId(ev.lastSavedId);
+          } else if (ev.type === "done") {
+            doneReceived = true;
+            setSummary(ev.summary);
+            setReportId(ev.reportId);
+            setSavedCount(ev.summary?.total ?? 0);
+            setDone(true);
+            fetchSubmissions();
+          } else if (ev.type === "error") {
+            setRunError(ev.message);
+          }
+        } catch { /* skip */ }
+      }
+    }
+
+    return { doneReceived, streamLastSavedId };
+  }
+
   async function handleRun() {
     setRunning(true);
     setLogs([]);
@@ -194,66 +262,44 @@ export default function AiCheckerTab() {
     setStoppedMidway(false);
     setSavedCount(0);
     setLastSavedId(null);
+    setAutoResumeCount(0);
     setProgress({ current: 0, total: 0, revisiCount: 0 });
+    userAbortedRef.current = false;
 
-    abortRef.current = new AbortController();
+    let resumeId: string | undefined = undefined;
+    let resumeAttempts = 0;
+
     try {
-      const res = await fetch("/api/zi/check", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          submissionId: selectedId,
-          sheetUrl,
-          sheetName,
-          limit,
-          startFromId,
-          email,
-          checkContentChange,
-        }),
-        signal: abortRef.current.signal,
-      });
-      if (!res.ok || !res.body) throw new Error("Gagal memulai proses");
+      while (resumeAttempts <= MAX_AUTO_RESUME) {
+        const { doneReceived, streamLastSavedId } = await runStream(resumeId);
 
-      const reader  = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer    = "";
+        if (doneReceived || userAbortedRef.current) break;
 
-      let doneReceived = false;
-      while (true) {
-        const { done: streamDone, value } = await reader.read();
-        if (streamDone) {
-          if (!doneReceived) setStoppedMidway(true);
+        // Stream ended without done — check if we can auto-resume
+        if (streamLastSavedId) {
+          resumeAttempts++;
+          const nextId = String(parseInt(streamLastSavedId) + 1);
+          resumeId = nextId;
+          setAutoResumeCount(resumeAttempts);
+          setLogs((p) => [...p, {
+            level: "warn",
+            message: `Koneksi terputus (timeout). Otomatis melanjutkan dari ID ${nextId}... (resume ke-${resumeAttempts})`,
+          }]);
+          // Brief pause before resuming
+          await new Promise((r) => setTimeout(r, 2000));
+        } else {
+          // No saved data to resume from
+          setStoppedMidway(true);
           break;
         }
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const ev = JSON.parse(line.slice(6));
-            if (ev.type === "log") {
-              setLogs((p) => [...p, { level: ev.level, message: ev.message }]);
-              setTimeout(() => logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" }), 50);
-            } else if (ev.type === "progress") {
-              setProgress((p) => ({ ...p, current: ev.current, total: ev.total }));
-            } else if (ev.type === "total") {
-              setProgress((p) => ({ ...p, total: ev.total, revisiCount: ev.revisiCount ?? 0 }));
-            } else if (ev.type === "batch_saved") {
-              setSavedCount(ev.savedCount);
-              if (ev.lastSavedId) setLastSavedId(ev.lastSavedId);
-            } else if (ev.type === "done") {
-              doneReceived = true;
-              setSummary(ev.summary);
-              setReportId(ev.reportId);
-              setSavedCount(ev.summary?.total ?? 0);
-              setDone(true);
-              fetchSubmissions();
-            } else if (ev.type === "error") {
-              setRunError(ev.message);
-            }
-          } catch { /* skip */ }
-        }
+      }
+
+      if (resumeAttempts > MAX_AUTO_RESUME) {
+        setStoppedMidway(true);
+        setLogs((p) => [...p, {
+          level: "error",
+          message: `Batas auto-resume tercapai (${MAX_AUTO_RESUME}x). Silakan lanjutkan manual.`,
+        }]);
       }
     } catch (err: any) {
       if (err.name !== "AbortError") setRunError(err.message);
@@ -263,6 +309,7 @@ export default function AiCheckerTab() {
   }
 
   function handleReset() {
+    userAbortedRef.current = true;
     abortRef.current?.abort();
     setInfo(null);
     setLogs([]);
@@ -272,6 +319,7 @@ export default function AiCheckerTab() {
     setStoppedMidway(false);
     setSavedCount(0);
     setLastSavedId(null);
+    setAutoResumeCount(0);
     setProgress({ current: 0, total: 0, revisiCount: 0 });
     setStartFromId("");
     setCheckContentChange(false);
@@ -696,6 +744,7 @@ export default function AiCheckerTab() {
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                   Proses terhenti sebelum selesai
+                  {autoResumeCount > 0 && ` (setelah ${autoResumeCount}x auto-resume)`}
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
                   {savedCount > 0
@@ -742,6 +791,9 @@ export default function AiCheckerTab() {
                       <span className="text-amber-500 font-medium">Tersimpan</span>
                     ) : (
                       <span>Progress</span>
+                    )}
+                    {autoResumeCount > 0 && (
+                      <span className="text-blue-500 font-medium">· auto-resume {autoResumeCount}x</span>
                     )}
                     {progress.revisiCount > 0 && (
                       <span className="text-amber-500 font-medium">· {progress.revisiCount} cek ulang revisi</span>

@@ -69,7 +69,15 @@ export default function LkeCheckerPage() {
     }, 400);
   }, [searchInput]);
 
-  const filtered = submissions;
+  // Sort: units with nilai descending, units without nilai at the bottom
+  const filtered = [...submissions].sort((a, b) => {
+    const aVal = a.nilai_lke?.nilai_akhir ?? a.nilai_lke_ai?.nilai_akhir ?? null;
+    const bVal = b.nilai_lke?.nilai_akhir ?? b.nilai_lke_ai?.nilai_akhir ?? null;
+    if (aVal === null && bVal === null) return 0;
+    if (aVal === null) return 1;
+    if (bVal === null) return -1;
+    return bVal - aVal;
+  });
 
   function handleDelete(id: string) {
     if (!confirm("Hapus unit ini? Data LKE akan dihapus permanen.")) return;
@@ -225,6 +233,9 @@ export default function LkeCheckerPage() {
                   <thead className="bg-default-50">
                     <tr>
                       <th className="text-left py-2.5 pl-4 pr-3 font-medium text-default-500 text-xs w-8"></th>
+                      <th className="text-center py-2.5 px-2 font-medium text-default-500 text-xs w-10">
+                        #
+                      </th>
                       <th className="text-left py-2.5 px-3 font-medium text-default-500 text-xs">
                         Unit Kerja
                       </th>
@@ -281,6 +292,16 @@ export default function LkeCheckerPage() {
                                 )}
                               </button>
                             </Tooltip>
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            {(filtered.indexOf(sub) + 1 <= filtered.length &&
+                              (sub.nilai_lke?.nilai_akhir != null || sub.nilai_lke_ai?.nilai_akhir != null)) ? (
+                              <span className="text-xs font-bold text-default-400">
+                                {filtered.indexOf(sub) + 1}
+                              </span>
+                            ) : (
+                              <span className="text-default-300">—</span>
+                            )}
                           </td>
                           <td className="py-2.5 px-3">
                             <div className="font-medium truncate max-w-[180px]">
