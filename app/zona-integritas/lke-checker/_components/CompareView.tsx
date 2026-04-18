@@ -34,6 +34,11 @@ function getVal(k: NilaiKomponen | undefined) {
   return k?.nilai ?? 0
 }
 
+/** Returns nilai_lke if available, otherwise falls back to nilai_lke_ai */
+function effectiveNilai(u: LkeSubmission) {
+  return u.nilai_lke ?? u.nilai_lke_ai ?? null
+}
+
 export default function CompareView({ ids, onClose }: Props) {
   const [units, setUnits]     = useState<LkeSubmission[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,8 +53,10 @@ export default function CompareView({ ids, onClose }: Props) {
   const radarData = Object.entries(KOMPONEN_LABELS).map(([key, label]) => {
     const entry: Record<string, any> = { subject: label.replace('\n', ' ') }
     units.forEach((u) => {
-      entry[u.eselon2] = getVal(u.nilai_lke?.pengungkit?.[key as keyof typeof u.nilai_lke.pengungkit] as NilaiKomponen | undefined)
-      if (u.nilai_lke_ai) {
+      const eff = effectiveNilai(u)
+      entry[u.eselon2] = getVal(eff?.pengungkit?.[key as keyof typeof eff.pengungkit] as NilaiKomponen | undefined)
+      if (u.nilai_lke_ai && u.nilai_lke) {
+        // Show AI as separate radar only when official nilai also exists
         entry[`${u.eselon2} (AI)`] = getVal(u.nilai_lke_ai.pengungkit?.[key as keyof typeof u.nilai_lke_ai.pengungkit] as NilaiKomponen | undefined)
       }
     })
@@ -58,21 +65,23 @@ export default function CompareView({ ids, onClose }: Props) {
 
   // Auto insights
   const insights: string[] = []
-  if (units.length >= 2 && units[0]?.nilai_lke?.nilai_akhir != null && units[1]?.nilai_lke?.nilai_akhir != null) {
-    const vals = units.map((u) => u.nilai_lke?.nilai_akhir ?? 0)
+  const unitsWithNilai = units.filter((u) => effectiveNilai(u)?.nilai_akhir != null)
+  if (unitsWithNilai.length >= 2) {
+    const vals = unitsWithNilai.map((u) => effectiveNilai(u)!.nilai_akhir!)
     const maxIdx = vals.indexOf(Math.max(...vals))
     const minIdx = vals.indexOf(Math.min(...vals))
     if (maxIdx !== minIdx) {
-      insights.push(`${units[maxIdx].eselon2} memiliki nilai tertinggi (${vals[maxIdx].toFixed(2)}).`)
-      insights.push(`${units[minIdx].eselon2} perlu peningkatan paling besar (${vals[minIdx].toFixed(2)}).`)
+      insights.push(`${unitsWithNilai[maxIdx].eselon2} memiliki nilai tertinggi (${vals[maxIdx].toFixed(2)}).`)
+      insights.push(`${unitsWithNilai[minIdx].eselon2} perlu peningkatan paling besar (${vals[minIdx].toFixed(2)}).`)
     }
 
     // Find biggest gap in komponen
     let maxGap = 0, maxGapKey = ''
     Object.keys(KOMPONEN_LABELS).forEach((key) => {
-      const kompVals = units.map((u) =>
-        getVal(u.nilai_lke?.pengungkit?.[key as keyof typeof u.nilai_lke.pengungkit] as NilaiKomponen | undefined)
-      )
+      const kompVals = unitsWithNilai.map((u) => {
+        const eff = effectiveNilai(u)
+        return getVal(eff?.pengungkit?.[key as keyof typeof eff.pengungkit] as NilaiKomponen | undefined)
+      })
       const gap = Math.max(...kompVals) - Math.min(...kompVals)
       if (gap > maxGap) { maxGap = gap; maxGapKey = key }
     })
@@ -162,8 +171,10 @@ export default function CompareView({ ids, onClose }: Props) {
             <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${units.length}, 1fr)` }}>
               {units.map((u, i) => {
                 const threshold = TARGET_THRESHOLD[u.target]
-                const val = u.nilai_lke?.nilai_akhir != null ? u.nilai_lke.nilai_akhir : null
+                const eff = effectiveNilai(u)
+                const val = eff?.nilai_akhir ?? null
                 const achieved = val !== null && val >= threshold
+                const isAiOnly = !u.nilai_lke && !!u.nilai_lke_ai
                 return (
                   <div key={u._id} className="rounded-xl border border-default-200 p-4 space-y-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -171,13 +182,14 @@ export default function CompareView({ ids, onClose }: Props) {
                       <span className="text-xs font-medium truncate flex-1">{u.eselon2}</span>
                       <TargetBadge target={u.target} tercapai={achieved} showStatus />
                     </div>
-                    <div className={`text-2xl font-bold tabular-nums ${achieved ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                    <div className={`text-2xl font-bold tabular-nums ${val === null ? '' : achieved ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
                       {val !== null ? val.toFixed(2) : '—'}
+                      {isAiOnly && <span className="text-xs font-normal text-violet-500 ml-1">(AI)</span>}
                     </div>
                     {val !== null && (
                       <ZiProgressBar value={val} size="sm" label={`min ${threshold}`} />
                     )}
-                    {u.nilai_lke_ai?.nilai_akhir != null && (
+                    {u.nilai_lke_ai?.nilai_akhir != null && u.nilai_lke && (
                       <div className="flex items-center justify-between text-xs text-default-400 pt-1 border-t border-default-100">
                         <span>AI:</span>
                         <span className="font-mono font-medium text-violet-500">{u.nilai_lke_ai.nilai_akhir.toFixed(2)}</span>
@@ -205,9 +217,10 @@ export default function CompareView({ ids, onClose }: Props) {
                   </thead>
                   <tbody className="divide-y divide-default-100">
                     {Object.entries(KOMPONEN_LABELS).map(([key, label]) => {
-                      const vals = units.map((u) =>
-                        (u.nilai_lke?.pengungkit?.[key as keyof typeof u.nilai_lke.pengungkit] as NilaiKomponen | undefined)?.nilai ?? null
-                      )
+                      const vals = units.map((u) => {
+                        const eff = effectiveNilai(u)
+                        return (eff?.pengungkit?.[key as keyof typeof eff.pengungkit] as NilaiKomponen | undefined)?.nilai ?? null
+                      })
                       return (
                         <tr key={key} className="hover:bg-default-50">
                           <td className="py-2 px-3 text-default-600">{label.replace('\n', ' ')}</td>
@@ -223,7 +236,8 @@ export default function CompareView({ ids, onClose }: Props) {
                     <tr className="bg-default-50 font-semibold">
                       <td className="py-2 px-3">Total Pengungkit</td>
                       {units.map((u) => {
-                        const v = u.nilai_lke?.pengungkit?.total?.nilai ?? null
+                        const eff = effectiveNilai(u)
+                        const v = eff?.pengungkit?.total?.nilai ?? null
                         return (
                           <td key={u._id} className="py-2 px-3 text-right tabular-nums">
                             {v !== null ? v.toFixed(2) : '—'}
@@ -234,7 +248,8 @@ export default function CompareView({ ids, onClose }: Props) {
                     <tr>
                       <td className="py-2 px-3 text-default-600">Total Hasil</td>
                       {units.map((u) => {
-                        const v = u.nilai_lke?.hasil?.total?.nilai ?? null
+                        const eff = effectiveNilai(u)
+                        const v = eff?.hasil?.total?.nilai ?? null
                         return (
                           <td key={u._id} className="py-2 px-3 text-right tabular-nums">
                             {v !== null ? v.toFixed(2) : '—'}
@@ -245,8 +260,8 @@ export default function CompareView({ ids, onClose }: Props) {
                     <tr className="bg-default-50 font-bold">
                       <td className="py-2 px-3">Nilai Akhir</td>
                       {units.map((u) => {
-                        const v = u.nilai_lke?.nilai_akhir ?? null
-                        const all = units.map((x) => x.nilai_lke?.nilai_akhir ?? null)
+                        const v = effectiveNilai(u)?.nilai_akhir ?? null
+                        const all = units.map((x) => effectiveNilai(x)?.nilai_akhir ?? null)
                         return (
                           <td key={u._id} className={`py-2 px-3 text-right tabular-nums ${cellCls(v, all)}`}>
                             {v !== null ? v.toFixed(2) : '—'}
