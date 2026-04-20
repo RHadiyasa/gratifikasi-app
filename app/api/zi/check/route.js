@@ -14,7 +14,7 @@ import {
 import { readSheet } from "@/lib/zi/sheets";
 import { ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows, setVisaReviewDropdown } from "@/lib/zi/visa-review";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
-import { listFilesInFolder, getFileContent } from "@/lib/zi/drive";
+import { listFilesInFolder, listFilesRecursive, getFileContent } from "@/lib/zi/drive";
 import { checkWithAI, calculateFinalVerdict } from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
 import { sendEmailReport } from "@/lib/zi/email";
@@ -121,7 +121,7 @@ async function detectFingerprintChanges(allValid, visaMap, auth, fileListCache, 
     const fId = extractFolderId(link);
     if (!fId) continue;
     try {
-      const files = await listFilesInFolder(auth, fId);
+      const files = await listFilesRecursive(auth, fId);
       fileListCache[fId] = files;
       if (computeFingerprint(files) !== visaMap[id].fingerprint) {
         changed.push(item);
@@ -183,9 +183,9 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
   let files = fileListCache[folderId] ?? null;
   if (files === null) {
     try {
-      files = await listFilesInFolder(auth, folderId);
+      files = await listFilesRecursive(auth, folderId);
       fileListCache[folderId] = files;
-      send("log", { level: "info", message: `ID ${id}: ${files.length} file ditemukan` });
+      send("log", { level: "info", message: `ID ${id}: ${files.length} file ditemukan (termasuk subfolder)` });
     } catch (err) {
       files = [];
       send("log", { level: "error", message: `ID ${id}: gagal akses Drive \u2014 ${err.message}` });
@@ -202,8 +202,9 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
   };
 
   let fileContents = [];
+  let readableFiles = [];
   if (existCheck.exists) {
-    const readable = files
+    readableFiles = files
       .filter((f) =>
         f.mimeType === "application/vnd.google-apps.document" ||
         f.mimeType === "application/pdf" ||
@@ -211,14 +212,14 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
         f.mimeType?.includes("word") ||
         f.mimeType?.includes("presentation"),
       )
-      .slice(0, 3);
+      .slice(0, 5);
     fileContents = await Promise.all(
-      readable.map((f) => getFileContent(auth, f.id, f.mimeType)),
+      readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType)),
     );
   }
 
   send("log", { level: "info", message: `ID ${id}: analisis AI...` });
-  const aiCheck = await checkWithAI(files, fileContents, standar, id);
+  const aiCheck = await checkWithAI(files, fileContents, standar, id, readableFiles);
   const verdict = calculateFinalVerdict(existCheck, aiCheck);
 
   send("log", {
