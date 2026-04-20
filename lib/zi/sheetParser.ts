@@ -1,6 +1,9 @@
 import { google } from 'googleapis'
 import fs from 'fs'
 import type { NilaiLKE, NilaiKomponen } from '@/types/zi'
+import { AI_PATTERN, VR_COL } from '@/lib/zi/constants'
+import { calculateNilaiLkeAi } from '@/lib/zi/scoring'
+import { writeRingkasanAi } from '@/lib/zi/ringkasan-ai'
 
 function getGoogleAuth() {
   let credentials
@@ -198,4 +201,54 @@ export async function parseSheetLKE(sheetUrl: string): Promise<NilaiLKE> {
     nilai_akhir,
     target_tercapai: false, // dihitung setelah tahu target unit
   }
+}
+
+/**
+ * Baca Visa review → hitung skor → tulis Ringkasan AI → return NilaiLKE.
+ * Dipanggil saat sync dan sheet "Ringkasan AI" belum ada tapi "Visa review" sudah ada.
+ */
+export async function buildRingkasanFromVisaReview(sheetUrl: string, target: string): Promise<NilaiLKE | null> {
+  const spreadsheetId = extractSheetId(sheetUrl)
+  const auth   = getGoogleAuth()
+  const sheets = google.sheets({ version: 'v4', auth } as any)
+
+  // Baca Visa review
+  let rows: any[][]
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Visa review!A:K',
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    })
+    rows = res.data.values || []
+  } catch {
+    return null // sheet Visa review tidak ada
+  }
+
+  if (rows.length < 2) return null
+
+  // Konversi visa review rows ke format scoring
+  const results: { id: string; verdict: { color: string } }[] = []
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i]
+    const id = String(row[VR_COL.ID - 1] || '').trim()
+    const result = String(row[VR_COL.RESULT - 1] || '')
+    if (!id || !AI_PATTERN.test(result)) continue
+
+    const color = /^\u2705/u.test(result) ? 'HIJAU'
+      : /^\u26A0\uFE0F/u.test(result) ? 'KUNING' : 'MERAH'
+    results.push({ id, verdict: { color } })
+  }
+
+  if (results.length === 0) return null
+
+  // Hitung skor
+  const nilaiLkeAi = calculateNilaiLkeAi(results, target)
+
+  // Tulis Ringkasan AI sheet
+  try {
+    await writeRingkasanAi(sheets, spreadsheetId, nilaiLkeAi, target)
+  } catch { /* lanjut walau gagal tulis */ }
+
+  return nilaiLkeAi as NilaiLKE
 }
