@@ -15,7 +15,7 @@ import { readSheet } from "@/lib/zi/sheets";
 import { ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows, setVisaReviewDropdown } from "@/lib/zi/visa-review";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
 import { listFilesInFolder, listFilesRecursive, getFileContent } from "@/lib/zi/drive";
-import { checkWithAI, calculateFinalVerdict } from "@/lib/zi/ai-checker";
+import { checkWithAI, deepContentReview, calculateFinalVerdict } from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
 import { sendEmailReport } from "@/lib/zi/email";
 import { getAnswerWeight, calculateNilaiLkeAi } from "@/lib/zi/scoring";
@@ -152,6 +152,17 @@ function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines
   ];
 }
 
+function isReadableMime(mimeType) {
+  return (
+    mimeType === "application/vnd.google-apps.document" ||
+    mimeType === "application/vnd.google-apps.spreadsheet" ||
+    mimeType === "application/vnd.google-apps.presentation" ||
+    mimeType === "application/pdf" ||
+    mimeType?.startsWith("text/") ||
+    mimeType?.startsWith("image/")
+  );
+}
+
 async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileListCache, send, tglCek }) {
   const id = String(row[COL.ID - 1]).trim();
   const bukti = String(row[COL.BUKTI - 1] || "").trim();
@@ -204,15 +215,7 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
   let fileContents = [];
   let readableFiles = [];
   if (existCheck.exists) {
-    readableFiles = files
-      .filter((f) =>
-        f.mimeType === "application/vnd.google-apps.document" ||
-        f.mimeType === "application/pdf" ||
-        f.mimeType?.startsWith("text/") ||
-        f.mimeType?.includes("word") ||
-        f.mimeType?.includes("presentation"),
-      )
-      .slice(0, 5);
+    readableFiles = files.filter((f) => isReadableMime(f.mimeType)).slice(0, 5);
     fileContents = await Promise.all(
       readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType)),
     );
@@ -220,6 +223,34 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
 
   send("log", { level: "info", message: `ID ${id}: analisis AI...` });
   const aiCheck = await checkWithAI(files, fileContents, standar, id, readableFiles);
+
+  // Deep content review jika skor rendah — cek independen terhadap kriteria PANRB (kolom I)
+  const kriteria = String(row[COL.KRITERIA - 1] || "").trim();
+  let deepReview = null;
+  if (aiCheck.score < 60 && kriteria && existCheck.exists) {
+    send("log", { level: "info", message: `ID ${id}: skor ${aiCheck.score}% rendah, review ulang dengan kriteria PANRB...` });
+
+    // Baca lebih banyak konten untuk review mendalam
+    let deepContents = fileContents;
+    let deepReadable = readableFiles;
+    const allReadable = files.filter((f) => isReadableMime(f.mimeType));
+    if (readableFiles.length < allReadable.length) {
+      deepReadable = allReadable.slice(0, 10);
+      deepContents = await Promise.all(
+        deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType)),
+      );
+    }
+
+    deepReview = await deepContentReview(files, deepContents, kriteria, id, deepReadable);
+
+    if (deepReview && deepReview.revisedScore > aiCheck.score) {
+      send("log", { level: "info", message: `ID ${id}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}% berdasarkan konten & kriteria PANRB` });
+      aiCheck.score = deepReview.revisedScore;
+      aiCheck.verdict = deepReview.revisedVerdict || aiCheck.verdict;
+      aiCheck.basedOn = "konten_kriteria_panrb";
+    }
+  }
+
   const verdict = calculateFinalVerdict(existCheck, aiCheck);
 
   send("log", {
@@ -233,6 +264,10 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
     aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).join(", ")}` : "",
     aiCheck.detail,
   ].filter(Boolean);
+
+  if (deepReview) {
+    reviuLines.push(`[Review PANRB] ${deepReview.review || deepReview.alasan || ""}`);
+  }
 
   const vrData = buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek);
 

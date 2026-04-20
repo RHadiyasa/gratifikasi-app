@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { connect } from '@/config/dbconfig'
 import LkeSubmission from '@/modules/models/LkeSubmission'
 import LkeSyncLog from '@/modules/models/LkeSyncLog'
-import { parseRingkasanAI } from '@/lib/zi/sheetParser'
+import { parseRingkasanAI, buildRingkasanFromVisaReview, parseSheetLKE } from '@/lib/zi/sheetParser'
 import { TARGET_THRESHOLD } from '@/types/zi'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
@@ -34,17 +34,26 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     try {
       const threshold  = TARGET_THRESHOLD[submission.target as 'WBK' | 'WBBM']
       let ringkasan = null
-      let parseError = null
       try {
         ringkasan = await parseRingkasanAI(submission.link)
-      } catch (parseErr: any) {
-        parseError = parseErr.message
+      } catch { /* fallback di bawah */ }
+
+      // Fallback 1: bangun Ringkasan AI dari data Visa review
+      if (!ringkasan) {
+        try {
+          ringkasan = await buildRingkasanFromVisaReview(submission.link, submission.target || 'WBK')
+        } catch { /* lanjut ke fallback berikutnya */ }
+      }
+
+      // Fallback 2: baca langsung dari sheet LKE utama
+      if (!ringkasan) {
+        try {
+          ringkasan = await parseSheetLKE(submission.link)
+        } catch { /* lanjut ke error */ }
       }
 
       if (!ringkasan) {
-        const msg = parseError
-          ? `Gagal baca sheet: ${parseError}`
-          : 'Sheet "Ringkasan AI" belum ada atau belum berisi data. Jalankan AI Checker terlebih dahulu.'
+        const msg = 'Tidak dapat membaca data nilai dari sheet. Pastikan sheet LKE memiliki data penilaian.'
         await LkeSubmission.findByIdAndUpdate(id, {
           sync_status: 'error',
           sync_error:  msg,
