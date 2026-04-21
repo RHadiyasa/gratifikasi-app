@@ -9,6 +9,16 @@ import {
   AlertTriangle,
   Zap,
   Coffee,
+  Wrench,
+  Copy,
+  FileSpreadsheet,
+  Type,
+  Columns3,
+  Rows3,
+  Link2,
+  Code2,
+  Ban,
+  Download,
 } from "lucide-react";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -81,6 +91,58 @@ const kolSheetLke = [
     desc: "Link ke folder Google Drive yang berisi file bukti. Ini yang akan dibuka dan dibaca oleh AI. Pastikan link-nya mengarah ke folder, bukan file tunggal.",
   },
 ];
+
+const preprocessingSteps = [
+  {
+    icon: Copy,
+    title: "Duplicate Sheet dari File Original",
+    desc: "Jangan langsung edit file asli. Buat salinan (copy) terlebih dahulu agar file original tetap aman sebagai backup. Kalau ada yang salah, Anda masih punya versi aslinya.",
+    detail: "Klik kanan pada file → Make a copy. Simpan di folder kerja Anda.",
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "Save as Google Sheets",
+    desc: "File LKE biasanya berformat .xlsx (Excel). Google Sheets tidak bisa mengedit format ini secara langsung, jadi harus dikonversi dulu.",
+    detail: "Buka file → File → Save as Google Sheets. File baru akan terbuat dalam format Google Sheets.",
+  },
+  {
+    icon: Type,
+    title: "Perhatikan Nama Sheet",
+    desc: "Nama sheet untuk jawaban LKE biasanya \"Jawaban\". Jika nama sheet-nya berbeda (misalnya \"BPPTKG\" atau \"Sheet1\"), bisa disesuaikan di Google Sheet atau di aplikasi.",
+    detail: "Rekomendasi: Sesuaikan nama sheet langsung di Google Sheets agar konsisten dengan sheet unit lain. Klik kanan tab sheet → Rename.",
+  },
+];
+
+const fixColumnInfo = [
+  { kolom: "A", fungsi: "ID", desc: "Wajib ada. Ambil dari file Standarisasi Data Dukung ZI.", required: true },
+  { kolom: "I", fungsi: "Kriteria Nilai", desc: "Kriteria penilaian dari PANRB.", required: false },
+  { kolom: "M", fungsi: "Narasi Data", desc: "Catatan/keterangan/penjelasan dari Unit.", required: false },
+  { kolom: "N", fungsi: "Link Data Dukung", desc: "Berupa URL ke folder Google Drive. BUKAN hyperlink.", required: true },
+];
+
+const fixRowSteps = [
+  "Row 1 hanya boleh berisi header. Jika ada informasi lain (nama balai, tahun, dll) di atas header — HAPUS.",
+  "Ambil ID dari file Standarisasi Data Dukung ZI: Copy seluruh column A dari file Standarisasi, lalu paste ke column A di LKE Anda.",
+  "Pastikan ID ke-202 menunjuk ke \"Pelayanan Publik\". Jika tidak cocok, berarti ada row tambahan yang perlu dihapus.",
+  "Jika ada row kosong atau row tambahan yang tidak disengaja di tengah data — hapus, lalu paste ulang ID dari Standarisasi.",
+];
+
+const appScriptCode = `function extractAllURLs() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var range = sheet.getRange("N1:N203"); // sesuaikan range kolom N
+  var richTexts = range.getRichTextValues();
+
+  for (var i = 0; i < richTexts.length; i++) {
+    var runs = richTexts[i][0].getRuns();
+    for (var j = 0; j < runs.length; j++) {
+      var url = runs[j].getLinkUrl();
+      if (url) {
+        sheet.getRange(i + 1, 19).setValue(url); // kolom S untuk link
+        break;
+      }
+    }
+  }
+}`;
 
 const kolVisaReview = [
   { kolom: "A", fungsi: "ID", desc: "Sama dengan ID di sheet LKE — sebagai penghubung data." },
@@ -211,16 +273,17 @@ function InfoCard({ children, variant = "default" }) {
 // ─── Sections config (untuk sidebar) ─────────────────────────────────────────
 
 export const lkeCheckerSections = [
-  { id: "lke-apa",       label: "Apa Itu LKE Checker?" },
-  { id: "lke-alur",      label: "Alur Pengecekan" },
-  { id: "lke-input",     label: "Input Data LKE" },
-  { id: "lke-struktur",  label: "Struktur Sheet" },
-  { id: "lke-jalankan",  label: "Menjalankan AI" },
-  { id: "lke-hasil",     label: "Membaca Hasil" },
-  { id: "lke-visa",      label: "Sheet Visa Review" },
-  { id: "lke-status",    label: "Status & Progress" },
-  { id: "lke-fitur",     label: "Fitur Lanjutan" },
-  { id: "lke-faq",       label: "FAQ" },
+  { id: "lke-apa",            label: "Apa Itu LKE Checker?" },
+  { id: "lke-alur",           label: "Alur Pengecekan" },
+  { id: "lke-input",          label: "Input Data LKE" },
+  { id: "lke-preprocessing",  label: "Cek Struktur Sheet" },
+  { id: "lke-struktur",       label: "Kolom yang Dibaca AI" },
+  { id: "lke-jalankan",       label: "Menjalankan AI" },
+  { id: "lke-hasil",          label: "Membaca Hasil" },
+  { id: "lke-visa",           label: "Sheet Visa Review" },
+  { id: "lke-status",         label: "Status & Progress" },
+  { id: "lke-fitur",          label: "Fitur Lanjutan" },
+  { id: "lke-faq",            label: "FAQ" },
 ];
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -367,7 +430,244 @@ export default function PanduanLkeChecker() {
         </div>
       </motion.section>
 
-      {/* 4. Struktur Sheet */}
+      {/* 4. Cek Struktur Sheet — Preprocessing */}
+      <motion.section
+        id="lke-preprocessing"
+        className="scroll-mt-28"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+        <SectionHeading number={4} title="Cek Struktur Sheet (Preprocessing)" />
+
+        <InfoCard variant="warn">
+          <div className="flex gap-3">
+            <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm text-default-600 leading-relaxed">
+              <p className="font-bold mb-1">Bagian ini adalah preprocessing (data cleansing).</p>
+              <p>
+                Sebelum data dicek oleh AI, format sheet <strong>harus konsisten</strong>.
+                Visa bukan auditor yang terbiasa membaca data berantakan — Visa butuh
+                struktur yang rapi dan seragam agar bisa bekerja dengan benar.
+              </p>
+              <p className="mt-2 text-xs text-default-400 italic">
+                Bagian ini hanya untuk mereka yang mau belajar.
+                Jika tidak, silakan tutup browser.
+              </p>
+            </div>
+          </div>
+        </InfoCard>
+
+        <div className="mt-4">
+          <a
+            href="/docs/cek-struktur-sheet.pdf"
+            download
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold transition-colors"
+          >
+            <Download size={15} />
+            Download Panduan PDF (dengan screenshot)
+          </a>
+          <p className="text-xs text-default-400 mt-1.5">
+            Panduan lengkap dengan gambar langkah demi langkah — cocok untuk dicetak atau dibagikan ke unit.
+          </p>
+        </div>
+
+        {/* Langkah 1-3: Persiapan Awal */}
+        <div className="mt-8 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">
+            Persiapan Awal
+          </p>
+        </div>
+        <div className="space-y-3">
+          {preprocessingSteps.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06, duration: 0.4 }}
+                className="p-4 rounded-2xl border border-default-200 bg-default-50 dark:bg-default-100/5 hover:border-primary/30 transition-colors"
+              >
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon size={15} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold mb-1">
+                      {i + 1}. {step.title}
+                    </p>
+                    <p className="text-xs text-default-500 leading-relaxed mb-1.5">{step.desc}</p>
+                    <p className="text-xs text-default-400 italic">{step.detail}</p>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Fix Column */}
+        <div className="mt-10 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            4. Fix Column — Posisi Kolom Harus Tepat
+          </p>
+          <p className="text-default-600 text-sm leading-relaxed mb-4">
+            Kolom-kolom berikut harus berada di posisi yang benar. Jika tidak sesuai,
+            pindahkan isi kolom ke posisi yang tepat terlebih dahulu. <strong>Ini wajib</strong> — kalau
+            salah kolom, AI akan membaca data yang salah dan hasilnya akan ngaco.
+          </p>
+        </div>
+        <div className="space-y-2">
+          {fixColumnInfo.map((k) => (
+            <div
+              key={k.kolom}
+              className={`flex gap-3 p-3 rounded-xl border ${
+                k.required
+                  ? "border-primary/30 bg-primary/5"
+                  : "border-default-200 bg-default-50 dark:bg-default-100/5"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-primary">{k.kolom}</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold">{k.fungsi}</p>
+                  {k.required && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      Wajib
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-default-500 leading-relaxed">{k.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Fix Row */}
+        <div className="mt-10 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            5. Fix Row — Bersihkan Baris yang Tidak Perlu
+          </p>
+          <p className="text-default-600 text-sm leading-relaxed mb-4">
+            Row 1 hanya boleh berisi header. Informasi tambahan seperti nama balai atau
+            tahun anggaran yang ada di atas header harus dihapus. ID harus diambil dari
+            file Standarisasi Data Dukung ZI agar konsisten.
+          </p>
+        </div>
+        <div className="space-y-2">
+          {fixRowSteps.map((step, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-default-200 bg-default-50 dark:bg-default-100/5">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-[10px] font-bold text-primary">{i + 1}</span>
+              </div>
+              <p className="text-xs text-default-600 leading-relaxed">{step}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3">
+          <InfoCard variant="accent">
+            <div className="flex gap-3">
+              <Info size={16} className="text-primary shrink-0 mt-0.5" />
+              <p className="text-sm text-default-600 leading-relaxed">
+                <strong>Kunci:</strong> ID ke-202 harus menunjuk ke <strong>Pelayanan Publik</strong>.
+                Jika tidak, berarti ada row tambahan di tengah yang perlu dihapus.
+                Setelah hapus, paste ulang ID dari Standarisasi.
+              </p>
+            </div>
+          </InfoCard>
+        </div>
+
+        {/* Fix Link Issue */}
+        <div className="mt-10 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            6. Fix Link Issue — Hyperlink vs URL
+          </p>
+          <p className="text-default-600 text-sm leading-relaxed mb-4">
+            Unit biasanya menaruh link dalam bentuk <strong>Hyperlink</strong> (teks
+            yang bisa diklik tapi bukan URL asli). Visa membaca <strong>URL</strong>,
+            bukan hyperlink — karena Visa bukan auditor yang bisa klik-klik link.
+            Visa butuh URL mentah yang bisa langsung diproses.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+          <InfoCard>
+            <div className="flex gap-3">
+              <Ban size={16} className="text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold mb-1 text-red-500">Salah (Hyperlink)</p>
+                <p className="text-xs text-default-500 leading-relaxed">
+                  Teks seperti <code className="bg-default-200 px-1 rounded text-[11px]">A.I.1.a</code> yang
+                  bisa diklik tapi bukan URL. Visa tidak bisa membaca ini.
+                </p>
+              </div>
+            </div>
+          </InfoCard>
+          <InfoCard variant="green">
+            <div className="flex gap-3">
+              <CheckCircle2 size={16} className="text-green-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold mb-1 text-green-600">Benar (URL)</p>
+                <p className="text-xs text-default-500 leading-relaxed">
+                  URL lengkap seperti <code className="bg-default-200 px-1 rounded text-[11px]">https://drive.google.com/drive/folders/...</code>
+                </p>
+              </div>
+            </div>
+          </InfoCard>
+        </div>
+
+        <p className="text-default-600 text-sm leading-relaxed mb-4">
+          <strong>Cara manual:</strong> Klik hyperlink → Copy link → Paste kembali ke cell yang sama
+          sebagai teks biasa (Ctrl+Shift+V).
+        </p>
+
+        <InfoCard variant="accent">
+          <div className="flex gap-3">
+            <Code2 size={16} className="text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold mb-2">Cara Otomatis dengan AppScript (Advance Mode)</p>
+              <p className="text-xs text-default-500 leading-relaxed mb-3">
+                Jika link-nya banyak, gunakan Google Apps Script untuk mengekstrak semua URL secara otomatis.
+                Buka <strong>Extensions → Apps Script</strong>, paste kode berikut, lalu klik <strong>Run</strong>.
+              </p>
+              <div className="rounded-xl bg-default-900 dark:bg-default-50/10 p-4 overflow-x-auto">
+                <pre className="text-xs text-green-400 dark:text-green-300 font-mono whitespace-pre leading-relaxed">
+                  {appScriptCode}
+                </pre>
+              </div>
+              <div className="mt-3 space-y-1.5">
+                <p className="text-xs text-default-500">
+                  Setelah di-run, URL akan muncul di <strong>kolom S</strong>. Copy isi kolom S ke kolom N, lalu hapus kolom S.
+                </p>
+                <p className="text-xs text-default-400 italic">
+                  Jika muncul peringatan &quot;Google hasn&apos;t verified this app&quot; — klik Advanced → Go to project.
+                  Ini terjadi karena Google tidak memverifikasi script buatan sendiri, bukan virus.
+                </p>
+              </div>
+            </div>
+          </div>
+        </InfoCard>
+
+        <div className="mt-6">
+          <InfoCard variant="warn">
+            <div className="flex gap-3">
+              <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-default-600 leading-relaxed">
+                <strong>Intinya:</strong> Semua langkah di atas adalah <em>data cleansing</em> agar
+                format sheet Anda konsisten dan bisa dibaca Visa dengan benar. Visa itu mesin —
+                dia tidak bisa berimprovisasi seperti auditor yang terbiasa dengan format berantakan.
+                Kalau input-nya rapi, output-nya juga rapi.
+              </p>
+            </div>
+          </InfoCard>
+        </div>
+      </motion.section>
+
+      {/* 5. Struktur Sheet */}
       <motion.section
         id="lke-struktur"
         className="scroll-mt-28"
@@ -376,7 +676,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={4} title="Struktur Sheet yang Perlu Diketahui" />
+        <SectionHeading number={5} title="Kolom yang Dibaca AI" />
         <p className="text-default-600 leading-relaxed mb-6">
           AI membaca kolom-kolom tertentu dari sheet LKE Anda. Pastikan data Anda ada
           di kolom yang benar, karena AI itu pintar tapi bukan paranormal —
@@ -414,7 +714,7 @@ export default function PanduanLkeChecker() {
         </InfoCard>
       </motion.section>
 
-      {/* 5. Menjalankan AI */}
+      {/* 6. Menjalankan AI */}
       <motion.section
         id="lke-jalankan"
         className="scroll-mt-28"
@@ -423,7 +723,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={5} title="Menjalankan AI Checker (Langkah 2 & 3)" />
+        <SectionHeading number={6} title="Menjalankan AI Checker (Langkah 2 & 3)" />
         <p className="text-default-600 leading-relaxed mb-6">
           Setelah unit terdaftar, saatnya menjalankan si AI. Klik tab
           <strong> &quot;AI Checker&quot;</strong> di halaman LKE Checker.
@@ -504,7 +804,7 @@ export default function PanduanLkeChecker() {
         </div>
       </motion.section>
 
-      {/* 6. Membaca Hasil */}
+      {/* 7. Membaca Hasil */}
       <motion.section
         id="lke-hasil"
         className="scroll-mt-28"
@@ -513,7 +813,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={6} title="Membaca Hasil Pengecekan" />
+        <SectionHeading number={7} title="Membaca Hasil Pengecekan" />
         <p className="text-default-600 leading-relaxed mb-6">
           Setelah AI selesai bekerja (atau saat proses berjalan), Anda bisa melihat
           hasil di beberapa tempat. Pilih yang paling nyaman untuk Anda.
@@ -567,7 +867,7 @@ export default function PanduanLkeChecker() {
         </InfoCard>
       </motion.section>
 
-      {/* 7. Sheet Visa Review */}
+      {/* 8. Sheet Visa Review */}
       <motion.section
         id="lke-visa"
         className="scroll-mt-28"
@@ -576,7 +876,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={7} title="Sheet Visa Review (Jantungnya Sistem)" />
+        <SectionHeading number={8} title="Sheet Visa Review (Jantungnya Sistem)" />
         <p className="text-default-600 leading-relaxed mb-4">
           Semua hasil AI ditulis ke sheet <strong>&quot;Visa review&quot;</strong> di Google Sheet Anda.
           Sheet ini adalah &quot;catatan kerja&quot; AI — di sinilah Anda bisa melihat detail
@@ -622,7 +922,7 @@ export default function PanduanLkeChecker() {
         </div>
       </motion.section>
 
-      {/* 8. Status & Progress */}
+      {/* 9. Status & Progress */}
       <motion.section
         id="lke-status"
         className="scroll-mt-28"
@@ -631,7 +931,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={8} title="Status & Progress Pengecekan" />
+        <SectionHeading number={9} title="Status & Progress Pengecekan" />
         <p className="text-default-600 leading-relaxed mb-8">
           Setiap unit yang didaftarkan memiliki status yang menunjukkan sejauh mana
           proses pengecekan sudah berjalan. Berikut arti masing-masing status:
@@ -675,7 +975,7 @@ export default function PanduanLkeChecker() {
         </div>
       </motion.section>
 
-      {/* 9. Fitur Lanjutan */}
+      {/* 10. Fitur Lanjutan */}
       <motion.section
         id="lke-fitur"
         className="scroll-mt-28"
@@ -684,7 +984,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={9} title="Fitur Lanjutan (Untuk yang Sudah Mahir)" />
+        <SectionHeading number={10} title="Fitur Lanjutan (Untuk yang Sudah Mahir)" />
         <p className="text-default-600 leading-relaxed mb-6">
           Sudah paham dasarnya? Bagus! Berikut fitur-fitur canggih yang bisa Anda manfaatkan.
           Tidak wajib digunakan, tapi kalau sudah terbiasa, hidup Anda akan jauh lebih mudah.
@@ -713,7 +1013,7 @@ export default function PanduanLkeChecker() {
         </div>
       </motion.section>
 
-      {/* 10. FAQ */}
+      {/* 11. FAQ */}
       <motion.section
         id="lke-faq"
         className="scroll-mt-28"
@@ -722,7 +1022,7 @@ export default function PanduanLkeChecker() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <SectionHeading number={10} title="Pertanyaan yang Sering Ditanyakan" />
+        <SectionHeading number={11} title="Pertanyaan yang Sering Ditanyakan" />
         <p className="text-default-600 leading-relaxed mb-6">
           Kumpulan pertanyaan yang sering muncul saat rapat koordinasi, chat WhatsApp grup,
           atau bisik-bisik di lorong kantor.

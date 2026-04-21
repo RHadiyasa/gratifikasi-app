@@ -25,6 +25,13 @@ export async function POST(req) {
       );
     }
 
+    if (admin.isBlocked) {
+      return NextResponse.json(
+        { message: "Akun Anda telah diblokir. Hubungi developer.", success: false },
+        { status: 403 }
+      );
+    }
+
     const token = jwt.sign(
       { id: admin._id, nip: admin.nip, role: admin.role },
       process.env.TOKEN_SECRET,

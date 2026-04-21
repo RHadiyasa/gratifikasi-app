@@ -188,7 +188,7 @@ const fadeUp = {
 
 export default function ELearningPage() {
   const { isLoggedIn, role } = useAuthStore();
-  const canTrack = isLoggedIn && (role === "admin" || role === "upg");
+  const canTrack = isLoggedIn && (role === "developer" || role === "admin" || role === "upg");
   const [activeTab, setActiveTab] = useState<"steps" | "issues">("steps");
 
   return (

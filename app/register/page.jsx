@@ -6,16 +6,12 @@ import { Input, Button, Select, SelectItem } from "@heroui/react";
 import { registerService } from "@/modules/auth/auth.service";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { getCreatableRoles, ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/lib/permissions";
 import {
   UserPlus, Lock, Eye, EyeOff, Loader2,
   User, BadgeCheck, Building2, Mail, Phone, ShieldCheck,
 } from "lucide-react";
-
-const ROLE_OPTIONS = [
-  { key: "upg",   label: "Tim UPG",             desc: "Pengelola laporan gratifikasi" },
-  { key: "zi",    label: "Tim Zona Integritas",  desc: "Pengelola program WBK/WBBM"   },
-  { key: "admin", label: "Master Admin",         desc: "Akses penuh ke seluruh sistem" },
-];
 
 // ── Subtle animated background ────────────────────────────────────────────
 function Background() {
@@ -56,6 +52,14 @@ const inputClass = {
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter();
+  const role = useAuthStore((s) => s.role);
+  const creatableRoles = getCreatableRoles(role);
+  const roleOptions = creatableRoles.map((r) => ({
+    key: r,
+    label: ROLE_LABELS[r],
+    desc: ROLE_DESCRIPTIONS[r],
+  }));
+
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -63,7 +67,7 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     name: "", nip: "", jabatan: "", unitKerja: "",
-    email: "", noTelp: "", password: "", confirmPassword: "", role: "upg",
+    email: "", noTelp: "", password: "", confirmPassword: "", role: creatableRoles[0] ?? "upg",
   });
 
   const set = (key) => (e) => {
@@ -94,9 +98,8 @@ export default function RegisterPage() {
         return;
       }
 
-      const roleLabel = { upg: "Tim UPG", zi: "Tim Zona Integritas", admin: "Master Admin" };
-      toast.success(`Akun ${roleLabel[form.role]} berhasil dibuat untuk ${form.name}.`);
-      router.push("/dashboard/upg");
+      toast.success(`Akun ${ROLE_LABELS[form.role] ?? form.role} berhasil dibuat untuk ${form.name}.`);
+      router.push("/dashboard");
     } catch {
       setError("Terjadi kesalahan server. Coba beberapa saat lagi.");
     } finally {
@@ -266,7 +269,7 @@ export default function RegisterPage() {
             {/* Row 5 — Role */}
             <Field label="Role">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {ROLE_OPTIONS.map((r) => (
+                {roleOptions.map((r) => (
                   <button
                     key={r.key}
                     type="button"

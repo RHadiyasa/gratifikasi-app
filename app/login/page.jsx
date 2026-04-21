@@ -215,7 +215,7 @@ export default function LoginPage() {
         setError(res.message || "NIP atau password salah.");
         return;
       }
-      const roleLabel = { upg: "Tim UPG", zi: "Tim Zona Integritas", admin: "Master Admin" };
+      const roleLabel = { developer: "Developer", admin: "Master Admin", zi: "Tim Zona Integritas", upg: "Tim UPG" };
       toast.success(`Login sebagai ${roleLabel[res.role] ?? res.role}`, { autoClose: 2000 });
       login(res.role);
       setTimeout(() => { window.location.href = "/dashboard"; }, 1200);

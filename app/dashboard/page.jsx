@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, LayoutGrid, ArrowRight } from "lucide-react";
+import { ShieldCheck, LayoutGrid, ArrowRight, Users } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -22,7 +23,9 @@ export default function DashboardPage() {
 
   if (!role) return null;
 
-  if (role !== "admin") return null;
+  if (!hasPermission(role, "dashboard:admin")) return null;
+
+  const isDeveloper = role === "developer";
 
   return (
     <div className="relative flex items-center justify-center px-6 min-h-screen">
@@ -53,6 +56,31 @@ export default function DashboardPage() {
 
           {/* Options */}
           <div className="space-y-3">
+            {/* Kelola Akun — developer only */}
+            {isDeveloper && (
+              <button
+                onClick={() => router.push("/dashboard/accounts")}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Users size={16} className="text-amber-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold">Kelola Akun</p>
+                    <p className="text-xs text-default-400">
+                      Edit, hapus, & blokir pengguna
+                    </p>
+                  </div>
+                </div>
+
+                <ArrowRight
+                  size={16}
+                  className="text-default-400 group-hover:translate-x-1 transition"
+                />
+              </button>
+            )}
+
             {/* UPG */}
             <button
               onClick={() => router.push("/dashboard/upg")}
@@ -124,7 +152,7 @@ export default function DashboardPage() {
           </div>
 
           <p className="text-[11px] text-default-300 text-center mt-6">
-            Anda masuk sebagai Master Admin
+            Anda masuk sebagai {isDeveloper ? "Developer" : "Master Admin"}
           </p>
         </div>
       </motion.div>

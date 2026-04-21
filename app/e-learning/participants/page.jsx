@@ -43,7 +43,7 @@ export default function ParticipantList() {
       try {
         const response = await axios.get("/api/auth/me");
         const role = response.data.role;
-        setIsPrivileged(response.data.success && (role === "admin" || role === "upg"));
+        setIsPrivileged(response.data.success && (role === "developer" || role === "admin" || role === "upg"));
       } catch (e) {
         setIsPrivileged(false);
       }

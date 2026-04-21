@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 
-type Role = "upg" | "zi" | "admin" | null;
+type Role = "developer" | "admin" | "zi" | "upg" | null;
 
 interface AuthState {
   isLoggedIn: boolean;

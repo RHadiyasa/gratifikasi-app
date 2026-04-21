@@ -19,7 +19,7 @@ Dokumentasi perubahan dan pembaruan aplikasi dari awal pengembangan hingga saat 
 - **Perbaikan Halaman LKE Checker** — Memperbaiki error pada halaman `/lke-checker`.
 - **Perbaikan Query Param Download** — Memperbaiki parameter URL saat proses download agar file yang diunduh sesuai.
 - **Penambahan Max Duration 300 detik** — Menambah batas waktu eksekusi menjadi 300 detik (5 menit) agar proses yang berat tidak timeout.
-
+    
 ### Keamanan
 - **Patch CVE-2025-66478** — Memperbarui Next.js ke versi 15.3.9 untuk menambal celah keamanan kritis pada React Server Components.
 - **Perbaikan Kerentanan React Server Components** — Menutup celah keamanan CVE yang ditemukan pada komponen server React.
