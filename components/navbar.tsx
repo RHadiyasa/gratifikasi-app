@@ -37,6 +37,7 @@ import {
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
 import { useAuthStore } from "@/store/authStore";
+import { hasPermission, getDashboardHref } from "@/lib/permissions";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -89,12 +90,7 @@ export const Navbar = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const dashboardHref =
-    role === "admin"
-      ? "/dashboard"
-      : role === "zi"
-        ? "/dashboard/zi"
-        : "/dashboard/upg";
+  const dashboardHref = getDashboardHref(role);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -264,7 +260,7 @@ export const Navbar = () => {
             </div>
           ) : (
             <div className="flex gap-2">
-              {role === "admin" && (
+              {hasPermission(role, "register:access") && (
                 <Button
                   as={NextLink}
                   href="/register"
@@ -419,7 +415,7 @@ export const Navbar = () => {
             </Button>
           ) : (
             <div className="flex flex-col gap-2">
-              {role === "admin" && (
+              {hasPermission(role, "register:access") && (
                 <Button
                   as={NextLink}
                   href="/register"

@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 // PATCH /api/zi/submissions/[id]
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const role = await getRole()
-  if (!role || !['admin', 'zi'].includes(role)) {
+  if (!role || !['developer', 'admin', 'zi'].includes(role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
   try {
@@ -62,8 +62,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 // DELETE /api/zi/submissions/[id]
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const role = await getRole()
-  if (role !== 'admin') {
-    return NextResponse.json({ error: 'Hanya admin yang dapat menghapus' }, { status: 403 })
+  if (role !== 'developer' && role !== 'admin') {
+    return NextResponse.json({ error: 'Hanya admin/developer yang dapat menghapus' }, { status: 403 })
   }
   try {
     await connect()

@@ -22,6 +22,7 @@ import {
   Activity,
   Zap,
   HelpCircle,
+  Wrench,
 } from "lucide-react";
 
 import PanduanPelaporan, { pelaporanSections } from "@/components/content/panduanPelaporan";
@@ -44,6 +45,7 @@ const lkeCheckerIcons = {
   "lke-apa": Info,
   "lke-alur": Workflow,
   "lke-input": ClipboardList,
+  "lke-preprocessing": Wrench,
   "lke-struktur": Layers,
   "lke-jalankan": Play,
   "lke-hasil": Eye,
