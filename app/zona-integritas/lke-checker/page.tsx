@@ -71,8 +71,8 @@ export default function LkeCheckerPage() {
 
   // Sort: units with nilai descending, units without nilai at the bottom
   const filtered = [...submissions].sort((a, b) => {
-    const aVal = a.nilai_lke?.nilai_akhir ?? a.nilai_lke_ai?.nilai_akhir ?? null;
-    const bVal = b.nilai_lke?.nilai_akhir ?? b.nilai_lke_ai?.nilai_akhir ?? null;
+    const aVal = a.nilai_lke_ai?.nilai_akhir ?? null;
+    const bVal = b.nilai_lke_ai?.nilai_akhir ?? null;
     if (aVal === null && bVal === null) return 0;
     if (aVal === null) return 1;
     if (bVal === null) return -1;
@@ -261,10 +261,8 @@ export default function LkeCheckerPage() {
                       const inCompare = compareIds.includes(sub._id);
                       const isSyncing = syncingIds.includes(sub._id);
                       const threshold = TARGET_THRESHOLD[sub.target];
-                      const achieved = sub.nilai_lke
-                        ? sub.nilai_lke.nilai_akhir !== null &&
-                          sub.nilai_lke.nilai_akhir >= threshold
-                        : undefined;
+                      const val = sub.nilai_lke_ai?.nilai_akhir ?? null;
+                      const achieved = val !== null ? val >= threshold : undefined;
 
                       return (
                         <tr
@@ -295,7 +293,7 @@ export default function LkeCheckerPage() {
                           </td>
                           <td className="py-2.5 px-2 text-center">
                             {(filtered.indexOf(sub) + 1 <= filtered.length &&
-                              (sub.nilai_lke?.nilai_akhir != null || sub.nilai_lke_ai?.nilai_akhir != null)) ? (
+                              sub.nilai_lke_ai?.nilai_akhir != null) ? (
                               <span className="text-xs font-bold text-default-400">
                                 {filtered.indexOf(sub) + 1}
                               </span>
@@ -315,7 +313,7 @@ export default function LkeCheckerPage() {
                             <TargetBadge
                               target={sub.target}
                               tercapai={achieved}
-                              showStatus={!!sub.nilai_lke}
+                              showStatus={val !== null}
                             />
                           </td>
                           <td className="py-2.5 px-3">
@@ -329,19 +327,14 @@ export default function LkeCheckerPage() {
                             />
                           </td>
                           <td className="py-2.5 px-3 text-right tabular-nums">
-                            {sub.nilai_lke?.nilai_akhir != null ? (
+                            {val !== null ? (
                               <span
-                                className={`font-bold ${sub.nilai_lke.nilai_akhir >= threshold ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
+                                className={`font-bold ${val >= threshold ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
                               >
-                                {sub.nilai_lke.nilai_akhir.toFixed(2)}
+                                {val.toFixed(2)}
                               </span>
                             ) : (
                               <span className="text-default-300">—</span>
-                            )}
-                            {sub.nilai_lke_ai?.nilai_akhir != null && (
-                              <div className="text-[10px] text-violet-500 font-mono mt-0.5">
-                                AI: {sub.nilai_lke_ai.nilai_akhir.toFixed(2)}
-                              </div>
                             )}
                           </td>
                           <td

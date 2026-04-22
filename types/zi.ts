@@ -42,7 +42,6 @@ export interface LkeSubmission {
   checked_count:    number
   unchecked_count:  number
   progress_percent: number
-  nilai_lke:        NilaiLKE | null
   nilai_lke_ai:     NilaiLKE | null
   last_synced_at:   string | null
   sync_status:      'idle' | 'syncing' | 'success' | 'error'

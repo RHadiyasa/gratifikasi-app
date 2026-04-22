@@ -50,27 +50,27 @@ export default function DashboardZI() {
 
   // Bar chart data: nilai akhir per unit
   const barData = submissions
-    .filter((s) => s.nilai_lke?.nilai_akhir != null)
-    .sort((a, b) => (b.nilai_lke.nilai_akhir - a.nilai_lke.nilai_akhir))
+    .filter((s) => s.nilai_lke_ai?.nilai_akhir != null)
+    .sort((a, b) => (b.nilai_lke_ai.nilai_akhir - a.nilai_lke_ai.nilai_akhir))
     .slice(0, 15)
     .map((s) => ({
       name:     s.eselon2.length > 18 ? s.eselon2.slice(0, 17) + "…" : s.eselon2,
-      nilai:    s.nilai_lke.nilai_akhir,
+      nilai:    s.nilai_lke_ai.nilai_akhir,
       target:   s.target,
-      color:    nilaiColor(s.nilai_lke.nilai_akhir, TARGET_THRESHOLD[s.target]),
+      color:    nilaiColor(s.nilai_lke_ai.nilai_akhir, TARGET_THRESHOLD[s.target]),
     }));
 
   // Anomali: units below threshold with status Selesai
   const anomali = submissions.filter((s) =>
     s.status === "Selesai" &&
-    s.nilai_lke?.nilai_akhir != null &&
-    s.nilai_lke.nilai_akhir < TARGET_THRESHOLD[s.target]
+    s.nilai_lke_ai?.nilai_akhir != null &&
+    s.nilai_lke_ai.nilai_akhir < TARGET_THRESHOLD[s.target]
   );
 
   // Rata komponen (radar)
   const radarData = KOMPONEN_KEYS.map(({ key, label }) => {
     const vals = submissions
-      .map((s) => s.nilai_lke?.pengungkit?.[key]?.nilai)
+      .map((s) => s.nilai_lke_ai?.pengungkit?.[key]?.nilai)
       .filter((v) => v != null);
     const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
     return { subject: label, nilai: parseFloat(avg.toFixed(2)) };
@@ -196,7 +196,7 @@ export default function DashboardZI() {
                 <div className="flex items-center gap-2 shrink-0">
                   <TargetBadge target={s.target} tercapai={false} showStatus />
                   <span className="text-sm font-bold text-red-500 tabular-nums">
-                    {s.nilai_lke.nilai_akhir.toFixed(2)}
+                    {s.nilai_lke_ai.nilai_akhir.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -301,13 +301,13 @@ export default function DashboardZI() {
               <div className="flex gap-2 flex-wrap">
                 <TargetBadge
                   target={drawerUnit.target}
-                  tercapai={drawerUnit.nilai_lke?.nilai_akhir != null && drawerUnit.nilai_lke.nilai_akhir >= TARGET_THRESHOLD[drawerUnit.target]}
-                  showStatus={!!drawerUnit.nilai_lke}
+                  tercapai={drawerUnit.nilai_lke_ai?.nilai_akhir != null && drawerUnit.nilai_lke_ai.nilai_akhir >= TARGET_THRESHOLD[drawerUnit.target]}
+                  showStatus={!!drawerUnit.nilai_lke_ai}
                 />
                 <StatusBadge status={drawerUnit.status} />
               </div>
               <ZiProgressBar value={drawerUnit.progress_percent} label={`${drawerUnit.checked_count}/${drawerUnit.total_data} data diperiksa`} />
-              {drawerUnit.nilai_lke ? (
+              {drawerUnit.nilai_lke_ai?.nilai_akhir != null ? (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-default-500">Nilai Akhir</p>
                   <p className={`text-3xl font-bold tabular-nums ${
@@ -315,7 +315,7 @@ export default function DashboardZI() {
                       ? "text-green-600 dark:text-green-400"
                       : "text-red-500"
                   }`}>
-                    {drawerUnit.nilai_lke_ai.nilai_akhir?.toFixed(2) ?? "—"}
+                    {drawerUnit.nilai_lke_ai.nilai_akhir.toFixed(2)}
                   </p>
                   <p className="text-xs text-default-400">Threshold {drawerUnit.target}: {TARGET_THRESHOLD[drawerUnit.target]}</p>
                 </div>

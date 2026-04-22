@@ -90,13 +90,15 @@ Dokumentasi perubahan dan pembaruan aplikasi dari awal pengembangan hingga saat 
 
 ## Teknologi yang Digunakan
 
-| Teknologi | Keterangan |
-|-----------|------------|
-| **Next.js 15** | Framework React untuk frontend & backend |
-| **HeroUI** | Library komponen UI |
-| **Tailwind CSS** | Framework CSS untuk styling |
-| **Google Sheets API** | Integrasi dengan Google Spreadsheet |
-| **AWS S3** | Penyimpanan file/dokumen |
-| **Anthropic Claude AI** | Integrasi AI untuk fitur pengecekan |
-| **Vercel** | Platform deployment |
-| **MongoDB (Prisma)** | Database |
+|--------------------------|-------------------------------------------|
+| Teknologi                | Keterangan                                |
+|--------------------------|-------------------------------------------|
+| **Next.js 15**           | Framework React untuk frontend & backend  |
+| **HeroUI**               | Library komponen UI                       |
+| **Tailwind CSS**         | Framework CSS untuk styling               |
+| **Google Sheets API**    | Integrasi dengan Google Spreadsheet       |
+| **AWS S3**               | Penyimpanan file/dokumen                  |
+| **Anthropic Claude AI**  | Integrasi AI untuk fitur pengecekan       |
+| **Vercel**               | Platform deployment                       |
+| **MongoDB (Prisma)**     | Database                                  |
+|--------------------------|-------------------------------------------|

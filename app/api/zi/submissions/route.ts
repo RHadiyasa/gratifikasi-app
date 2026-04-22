@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { connect } from '@/config/dbconfig'
 import LkeSubmission from '@/modules/models/LkeSubmission'
-import { parseSheetLKE } from '@/lib/zi/sheetParser'
-import { TARGET_THRESHOLD } from '@/types/zi'
 
 function detectAbbrev(text: string): boolean {
   const words = text.split(/\s+/)
@@ -34,11 +32,11 @@ export async function GET(req: Request) {
     const selesai          = submissions.filter((s) => s.status === 'Selesai').length
     const sedang           = submissions.filter((s) => s.status === 'Sedang Dicek').length
     const belum            = submissions.filter((s) => s.status === 'Belum Dicek').length
-    const wbk_tercapai     = submissions.filter((s) => s.target === 'WBK'  && s.nilai_lke?.target_tercapai).length
-    const wbbm_tercapai    = submissions.filter((s) => s.target === 'WBBM' && s.nilai_lke?.target_tercapai).length
-    const withNilai        = submissions.filter((s) => s.nilai_lke?.nilai_akhir != null)
+    const wbk_tercapai     = submissions.filter((s) => s.target === 'WBK'  && s.nilai_lke_ai?.target_tercapai).length
+    const wbbm_tercapai    = submissions.filter((s) => s.target === 'WBBM' && s.nilai_lke_ai?.target_tercapai).length
+    const withNilai        = submissions.filter((s) => s.nilai_lke_ai?.nilai_akhir != null)
     const rata_nilai_akhir = withNilai.length
-      ? withNilai.reduce((a, s) => a + (s.nilai_lke?.nilai_akhir ?? 0), 0) / withNilai.length
+      ? withNilai.reduce((a, s) => a + (s.nilai_lke_ai?.nilai_akhir ?? 0), 0) / withNilai.length
       : null
 
     return NextResponse.json({
@@ -71,30 +69,8 @@ export async function POST(req: Request) {
 
     const submission = await LkeSubmission.create({ link, target, eselon1, eselon2, pic_unit, catatan: catatan || '' })
 
-    // Parse sheet awal (non-blocking terhadap error)
-    let nilai_lke = null
-    let parse_error = null
-    try {
-      const parsed = await parseSheetLKE(link)
-      const threshold = TARGET_THRESHOLD[target as 'WBK' | 'WBBM']
-      parsed.target_tercapai = (parsed.nilai_akhir ?? 0) >= threshold
-      nilai_lke = parsed
-
-      await LkeSubmission.findByIdAndUpdate(submission._id, {
-        nilai_lke:      parsed,
-        last_synced_at: new Date(),
-        sync_status:    'success',
-      })
-    } catch (e: any) {
-      parse_error = e.message
-      await LkeSubmission.findByIdAndUpdate(submission._id, {
-        sync_status: 'error',
-        sync_error:  e.message,
-      })
-    }
-
-    const updated = await LkeSubmission.findById(submission._id).lean()
-    return NextResponse.json({ submission: updated, abbrev_warning, parse_error }, { status: 201 })
+    const created = await LkeSubmission.findById(submission._id).lean()
+    return NextResponse.json({ submission: created, abbrev_warning }, { status: 201 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
