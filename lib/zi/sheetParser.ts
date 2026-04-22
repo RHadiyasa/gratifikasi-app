@@ -36,33 +36,6 @@ function parseNum(val: any): number | null {
   return isNaN(n) ? null : n
 }
 
-function empty(): NilaiKomponen {
-  return { nilai: null, persen: null }
-}
-
-const KEYWORDS: Record<string, string> = {
-  'MANAJEMEN PERUBAHAN':            'pengungkit.manajemen_perubahan',
-  'PENATAAN TATALAKSANA':           'pengungkit.penataan_tatalaksana',
-  'PENATAAN SISTEM MANAJEMEN SDM':  'pengungkit.penataan_sdm',
-  'PENGUATAN AKUNTABILITAS':        'pengungkit.penguatan_akuntabilitas',
-  'PENGUATAN PENGAWASAN':           'pengungkit.penguatan_pengawasan',
-  'PENINGKATAN KUALITAS PELAYANAN': 'pengungkit.peningkatan_pelayanan',
-  'TOTAL PENGUNGKIT':               'total_pengungkit',
-  'NILAI SURVEY PERSEPSI KORUPSI':  'hasil.ipak',
-  'CAPAIAN KINERJA LEBIH BAIK':     'hasil.capaian_kinerja',
-  'NILAI PERSEPSI KUALITAS':        'hasil.ipkp',
-  'TOTAL HASIL':                    'total_hasil',
-  'NILAI HASIL EVALUASI':           'nilai_akhir',
-}
-
-function matchKeyword(label: string): string | null {
-  const normalized = label.toUpperCase().trim()
-  for (const [kw, path] of Object.entries(KEYWORDS)) {
-    if (normalized.includes(kw)) return path
-  }
-  return null
-}
-
 export async function parseRingkasanAI(sheetUrl: string): Promise<NilaiLKE | null> {
   const spreadsheetId = extractSheetId(sheetUrl)
   const auth   = getGoogleAuth()
@@ -135,71 +108,6 @@ export async function parseRingkasanAI(sheetUrl: string): Promise<NilaiLKE | nul
       err.status === 404
     ) return null
     throw err
-  }
-}
-
-export async function parseSheetLKE(sheetUrl: string): Promise<NilaiLKE> {
-  const spreadsheetId = extractSheetId(sheetUrl)
-  const auth    = getGoogleAuth()
-  const sheets  = google.sheets({ version: 'v4', auth } as any)
-
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: 'A1:R300',
-  })
-
-  const rows = res.data.values || []
-
-  // Hasil parsing
-  const data: Record<string, NilaiKomponen> = {}
-
-  for (const row of rows) {
-    const labelCell = String(row[6] || '').trim() // Kolom G = index 6
-    if (!labelCell) continue
-
-    const path = matchKeyword(labelCell)
-    if (!path) continue
-
-    const nilai  = parseNum(row[15]) // Kolom P = index 15
-    const persen = parseNum(row[16]) // Kolom Q = index 16
-
-    data[path] = { nilai, persen }
-  }
-
-  const get = (path: string): NilaiKomponen => data[path] ?? empty()
-
-  const nilai_akhir = get('nilai_akhir').nilai ??
-    (get('total_pengungkit').nilai !== null && get('total_hasil').nilai !== null
-      ? (get('total_pengungkit').nilai! + get('total_hasil').nilai!)
-      : null)
-
-  return {
-    pengungkit: {
-      manajemen_perubahan:     get('pengungkit.manajemen_perubahan'),
-      penataan_tatalaksana:    get('pengungkit.penataan_tatalaksana'),
-      penataan_sdm:            get('pengungkit.penataan_sdm'),
-      penguatan_akuntabilitas: get('pengungkit.penguatan_akuntabilitas'),
-      penguatan_pengawasan:    get('pengungkit.penguatan_pengawasan'),
-      peningkatan_pelayanan:   get('pengungkit.peningkatan_pelayanan'),
-      total:                   get('total_pengungkit'),
-    },
-    hasil: {
-      birokrasi_bersih: {
-        ipak:            get('hasil.ipak'),
-        capaian_kinerja: get('hasil.capaian_kinerja'),
-        total:           {
-          nilai:  (get('hasil.ipak').nilai ?? 0) + (get('hasil.capaian_kinerja').nilai ?? 0) || null,
-          persen: null,
-        },
-      },
-      pelayanan_prima: {
-        ipkp:  get('hasil.ipkp'),
-        total: get('hasil.ipkp'),
-      },
-      total: get('total_hasil'),
-    },
-    nilai_akhir,
-    target_tercapai: false, // dihitung setelah tahu target unit
   }
 }
 

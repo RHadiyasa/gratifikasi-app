@@ -34,9 +34,8 @@ function getVal(k: NilaiKomponen | undefined) {
   return k?.nilai ?? 0
 }
 
-/** Returns nilai_lke if available, otherwise falls back to nilai_lke_ai */
 function effectiveNilai(u: LkeSubmission) {
-  return u.nilai_lke ?? u.nilai_lke_ai ?? null
+  return u.nilai_lke_ai ?? null
 }
 
 export default function CompareView({ ids, onClose }: Props) {
@@ -49,16 +48,12 @@ export default function CompareView({ ids, onClose }: Props) {
       .finally(() => setLoading(false))
   }, [ids.join(',')])
 
-  // Build radar data — ZI penilaian + AI penilaian (suffix " (AI)")
+  // Build radar data
   const radarData = Object.entries(KOMPONEN_LABELS).map(([key, label]) => {
     const entry: Record<string, any> = { subject: label.replace('\n', ' ') }
     units.forEach((u) => {
       const eff = effectiveNilai(u)
       entry[u.eselon2] = getVal(eff?.pengungkit?.[key as keyof typeof eff.pengungkit] as NilaiKomponen | undefined)
-      if (u.nilai_lke_ai && u.nilai_lke) {
-        // Show AI as separate radar only when official nilai also exists
-        entry[`${u.eselon2} (AI)`] = getVal(u.nilai_lke_ai.pengungkit?.[key as keyof typeof u.nilai_lke_ai.pengungkit] as NilaiKomponen | undefined)
-      }
     })
     return entry
   })
@@ -129,7 +124,7 @@ export default function CompareView({ ids, onClose }: Props) {
         ) : (
           <div className="p-6 space-y-8">
             {/* Radar */}
-            {units.some((u) => u.nilai_lke?.nilai_akhir != null || u.nilai_lke_ai?.nilai_akhir != null) && (
+            {units.some((u) => u.nilai_lke_ai?.nilai_akhir != null) && (
               <div>
                 <p className="text-sm font-semibold mb-3">Radar Komponen Pengungkit</p>
                 <div className="h-72">
@@ -148,17 +143,6 @@ export default function CompareView({ ids, onClose }: Props) {
                           fillOpacity={0.15}
                         />
                       ))}
-                      {units.filter(u => u.nilai_lke_ai?.nilai_akhir != null).map((u, i) => (
-                        <Radar
-                          key={`${u._id}-ai`}
-                          name={`${u.eselon2} (AI)`}
-                          dataKey={`${u.eselon2} (AI)`}
-                          stroke={COLORS[i]}
-                          fill="none"
-                          strokeDasharray="4 2"
-                          strokeOpacity={0.6}
-                        />
-                      ))}
                       <Legend />
                       <Tooltip />
                     </RadarChart>
@@ -168,13 +152,12 @@ export default function CompareView({ ids, onClose }: Props) {
             )}
 
             {/* Nilai Akhir row */}
-            <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${units.length}, 1fr)` }}>
+            <div className="flex flex-wrap bg-red-300 gap-3" style={{ gridTemplateColumns: `repeat(${units.length}, 1fr)` }}>
               {units.map((u, i) => {
                 const threshold = TARGET_THRESHOLD[u.target]
                 const eff = effectiveNilai(u)
                 const val = eff?.nilai_akhir ?? null
                 const achieved = val !== null && val >= threshold
-                const isAiOnly = !u.nilai_lke && !!u.nilai_lke_ai
                 return (
                   <div key={u._id} className="rounded-xl border border-default-200 p-4 space-y-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -184,16 +167,9 @@ export default function CompareView({ ids, onClose }: Props) {
                     </div>
                     <div className={`text-2xl font-bold tabular-nums ${val === null ? '' : achieved ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
                       {val !== null ? val.toFixed(2) : '—'}
-                      {isAiOnly && <span className="text-xs font-normal text-violet-500 ml-1">(AI)</span>}
                     </div>
                     {val !== null && (
                       <ZiProgressBar value={val} size="sm" label={`min ${threshold}`} />
-                    )}
-                    {u.nilai_lke_ai?.nilai_akhir != null && u.nilai_lke && (
-                      <div className="flex items-center justify-between text-xs text-default-400 pt-1 border-t border-default-100">
-                        <span>AI:</span>
-                        <span className="font-mono font-medium text-violet-500">{u.nilai_lke_ai.nilai_akhir.toFixed(2)}</span>
-                      </div>
                     )}
                   </div>
                 )

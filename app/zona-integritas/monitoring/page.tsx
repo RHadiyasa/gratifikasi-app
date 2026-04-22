@@ -22,11 +22,11 @@ function buildSummary(docs: ILke[]): ZiSummary {
   const sedang    = docs.filter((d) => d.status === 'Sedang Dicek').length
   const belum     = docs.filter((d) => d.status === 'Belum Dicek').length
 
-  const withNilai = docs.filter((d) => d.nilai_lke?.nilai_akhir != null)
-  const wbkTercapai  = withNilai.filter((d) => d.target === 'WBK'  && d.nilai_lke!.nilai_akhir! >= TARGET_THRESHOLD.WBK).length
-  const wbbmTercapai = withNilai.filter((d) => d.target === 'WBBM' && d.nilai_lke!.nilai_akhir! >= TARGET_THRESHOLD.WBBM).length
+  const withNilai = docs.filter((d) => d.nilai_lke_ai?.nilai_akhir != null)
+  const wbkTercapai  = withNilai.filter((d) => d.target === 'WBK'  && d.nilai_lke_ai!.nilai_akhir! >= TARGET_THRESHOLD.WBK).length
+  const wbbmTercapai = withNilai.filter((d) => d.target === 'WBBM' && d.nilai_lke_ai!.nilai_akhir! >= TARGET_THRESHOLD.WBBM).length
   const rata = withNilai.length > 0
-    ? withNilai.reduce((sum, d) => sum + d.nilai_lke!.nilai_akhir!, 0) / withNilai.length
+    ? withNilai.reduce((sum, d) => sum + d.nilai_lke_ai!.nilai_akhir!, 0) / withNilai.length
     : null
 
   return { total: docs.length, selesai, sedang, belum, wbk_tercapai: wbkTercapai, wbbm_tercapai: wbbmTercapai, rata_nilai_akhir: rata }

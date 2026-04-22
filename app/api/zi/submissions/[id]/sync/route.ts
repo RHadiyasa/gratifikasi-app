@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { connect } from '@/config/dbconfig'
 import LkeSubmission from '@/modules/models/LkeSubmission'
 import LkeSyncLog from '@/modules/models/LkeSyncLog'
-import { parseRingkasanAI, buildRingkasanFromVisaReview, parseSheetLKE } from '@/lib/zi/sheetParser'
+import { parseRingkasanAI, buildRingkasanFromVisaReview } from '@/lib/zi/sheetParser'
 import { TARGET_THRESHOLD } from '@/types/zi'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
@@ -26,7 +26,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const submission = await LkeSubmission.findById(id)
     if (!submission) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
 
-    const nilai_sebelum = submission.nilai_lke?.nilai_akhir ?? null
+    const nilai_sebelum = submission.nilai_lke_ai?.nilai_akhir ?? null
 
     // Set syncing
     await LkeSubmission.findByIdAndUpdate(id, { sync_status: 'syncing', sync_error: null })
@@ -43,13 +43,6 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         try {
           ringkasan = await buildRingkasanFromVisaReview(submission.link, submission.target || 'WBK')
         } catch { /* lanjut ke fallback berikutnya */ }
-      }
-
-      // Fallback 2: baca langsung dari sheet LKE utama
-      if (!ringkasan) {
-        try {
-          ringkasan = await parseSheetLKE(submission.link)
-        } catch { /* lanjut ke error */ }
       }
 
       if (!ringkasan) {

@@ -113,7 +113,6 @@ export default function UnitDetailPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   const [nilaiOpen, setNilaiOpen] = useState(false);
-  const [nilaiTab, setNilaiTab] = useState<"lke" | "ai">("lke");
   const [sheetName, setSheetName] = useState("Jawaban");
   const [activeTab, setActiveTab] = useState<TabKey>("semua");
   const [search, setSearch] = useState("");
@@ -326,8 +325,7 @@ export default function UnitDetailPage() {
       </div>
 
       {/* ── Nilai LKE collapsible ── */}
-      {(unit.nilai_lke?.nilai_akhir != null ||
-        unit.nilai_lke_ai?.nilai_akhir != null) && (
+      {unit.nilai_lke_ai?.nilai_akhir != null && (
         <div className="rounded-xl border border-default-200 overflow-hidden">
           <button
             className="w-full flex items-center justify-between px-4 py-3 hover:bg-default-50 transition-colors"
@@ -335,20 +333,11 @@ export default function UnitDetailPage() {
           >
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold">Nilai LKE</span>
-              <div className="flex items-center gap-2">
-                {unit.nilai_lke?.nilai_akhir != null && (
-                  <span
-                    className={`text-sm font-bold tabular-nums ${unit.nilai_lke.nilai_akhir >= (unit.target === "WBBM" ? 75 : 60) ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
-                  >
-                    {unit.nilai_lke.nilai_akhir.toFixed(2)}
-                  </span>
-                )}
-                {unit.nilai_lke_ai?.nilai_akhir != null && (
-                  <span className="text-xs font-mono text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded">
-                    AI: {unit.nilai_lke_ai.nilai_akhir.toFixed(2)}
-                  </span>
-                )}
-              </div>
+              <span
+                className={`text-sm font-bold tabular-nums ${unit.nilai_lke_ai.nilai_akhir >= (unit.target === "WBBM" ? 75 : 60) ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
+              >
+                {unit.nilai_lke_ai.nilai_akhir.toFixed(2)}
+              </span>
             </div>
             {nilaiOpen ? (
               <ChevronUp size={15} className="text-default-400" />
@@ -358,35 +347,11 @@ export default function UnitDetailPage() {
           </button>
 
           {nilaiOpen && (
-            <div className="border-t border-default-200 p-4 space-y-3">
-              {/* Tab switcher jika keduanya ada */}
-              {unit.nilai_lke?.nilai_akhir != null &&
-                unit.nilai_lke_ai?.nilai_akhir != null && (
-                  <div className="flex gap-1">
-                    {(["lke", "ai"] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setNilaiTab(t)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${nilaiTab === t ? "bg-primary text-white" : "bg-default-100 text-default-600 hover:bg-default-200"}`}
-                      >
-                        {t === "lke"
-                          ? "Nilai LKE (Sheet)"
-                          : "Nilai AI (Checker)"}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-              {nilaiTab === "lke" && unit.nilai_lke?.nilai_akhir != null && (
-                <NilaiLKETable nilai={unit.nilai_lke} target={unit.target} />
-              )}
-              {(nilaiTab === "ai" || unit.nilai_lke?.nilai_akhir == null) &&
-                unit.nilai_lke_ai?.nilai_akhir != null && (
-                  <NilaiLKETable
-                    nilai={unit.nilai_lke_ai}
-                    target={unit.target}
-                  />
-                )}
+            <div className="border-t border-default-200 p-4">
+              <NilaiLKETable
+                nilai={unit.nilai_lke_ai}
+                target={unit.target}
+              />
             </div>
           )}
         </div>
