@@ -34,13 +34,16 @@ function createSSESender(controller) {
 }
 
 function buildStandarMap(standarRows) {
-  const map = {};
+  const standarMap = {};
+  const kriteriaMap = {};
   for (const row of standarRows.slice(2)) {
-    const id = String(row[STANDAR.ID - 1] || "").trim();
-    const standar = String(row[STANDAR.DOK - 1] || "").trim();
-    if (id && standar) map[id] = standar;
+    const id       = String(row[STANDAR.ID       - 1] || "").trim();
+    const standar  = String(row[STANDAR.DOK      - 1] || "").trim();
+    const kriteria = String(row[STANDAR.KRITERIA - 1] || "").trim();
+    if (id && standar)  standarMap[id]  = standar;
+    if (id && kriteria) kriteriaMap[id] = kriteria;
   }
-  return map;
+  return { standarMap, kriteriaMap };
 }
 
 function extractDataRows(penilaianRows) {
@@ -163,7 +166,7 @@ function isReadableMime(mimeType) {
   );
 }
 
-async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileListCache, send, tglCek }) {
+async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek }) {
   const id = String(row[COL.ID - 1]).trim();
   const bukti = String(row[COL.BUKTI - 1] || "").trim();
   const linkDrive = String(row[COL.LINK - 1] || "").trim();
@@ -224,8 +227,8 @@ async function processItem({ row, rowNum }, { auth, standarMap, visaMap, fileLis
   send("log", { level: "info", message: `ID ${id}: analisis AI...` });
   const aiCheck = await checkWithAI(files, fileContents, standar, id, readableFiles);
 
-  // Deep content review jika skor rendah — cek independen terhadap kriteria PANRB (kolom I)
-  const kriteria = String(row[COL.KRITERIA - 1] || "").trim();
+  // Deep content review jika skor rendah — cek independen terhadap kriteria PANRB (kolom I Standarisasi)
+  const kriteria = kriteriaMap[id] || "";
   let deepReview = null;
   if (aiCheck.score < 60 && kriteria && existCheck.exists) {
     send("log", { level: "info", message: `ID ${id}: skor ${aiCheck.score}% rendah, review ulang dengan kriteria PANRB...` });
@@ -347,7 +350,7 @@ export async function POST(req) {
 
         send("log", { level: "info", message: "Membaca Sheet Standarisasi..." });
         const standarRows = await readSheet(auth, standarId, standarName);
-        const standarMap = buildStandarMap(standarRows);
+        const { standarMap, kriteriaMap } = buildStandarMap(standarRows);
         send("log", { level: "info", message: `${Object.keys(standarMap).length} standar dokumen ditemukan` });
 
         // ── Extract & classify rows ──
@@ -464,7 +467,7 @@ export async function POST(req) {
             message: `${tag}ID ${id} \u2014 ${bukti.substring(0, 50)}${bukti.length > 50 ? "\u2026" : ""}`,
           });
 
-          const processed = await processItem(item, { auth, standarMap, visaMap, fileListCache, send, tglCek });
+          const processed = await processItem(item, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek });
           if (!processed) continue;
 
           results.push(processed.result);

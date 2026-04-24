@@ -59,6 +59,7 @@
     "aws-sdk": "^2.1692.0",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "2.1.1",
     "crypto-randomuuid": "^1.0.0",
     "exceljs": "^4.4.0",
@@ -82,10 +83,12 @@
     "react-dom": "18.3.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.3.0",
+    "tailwind-merge": "^3.5.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.2.9",
     "@next/eslint-plugin-next": "15.3.9",
     "@react-types/shared": "3.32.1",
     "@tailwindcss/postcss": "4.1.11",
@@ -96,7 +99,6 @@
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "8.34.1",
     "@typescript-eslint/parser": "8.34.1",
-    "@eslint/compat": "^1.2.9",
     "eslint": "9.25.1",
     "eslint-config-next": "15.3.9",
     "eslint-config-prettier": "9.1.0",
