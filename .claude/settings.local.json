@@ -3,7 +3,12 @@
     "allow": [
       "WebSearch",
       "Bash(npm view:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; print\\(json.dumps\\(deps, indent=2\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./package.json'\\);const all={...d.dependencies,...d.devDependencies};console.log\\(JSON.stringify\\(all,null,2\\)\\)\")",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

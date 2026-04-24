@@ -93,6 +93,7 @@ export default defineConfig([globalIgnores([
         "react-hooks/exhaustive-deps": "off",
         "jsx-a11y/click-events-have-key-events": "warn",
         "jsx-a11y/interactive-supports-focus": "warn",
+        "jsx-a11y/heading-has-content": "warn",
         "prettier/prettier": "warn",
         "no-unused-vars": "off",
         "unused-imports/no-unused-vars": "off",

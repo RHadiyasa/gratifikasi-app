@@ -2,9 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef, Fragment } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
-import { Progress } from "@heroui/progress";
 import {
   ArrowLeft,
   RefreshCw,
@@ -20,12 +17,29 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Play,
+  Info,
+  StopCircle,
 } from "lucide-react";
-import { StatusBadge } from "@/components/StatusBadge";
-import { TargetBadge } from "@/components/TargetBadge";
-import { ZiProgressBar } from "@/components/ZiProgressBar";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { NilaiLKETable } from "@/components/NilaiLKETable";
 import type { LkeSubmission } from "@/types/zi";
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 type RowStatus = "checked" | "unchecked" | "no_link" | "revisi";
 type VerdictColor = "HIJAU" | "KUNING" | "MERAH" | null;
@@ -36,6 +50,7 @@ type TabKey =
   | "no_link"
   | "revisi"
   | "checked";
+type JobStatus = "running" | "done" | "error";
 
 interface DetailRow {
   id: string;
@@ -57,48 +72,144 @@ interface DetailSummary {
   revisi: number;
 }
 
+interface LogEntry {
+  level: "info" | "success" | "warn" | "error";
+  message: string;
+}
+
+interface RowJob {
+  status: JobStatus;
+  logs: LogEntry[];
+}
+
+// ── Constants ────────────────────────────────────────────────────────────────
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "semua", label: "Semua" },
+  { key: "bermasalah", label: "Perlu Tindak Lanjut" },
+  { key: "unchecked", label: "Belum Dicek" },
+  { key: "no_link", label: "Tanpa Link" },
+  { key: "revisi", label: "Revisi" },
+  { key: "checked", label: "Sesuai" },
+];
+
 const STATUS_CONFIG: Record<
   RowStatus,
-  { label: string; color: string; icon: React.ReactNode }
+  {
+    label: string;
+    badge: "secondary" | "warning" | "success" | "info" | "destructive";
+  }
 > = {
-  checked: {
-    label: "Sudah Dicek",
-    color: "text-green-600 dark:text-green-400",
-    icon: <CheckCircle2 size={12} />,
-  },
-  unchecked: {
-    label: "Belum Dicek",
-    color: "text-amber-500",
-    icon: <Clock size={12} />,
-  },
-  no_link: {
-    label: "Tanpa Link",
-    color: "text-default-400",
-    icon: <Link2Off size={12} />,
-  },
-  revisi: {
-    label: "Revisi",
-    color: "text-blue-500",
-    icon: <RotateCw size={12} />,
-  },
+  checked: { label: "Sudah Dicek", badge: "success" },
+  unchecked: { label: "Belum Dicek", badge: "warning" },
+  no_link: { label: "Tanpa Link", badge: "secondary" },
+  revisi: { label: "Revisi", badge: "info" },
 };
 
-const VERDICT_STYLE: Record<string, string> = {
+const VERDICT_CLS: Record<string, string> = {
   HIJAU:
-    "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800",
+    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30",
   KUNING:
-    "bg-amber-500/10 text-amber-600 border border-amber-200 dark:border-amber-800",
-  MERAH: "bg-red-500/10 text-red-500 border border-red-200 dark:border-red-800",
+    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30",
+  MERAH:
+    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30",
 };
 
-const TABS: { key: TabKey; label: string; color?: string }[] = [
-  { key: "semua", label: "Semua" },
-  { key: "bermasalah", label: "Perlu Tindak Lanjut", color: "text-red-500" },
-  { key: "unchecked", label: "Belum Dicek", color: "text-amber-500" },
-  { key: "no_link", label: "Tanpa Link", color: "text-default-400" },
-  { key: "revisi", label: "Revisi", color: "text-blue-500" },
-  { key: "checked", label: "Sesuai ✅", color: "text-green-600" },
-];
+const LOG_ICON: Record<string, React.ReactNode> = {
+  success: (
+    <CheckCircle2
+      size={11}
+      className="text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5"
+    />
+  ),
+  warn: (
+    <AlertTriangle
+      size={11}
+      className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5"
+    />
+  ),
+  error: (
+    <XCircle
+      size={11}
+      className="text-rose-500 dark:text-rose-400 shrink-0 mt-0.5"
+    />
+  ),
+  info: <Info size={11} className="text-default-400 shrink-0 mt-0.5" />,
+};
+
+const LOG_CLS: Record<string, string> = {
+  success: "text-emerald-600 dark:text-emerald-400",
+  warn: "text-amber-600 dark:text-amber-400",
+  error: "text-rose-600 dark:text-rose-400",
+  info: "text-default-500 dark:text-default-400",
+};
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function VerdictBadge({
+  color,
+  verdict,
+}: {
+  color: VerdictColor;
+  verdict: string | null;
+}) {
+  if (!color || !verdict)
+    return <span className="text-default-300 text-xs">—</span>;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border",
+        VERDICT_CLS[color],
+      )}
+    >
+      {verdict}
+    </span>
+  );
+}
+
+function RowLogPanel({
+  logs,
+  status,
+}: {
+  logs: LogEntry[];
+  status: JobStatus;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollTo({
+      top: ref.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [logs.length]);
+
+  return (
+    <div
+      ref={ref}
+      className="h-44 overflow-y-auto rounded-lg bg-default-100 dark:bg-zinc-900 border border-default-200 dark:border-zinc-800 p-3 space-y-0.5 font-mono text-xs"
+    >
+      {logs.length === 0 && status === "running" && (
+        <div className="text-default-400">Memulai...</div>
+      )}
+      {logs.map((l, i) => (
+        <div
+          key={i}
+          className={cn("flex items-start gap-1.5", LOG_CLS[l.level])}
+        >
+          {LOG_ICON[l.level]}
+          <span className="break-all leading-relaxed">{l.message}</span>
+        </div>
+      ))}
+      {status === "running" && (
+        <div className="flex items-center gap-1.5 text-default-400 pt-0.5">
+          <Loader2 size={10} className="animate-spin shrink-0" />
+          <span>memproses…</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function UnitDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -106,7 +217,6 @@ export default function UnitDetailPage() {
 
   const [unit, setUnit] = useState<LkeSubmission | null>(null);
   const [unitError, setUnitError] = useState<string | null>(null);
-
   const [rows, setRows] = useState<DetailRow[]>([]);
   const [summary, setSummary] = useState<DetailSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -116,8 +226,19 @@ export default function UnitDetailPage() {
   const [sheetName, setSheetName] = useState("Jawaban");
   const [activeTab, setActiveTab] = useState<TabKey>("semua");
   const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  // Per-row expand: "reviu" or "log"
+  const [expandedReviu, setExpandedReviu] = useState<string | null>(null);
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
+
+  // Per-row check jobs
+  const [rowJobs, setRowJobs] = useState<Record<string, RowJob>>({});
+  const abortRefs = useRef<Record<string, AbortController>>({});
+
+  const runningCount = Object.values(rowJobs).filter(
+    (j) => j.status === "running",
+  ).length;
 
   // ── Load submission ──
   useEffect(() => {
@@ -149,7 +270,8 @@ export default function UnitDetailPage() {
         if (!res.ok) throw new Error(data.error || "Gagal memuat detail");
         setRows(data.rows);
         setSummary(data.summary);
-        setExpandedId(null);
+        setExpandedReviu(null);
+        setExpandedLog(null);
       } catch (e: any) {
         setDetailError(e.message);
       } finally {
@@ -194,6 +316,126 @@ export default function UnitDetailPage() {
     }
   }
 
+  // ── Per-row Visa check ──
+  async function startRowCheck(rowId: string) {
+    if (!unit?.link) return;
+
+    // Abort previous job for this row if any
+    abortRefs.current[rowId]?.abort();
+    const ctrl = new AbortController();
+    abortRefs.current[rowId] = ctrl;
+
+    setRowJobs((prev) => ({
+      ...prev,
+      [rowId]: { status: "running", logs: [] },
+    }));
+    setExpandedLog(rowId);
+    setExpandedReviu(null);
+
+    try {
+      const res = await fetch("/api/zi/check-single", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: id,
+          rowId,
+          sheetUrl: unit.link,
+          sheetName,
+        }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok || !res.body) throw new Error("Gagal memulai pemeriksaan");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            if (ev.type === "log") {
+              setRowJobs((prev) => ({
+                ...prev,
+                [rowId]: {
+                  ...prev[rowId],
+                  logs: [
+                    ...prev[rowId].logs,
+                    { level: ev.level, message: ev.message },
+                  ],
+                },
+              }));
+            } else if (ev.type === "done") {
+              setRowJobs((prev) => ({
+                ...prev,
+                [rowId]: { ...prev[rowId], status: "done" },
+              }));
+              // Update baris di table secara langsung
+              if (ev.result) {
+                setRows((prev) =>
+                  prev.map((r) =>
+                    r.id === rowId
+                      ? {
+                          ...r,
+                          verdict: ev.result.verdict,
+                          verdictColor: ev.result.verdictColor,
+                          reviu: ev.result.reviu,
+                          status: "checked" as RowStatus,
+                          tglCek: ev.result.tglCek,
+                        }
+                      : r,
+                  ),
+                );
+              }
+            } else if (ev.type === "error") {
+              setRowJobs((prev) => ({
+                ...prev,
+                [rowId]: {
+                  ...prev[rowId],
+                  status: "error",
+                  logs: [
+                    ...prev[rowId].logs,
+                    { level: "error", message: ev.message },
+                  ],
+                },
+              }));
+            }
+          } catch {
+            /* skip malformed line */
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        setRowJobs((prev) => ({
+          ...prev,
+          [rowId]: {
+            ...prev[rowId],
+            status: "error",
+            logs: [
+              ...prev[rowId].logs,
+              { level: "error", message: err.message },
+            ],
+          },
+        }));
+      }
+    }
+  }
+
+  function stopRowCheck(rowId: string) {
+    abortRefs.current[rowId]?.abort();
+    setRowJobs((prev) => ({
+      ...prev,
+      [rowId]: { ...prev[rowId], status: "error" },
+    }));
+  }
+
   // ── Filter ──
   const filtered = rows.filter((r) => {
     let matchTab = true;
@@ -233,56 +475,77 @@ export default function UnitDetailPage() {
   const sebagian = rows.filter((r) => r.verdictColor === "KUNING").length;
   const tidak = rows.filter((r) => r.verdictColor === "MERAH").length;
 
-  if (unitError) {
+  // ── Error / Loading states ──
+  if (unitError)
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Button
-          variant="light"
-          startContent={<ArrowLeft size={15} />}
-          onPress={() => router.back()}
-          className="mb-4"
-        >
-          Kembali
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft size={15} /> Kembali
         </Button>
-        <div className="text-center py-16 text-red-500">{unitError}</div>
+        <Card className="border-rose-200 dark:border-rose-500/20">
+          <CardContent className="p-6 text-center text-rose-500">
+            {unitError}
+          </CardContent>
+        </Card>
       </div>
     );
-  }
 
-  if (!unit) {
+  if (!unit)
     return (
-      <div className="max-w-4xl mx-auto px-4 flex items-center justify-center py-32 text-default-400 gap-2">
+      <div className="flex items-center justify-center py-32 text-default-400 gap-2 text-sm">
         <Loader2 size={16} className="animate-spin" /> Memuat data unit...
       </div>
     );
-  }
+
+  const threshold = unit.target === "WBBM" ? 75 : 60;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
       {/* ── Header ── */}
       <div className="flex items-start gap-3">
         <Button
-          variant="light"
-          isIconOnly
-          size="sm"
-          onPress={() => router.back()}
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => router.back()}
           className="mt-0.5 shrink-0"
         >
           <ArrowLeft size={16} />
         </Button>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold truncate">{unit.eselon2}</h1>
-            <TargetBadge target={unit.target} showStatus={false} />
-            <StatusBadge status={unit.status} />
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="text-xl font-bold text-foreground truncate">
+              {unit.eselon2}
+            </h1>
+            <Badge variant={unit.target === "WBBM" ? "violet" : "info"}>
+              {unit.target}
+            </Badge>
+            <Badge
+              variant={
+                unit.status === "Selesai"
+                  ? "success"
+                  : unit.status === "Sedang Dicek"
+                    ? "warning"
+                    : unit.status === "Perlu Revisi"
+                      ? "destructive"
+                      : "secondary"
+              }
+            >
+              {unit.status}
+            </Badge>
+            {runningCount > 0 && (
+              <Badge variant="warning" className="gap-1.5">
+                <Loader2 size={10} className="animate-spin" />
+                {runningCount} aktif
+              </Badge>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-3 mt-1">
+          <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-default-400">{unit.eselon1}</p>
             <a
               href={unit.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
+              className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
             >
               <ExternalLink size={11} /> Buka Sheet
             </a>
@@ -290,121 +553,160 @@ export default function UnitDetailPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            size="sm"
-            variant="flat"
-            isIconOnly
+            variant="outline"
+            size="icon-sm"
             isLoading={loading}
-            onPress={() => loadDetail()}
-            title="Refresh data dari sheet"
+            onClick={() => loadDetail()}
+            title="Refresh dari sheet"
           >
             {!loading && <RefreshCw size={13} />}
           </Button>
           <Button
+            variant="success"
             size="sm"
-            color="success"
-            variant="flat"
-            startContent={!exporting && <Download size={13} />}
             isLoading={exporting}
-            isDisabled={!summary || exporting}
-            onPress={handleExport}
+            disabled={!summary || exporting}
+            onClick={handleExport}
           >
+            {!exporting && <Download size={13} />}
             Export Excel
           </Button>
         </div>
       </div>
 
-      {/* ── Progress unit ── */}
-      <div className="rounded-xl border border-default-200 px-4 py-3 space-y-2">
-        <div className="flex justify-between text-xs text-default-500">
-          <span>Progress Pengecekan</span>
-          <span className="font-mono tabular-nums">
-            {unit.checked_count} / {unit.total_data || "?"}
-          </span>
-        </div>
-        <ZiProgressBar value={unit.progress_percent} size="sm" />
-      </div>
+      {/* ── Progress card ── */}
+      <Card className="border-default-200">
+        <CardContent className="p-4 space-y-2">
+          <div className="flex justify-between text-xs text-default-500">
+            <span>Progress Pengecekan</span>
+            <span className="font-mono tabular-nums font-medium">
+              {unit.checked_count} / {unit.total_data || "?"}
+            </span>
+          </div>
+          <Progress
+            value={unit.progress_percent}
+            indicatorClassName={
+              unit.progress_percent >= 100
+                ? "bg-emerald-500"
+                : unit.progress_percent >= 60
+                  ? "bg-amber-500"
+                  : "bg-indigo-500"
+            }
+          />
+        </CardContent>
+      </Card>
 
       {/* ── Nilai LKE collapsible ── */}
       {unit.nilai_lke_ai?.nilai_akhir != null && (
-        <div className="rounded-xl border border-default-200 overflow-hidden">
+        <Card className="border-default-200 overflow-hidden">
           <button
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-default-50 transition-colors"
+            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-default-50 transition-colors"
             onClick={() => setNilaiOpen(!nilaiOpen)}
           >
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold">Nilai LKE</span>
+              <span className="text-sm font-semibold text-foreground">
+                Nilai LKE
+              </span>
               <span
-                className={`text-sm font-bold tabular-nums ${unit.nilai_lke_ai.nilai_akhir >= (unit.target === "WBBM" ? 75 : 60) ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
+                className={cn(
+                  "text-sm font-bold tabular-nums",
+                  unit.nilai_lke_ai.nilai_akhir >= threshold
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-rose-500",
+                )}
               >
                 {unit.nilai_lke_ai.nilai_akhir.toFixed(2)}
               </span>
+              <span className="text-xs text-default-400">
+                / 100 (threshold {threshold})
+              </span>
             </div>
             {nilaiOpen ? (
-              <ChevronUp size={15} className="text-default-400" />
+              <ChevronUp size={14} className="text-default-400" />
             ) : (
-              <ChevronDown size={15} className="text-default-400" />
+              <ChevronDown size={14} className="text-default-400" />
             )}
           </button>
-
-          {nilaiOpen && (
-            <div className="border-t border-default-200 p-4">
-              <NilaiLKETable
-                nilai={unit.nilai_lke_ai}
-                target={unit.target}
-              />
-            </div>
-          )}
-        </div>
+          <AnimatePresence>
+            {nilaiOpen && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: "auto" }}
+                exit={{ height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-default-200 p-5">
+                  <NilaiLKETable
+                    nilai={unit.nilai_lke_ai}
+                    target={unit.target}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
       )}
 
-      {/* ── Summary cards ── */}
+      {/* ── Summary stats ── */}
       {summary && (
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {[
-            { label: "Total", value: summary.total, cls: "" },
-            {
-              label: "✅ Sesuai",
-              value: sesuai,
-              cls: "text-green-600 dark:text-green-400",
-            },
-            { label: "⚠️ Sebagian", value: sebagian, cls: "text-amber-500" },
-            { label: "❌ Tidak", value: tidak, cls: "text-red-500" },
-            {
-              label: "Belum Dicek",
-              value: summary.unchecked,
-              cls: "text-default-500",
-            },
-            {
-              label: "Tanpa Link",
-              value: summary.noLink,
-              cls: "text-default-400",
-            },
-            { label: "Revisi", value: summary.revisi, cls: "text-blue-500" },
-            {
-              label: "Progress",
-              value: `${summary.total > 0 ? Math.round((summary.checked / summary.total) * 100) : 0}%`,
-              cls: "text-primary",
-            },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="text-center rounded-xl bg-default-50 dark:bg-default-100 p-2.5"
-            >
-              <p className={`text-lg font-bold tabular-nums ${s.cls}`}>
-                {s.value}
-              </p>
-              <p className="text-[10px] text-default-500 mt-0.5 leading-tight">
-                {s.label}
-              </p>
-            </div>
+          {(
+            [
+              { label: "Total", value: summary.total, cls: "text-foreground" },
+              {
+                label: "✅ Sesuai",
+                value: sesuai,
+                cls: "text-emerald-600 dark:text-emerald-400",
+              },
+              {
+                label: "⚠️ Sebagian",
+                value: sebagian,
+                cls: "text-amber-600 dark:text-amber-400",
+              },
+              { label: "❌ Tidak", value: tidak, cls: "text-rose-500" },
+              {
+                label: "Belum Dicek",
+                value: summary.unchecked,
+                cls: "text-default-500",
+              },
+              {
+                label: "Tanpa Link",
+                value: summary.noLink,
+                cls: "text-default-400",
+              },
+              {
+                label: "Revisi",
+                value: summary.revisi,
+                cls: "text-blue-600 dark:text-blue-400",
+              },
+              {
+                label: "Progress",
+                value: `${summary.total > 0 ? Math.round((summary.checked / summary.total) * 100) : 0}%`,
+                cls: "text-indigo-600 dark:text-indigo-400",
+              },
+            ] as const
+          ).map((s) => (
+            <Card key={s.label} className="border-default-200">
+              <CardContent className="p-2.5 text-center">
+                <p className={cn("text-lg font-bold tabular-nums", s.cls)}>
+                  {s.value}
+                </p>
+                <p className="text-[10px] text-default-400 mt-0.5 leading-tight">
+                  {s.label}
+                </p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
+      {/* ── Error / initial loading ── */}
       {detailError && (
-        <div className="flex items-center gap-2 text-sm text-red-500 rounded-xl border border-red-200 dark:border-red-800 bg-red-500/5 px-3 py-2.5">
-          <XCircle size={14} className="shrink-0" /> {detailError}
-        </div>
+        <Card className="border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-950/20">
+          <CardContent className="p-3 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400">
+            <XCircle size={14} className="shrink-0" /> {detailError}
+          </CardContent>
+        </Card>
       )}
 
       {loading && !summary && (
@@ -414,175 +716,245 @@ export default function UnitDetailPage() {
         </div>
       )}
 
-      {/* ── Sheet name override ── */}
+      {/* ── Main table section ── */}
       {summary && (
-        <div className="flex items-center gap-2">
-          <Input
-            size="sm"
-            label="Nama tab sheet"
-            value={sheetName}
-            onValueChange={setSheetName}
-            className="max-w-[180px]"
-          />
-          <Button
-            size="sm"
-            variant="flat"
-            isDisabled={loading}
-            onPress={() => loadDetail(sheetName)}
-          >
-            Reload
-          </Button>
-        </div>
-      )}
+        <Card className="border-default-200">
+          <CardHeader className="pb-3">
+            <div className="space-y-3">
+              {/* Tabs */}
+              <div className="flex gap-1.5 flex-wrap">
+                {TABS.map((t) => {
+                  const count = tabCount(t.key);
+                  const isActive = activeTab === t.key;
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => setActiveTab(t.key)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-default-100 text-default-600 hover:bg-default-200",
+                      )}
+                    >
+                      {t.label}
+                      <span
+                        className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full font-mono",
+                          isActive ? "bg-white/20" : "bg-default-200",
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-      {/* ── Tabs + Search + Table ── */}
-      {summary && (
-        <div className="space-y-3">
-          {/* Tabs */}
-          <div className="flex gap-1.5 flex-wrap">
-            {TABS.map((t) => {
-              const count = tabCount(t.key);
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setActiveTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    activeTab === t.key
-                      ? "bg-primary text-white shadow-sm"
-                      : "bg-default-100 text-default-600 hover:bg-default-200"
-                  }`}
-                >
-                  <span className={activeTab !== t.key ? (t.color ?? "") : ""}>
-                    {t.label}
-                  </span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${activeTab === t.key ? "bg-white/20" : "bg-default-200"}`}
+              {/* Search + sheet name */}
+              <div className="flex gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[180px] max-w-xs">
+                  <Search
+                    size={12}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-default-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari ID atau nama data..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className={cn(
+                      "w-full h-8 pl-8 pr-3 text-xs rounded-lg transition-colors",
+                      "border border-default-200 bg-default-50 hover:bg-background",
+                      "focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-foreground placeholder:text-default-400",
+                    )}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={sheetName}
+                    onChange={(e) => setSheetName(e.target.value)}
+                    placeholder="Nama tab sheet"
+                    className={cn(
+                      "h-8 px-3 text-xs rounded-lg w-32 transition-colors",
+                      "border border-default-200 bg-default-50 hover:bg-background",
+                      "focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-foreground placeholder:text-default-400",
+                    )}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={loading}
+                    onClick={() => loadDetail(sheetName)}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    Reload
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
 
-          {/* Search */}
-          <Input
-            size="sm"
-            placeholder="Cari ID atau nama data..."
-            startContent={<Search size={13} className="text-default-400" />}
-            value={search}
-            onValueChange={setSearch}
-            isClearable
-            onClear={() => setSearch("")}
-            className="max-w-sm"
-          />
+          <Separator />
 
-          {/* Table */}
-          <div className="rounded-xl border border-default-200 overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-default-50 border-b border-default-200">
-                <tr>
-                  <th className="text-left py-2.5 px-3 font-medium text-default-500 w-12">
-                    ID
-                  </th>
-                  <th className="text-left py-2.5 px-3 font-medium text-default-500">
-                    Nama Bukti Data
-                  </th>
-                  <th className="text-left py-2.5 px-3 font-medium text-default-500 w-28">
-                    Hasil AI
-                  </th>
-                  <th className="text-left py-2.5 px-3 font-medium text-default-500 w-24">
-                    Status
-                  </th>
-                  <th className="text-left py-2.5 px-3 font-medium text-default-500 w-20">
-                    Tgl Cek
-                  </th>
-                  <th className="text-center py-2.5 px-3 font-medium text-default-500 w-10">
-                    Link
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-default-100">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-12">ID</TableHead>
+                  <TableHead>Nama Bukti Data</TableHead>
+                  <TableHead className="w-32">Hasil AI</TableHead>
+                  <TableHead className="w-28">Status</TableHead>
+                  <TableHead className="w-24">Tgl Cek</TableHead>
+                  <TableHead className="w-10 text-center">Link</TableHead>
+                  <TableHead className="w-28 text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-14 text-center text-default-400"
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-14 text-center text-default-400 text-sm"
                     >
                       Tidak ada data untuk filter ini
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filtered.map((row) => {
                     const statusCfg = STATUS_CONFIG[row.status];
-                    const isExpanded = expandedId === row.id;
+                    const job = rowJobs[row.id];
+                    const isLogOpen = expandedLog === row.id;
+                    const isRevOpen = expandedReviu === row.id;
+                    const canCheck = row.status !== "no_link";
+
                     return (
                       <Fragment key={row.id}>
-                        <tr
-                          className={`hover:bg-default-50 transition-colors ${row.reviu ? "cursor-pointer" : ""} ${isExpanded ? "bg-default-50" : ""}`}
-                          onClick={() =>
-                            row.reviu &&
-                            setExpandedId(isExpanded ? null : row.id)
-                          }
+                        {/* ── Main row ── */}
+                        <TableRow
+                          className={cn(
+                            isLogOpen || isRevOpen
+                              ? "bg-default-50 dark:bg-default-50/5"
+                              : "",
+                            job?.status === "running"
+                              ? "bg-indigo-50/50 dark:bg-indigo-950/20"
+                              : job?.status === "done"
+                                ? "bg-emerald-50/30 dark:bg-emerald-950/10"
+                                : job?.status === "error"
+                                  ? "bg-rose-50/30 dark:bg-rose-950/10"
+                                  : "",
+                          )}
                         >
-                          <td className="py-2.5 px-3 font-mono font-bold text-default-700">
+                          {/* ID */}
+                          <TableCell className="font-mono font-bold text-default-600 text-xs">
                             {row.id}
-                          </td>
-                          <td className="py-2.5 px-3">
+                          </TableCell>
+
+                          {/* Bukti Data */}
+                          <TableCell>
                             <div className="flex items-center gap-1.5">
-                              <span
-                                className="truncate max-w-[260px]"
+                              <button
+                                className={cn(
+                                  "text-left text-xs text-foreground truncate max-w-[250px]",
+                                  row.reviu && !job
+                                    ? "cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                                    : "",
+                                )}
                                 title={row.bukti}
+                                onClick={() => {
+                                  if (!row.reviu || job) return;
+                                  setExpandedReviu(isRevOpen ? null : row.id);
+                                  setExpandedLog(null);
+                                }}
                               >
                                 {row.bukti || (
                                   <span className="text-default-300 italic">
                                     —
                                   </span>
                                 )}
-                              </span>
+                              </button>
                               {row.reviu &&
-                                (isExpanded ? (
+                                !job &&
+                                (isRevOpen ? (
                                   <ChevronUp
-                                    size={11}
+                                    size={10}
                                     className="text-default-400 shrink-0"
                                   />
                                 ) : (
                                   <ChevronDown
-                                    size={11}
+                                    size={10}
                                     className="text-default-400 shrink-0"
                                   />
                                 ))}
+                              {job && (
+                                <button
+                                  onClick={() =>
+                                    setExpandedLog(isLogOpen ? null : row.id)
+                                  }
+                                  className="shrink-0"
+                                >
+                                  {isLogOpen ? (
+                                    <ChevronUp
+                                      size={10}
+                                      className="text-indigo-400"
+                                    />
+                                  ) : (
+                                    <ChevronDown
+                                      size={10}
+                                      className="text-indigo-400"
+                                    />
+                                  )}
+                                </button>
+                              )}
                             </div>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            {row.verdictColor ? (
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${VERDICT_STYLE[row.verdictColor]}`}
-                              >
-                                {row.verdict}
+                          </TableCell>
+
+                          {/* Hasil AI */}
+                          <TableCell>
+                            {job?.status === "running" ? (
+                              <span className="flex items-center gap-1 text-[10px] text-indigo-500">
+                                <Loader2 size={10} className="animate-spin" />{" "}
+                                Mengecek...
                               </span>
                             ) : (
-                              <span className="text-default-300">—</span>
+                              <VerdictBadge
+                                color={row.verdictColor}
+                                verdict={row.verdict}
+                              />
                             )}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span
-                              className={`flex items-center gap-1 ${statusCfg.color}`}
+                          </TableCell>
+
+                          {/* Status */}
+                          <TableCell>
+                            <Badge
+                              variant={statusCfg.badge}
+                              className="gap-1 text-[10px]"
                             >
-                              {statusCfg.icon} {statusCfg.label}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-default-400 text-[10px] tabular-nums">
+                              {row.status === "checked" && (
+                                <CheckCircle2 size={9} />
+                              )}
+                              {row.status === "unchecked" && <Clock size={9} />}
+                              {row.status === "no_link" && (
+                                <Link2Off size={9} />
+                              )}
+                              {row.status === "revisi" && <RotateCw size={9} />}
+                              {statusCfg.label}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Tgl Cek */}
+                          <TableCell className="text-default-400 text-[10px] tabular-nums">
                             {row.tglCek || "—"}
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
+                          </TableCell>
+
+                          {/* Link */}
+                          <TableCell className="text-center">
                             {row.link ? (
                               <a
                                 href={row.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:text-primary-600 transition-colors inline-flex justify-center"
-                                onClick={(e) => e.stopPropagation()}
+                                className="text-indigo-500 hover:text-indigo-400 inline-flex justify-center"
                               >
                                 <ExternalLink size={12} />
                               </a>
@@ -592,35 +964,202 @@ export default function UnitDetailPage() {
                                 className="text-default-300 inline"
                               />
                             )}
-                          </td>
-                        </tr>
-                        {isExpanded && row.reviu && (
-                          <tr className="bg-default-50">
-                            <td />
-                            <td colSpan={5} className="px-3 pb-3 pt-1">
-                              <div className="rounded-lg bg-default-100 dark:bg-default-50 px-3 py-2 text-xs text-default-600 leading-relaxed">
-                                <p className="font-semibold text-default-500 mb-1 text-[10px] uppercase tracking-wide">
-                                  Catatan Reviu
-                                </p>
-                                {row.reviu.split(" | ").map((line, i) => (
-                                  <p key={i}>{line}</p>
-                                ))}
+                          </TableCell>
+
+                          {/* Aksi */}
+                          <TableCell className="text-center">
+                            {!canCheck ? (
+                              <span className="text-[10px] text-default-300">
+                                Tanpa link
+                              </span>
+                            ) : job?.status === "running" ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-rose-500 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                onClick={() => stopRowCheck(row.id)}
+                              >
+                                <StopCircle size={10} /> Stop
+                              </Button>
+                            ) : (
+                              <Button
+                                variant={
+                                  job?.status === "done"
+                                    ? "outline"
+                                    : "secondary"
+                                }
+                                size="sm"
+                                className={cn(
+                                  "h-6 px-2 text-[10px]",
+                                  job?.status === "error" &&
+                                    "border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400",
+                                )}
+                                onClick={() => startRowCheck(row.id)}
+                              >
+                                <Play size={9} />
+                                {job?.status === "done"
+                                  ? "Cek Ulang"
+                                  : job?.status === "error"
+                                    ? "Coba Lagi"
+                                    : "Cek Visa"}
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* ── Log panel ── */}
+                        {job && isLogOpen && (
+                          <TableRow className="bg-default-50/80 dark:bg-default-100/5 hover:bg-default-50/80 dark:hover:bg-default-100/5">
+                            <TableCell />
+                            <TableCell colSpan={6} className="px-3 pb-3 pt-1">
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <p
+                                    className={cn(
+                                      "text-[10px] font-semibold uppercase tracking-wide",
+                                      job.status === "running"
+                                        ? "text-indigo-500"
+                                        : job.status === "done"
+                                          ? "text-emerald-500"
+                                          : "text-rose-500",
+                                    )}
+                                  >
+                                    {job.status === "running"
+                                      ? "Sedang berjalan..."
+                                      : job.status === "done"
+                                        ? "Selesai ✓"
+                                        : "Terhenti"}
+                                  </p>
+                                  <span className="text-[10px] text-default-400">
+                                    {job.logs.length} log
+                                  </span>
+                                </div>
+                                <RowLogPanel
+                                  logs={job.logs}
+                                  status={job.status}
+                                />
+
+                                {/* Reviu AI langsung di bawah log */}
+                                {job.status === "done" && row.reviu && (
+                                  <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-500/20 bg-indigo-50/60 dark:bg-indigo-950/20 p-3">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="p-1 rounded-md bg-indigo-100 dark:bg-indigo-900/40">
+                                        <Info
+                                          size={12}
+                                          className="text-indigo-500 dark:text-indigo-400"
+                                        />
+                                      </div>
+                                      <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500/80 dark:text-indigo-400/80">
+                                        Catatan Reviu AI
+                                      </p>
+                                    </div>
+
+                                    {/* Content */}
+                                    <ul className="space-y-1.5">
+                                      {row.reviu.split(" | ").map((line, i) => (
+                                        <li
+                                          key={i}
+                                          className="text-[12px] text-default-600 dark:text-default-300 leading-snug flex gap-2"
+                                        >
+                                          <span className="mt-[5px] h-1 w-1 rounded-full bg-indigo-400/70 shrink-0" />
+                                          <span>{line}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {/* ── Reviu catatan ── */}
+                        {!job && isRevOpen && row.reviu && (
+                          <TableRow className="bg-transparent">
+                            <TableCell />
+                            <TableCell colSpan={6} className="px-4 pb-4 pt-0">
+                              <div className="rounded-xl border border-default-200/60 dark:border-default-700/40 bg-white/70 dark:bg-default-900/30 backdrop-blur-sm p-4 space-y-3">
+                                {/* Summary Highlight */}
+                                {(() => {
+                                  const parts = row.reviu.split(" | ");
+                                  const found = parts.find((p) =>
+                                    p.toLowerCase().includes("file ditemukan"),
+                                  );
+
+                                  return (
+                                    found && (
+                                      <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 border border-emerald-200/60 dark:border-emerald-500/20">
+                                        <span className="text-[12px] text-emerald-600 dark:text-emerald-400">
+                                          {found.replace(/^\d+/, "").trim()}
+                                        </span>
+                                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-300">
+                                          {found.match(/\d+/)?.[0]}
+                                        </span>
+                                      </div>
+                                    )
+                                  );
+                                })()}
+
+                                {/* Content */}
+                                <ul className="space-y-2">
+                                  {row.reviu.split(" | ").map((line, i) => {
+                                    const isWarning =
+                                      line.toLowerCase().includes("kurang") ||
+                                      line.toLowerCase().includes("tidak") ||
+                                      line.toLowerCase().includes("belum");
+
+                                    return (
+                                      <li
+                                        key={i}
+                                        className={`flex gap-3 text-[13px] leading-snug ${
+                                          isWarning
+                                            ? "text-amber-600 dark:text-amber-400"
+                                            : "text-default-600 dark:text-default-300"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`mt-[6px] h-1.5 w-1.5 rounded-full shrink-0 ${
+                                            isWarning
+                                              ? "bg-amber-500"
+                                              : "bg-default-400/70"
+                                          }`}
+                                        />
+                                        <span
+                                          className={
+                                            isWarning ? "font-medium" : ""
+                                          }
+                                        >
+                                          {line}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         )}
                       </Fragment>
                     );
                   })
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
 
-          <p className="text-[10px] text-default-400 text-right">
-            Menampilkan {filtered.length} dari {rows.length} data
-          </p>
-        </div>
+            <div className="px-4 py-2.5 border-t border-default-100 flex items-center justify-between">
+              <span className="text-[10px] text-default-400">
+                Menampilkan {filtered.length} dari {rows.length} data
+              </span>
+              {runningCount > 0 && (
+                <span className="text-[10px] text-indigo-500 flex items-center gap-1">
+                  <Loader2 size={9} className="animate-spin" />
+                  {runningCount} pemeriksaan paralel berjalan
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
