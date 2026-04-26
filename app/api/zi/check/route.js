@@ -15,7 +15,12 @@ import { readSheet } from "@/lib/zi/sheets";
 import { ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows, setVisaReviewDropdown } from "@/lib/zi/visa-review";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
 import { listFilesInFolder, listFilesRecursive, getFileContent } from "@/lib/zi/drive";
-import { checkWithAI, deepContentReview, calculateFinalVerdict } from "@/lib/zi/ai-checker";
+import {
+  AiCostError, checkByName,
+  checkWithAINames, checkWithAINamesPanrb,
+  checkWithAIContent, deepContentReview,
+  calculateFinalVerdict,
+} from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
 import { sendEmailReport } from "@/lib/zi/email";
 import { getAnswerWeight, calculateNilaiLkeAi } from "@/lib/zi/scoring";
@@ -63,12 +68,14 @@ function extractDataRows(penilaianRows) {
   return { dataStart, allDataRows, allValid };
 }
 
-function classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows, startId) {
+function classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows) {
   const revisiRows = allValid.filter(({ row }) => {
     const id = String(row[COL.ID - 1]).trim();
     return visaMap[id]?.supervisi === "Revisi";
   });
 
+  // Semua baris yang belum pernah dicek AI — tanpa filter posisi/startId
+  // agar ID yang dicek secara random tidak terlewat
   const uncheckedRows = allValid.filter(({ row }) => {
     const id = String(row[COL.ID - 1]).trim();
     const entry = visaMap[id];
@@ -78,19 +85,10 @@ function classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows, start
     return false;
   });
 
-  let offsetted = uncheckedRows;
-  if (startId) {
-    const startIdx = uncheckedRows.findIndex(
-      ({ row }) => parseInt(String(row[COL.ID - 1]).trim()) >= parseInt(startId),
-    );
-    if (startIdx > 0) offsetted = uncheckedRows.slice(startIdx);
-    else if (startIdx === -1) offsetted = [];
-  }
-
   return {
     revisiRows,
-    uncheckedRows: offsetted,
-    combined: [...revisiRows, ...linkChangedRows, ...fingerprintRows, ...offsetted],
+    uncheckedRows,
+    combined: [...revisiRows, ...linkChangedRows, ...fingerprintRows, ...uncheckedRows],
   };
 }
 
@@ -215,46 +213,66 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
     detail: files.length > 0 ? `${files.length} file ditemukan` : "Folder kosong",
   };
 
-  let fileContents = [];
-  let readableFiles = [];
-  if (existCheck.exists) {
-    readableFiles = files.filter((f) => isReadableMime(f.mimeType)).slice(0, 5);
-    fileContents = await Promise.all(
-      readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType)),
-    );
-  }
-
-  send("log", { level: "info", message: `ID ${id}: analisis AI...` });
-  const aiCheck = await checkWithAI(files, fileContents, standar, id, readableFiles);
-
-  // Deep content review jika skor rendah — cek independen terhadap kriteria PANRB (kolom I Standarisasi)
   const kriteria = kriteriaMap[id] || "";
-  let deepReview = null;
-  if (aiCheck.score < 60 && kriteria && existCheck.exists) {
-    send("log", { level: "info", message: `ID ${id}: skor ${aiCheck.score}% rendah, review ulang dengan kriteria PANRB...` });
 
-    // Baca lebih banyak konten untuk review mendalam
-    let deepContents = fileContents;
-    let deepReadable = readableFiles;
-    const allReadable = files.filter((f) => isReadableMime(f.mimeType));
-    if (readableFiles.length < allReadable.length) {
-      deepReadable = allReadable.slice(0, 10);
-      deepContents = await Promise.all(
-        deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType)),
-      );
+  // ── Layer 0: Regex name matching ──
+  const nameCheck = checkByName(files, standar);
+  let aiCheck;
+  let deepReview = null;
+  let exhausted  = false;
+
+  if (nameCheck.skip) {
+    send("log", { level: "info", message: `ID ${id}: nama file cocok standar — ${nameCheck.result.detail}` });
+    aiCheck = nameCheck.result;
+  } else {
+    // ── Layer 1: AI nama file vs standar (AiCostError bubble ke batch loop) ──
+    send("log", { level: "info", message: `ID ${id}: Layer 1 — Analisis Folder vs Standar dokumen...` });
+    aiCheck = await checkWithAINames(files, standar, id);
+    send("log", { level: "info", message: `ID ${id}: Layer 1 — skor ${aiCheck.score}%` });
+
+    // ── Layer 2: nama file vs PANRB (hanya jika ada kriteria) ──
+    if (aiCheck.score < 65 && !kriteria) {
+      send("log", { level: "warn", message: `ID ${id}: Layer 2 — dilewati (kolom kriteria PANRB kosong di sheet Standarisasi)` });
+    }
+    if (aiCheck.score < 65 && kriteria && existCheck.exists) {
+      send("log", { level: "info", message: `ID ${id}: Layer 2 — nama file vs PANRB...` });
+      const panrbNameCheck = await checkWithAINamesPanrb(files, kriteria, id);
+      if (panrbNameCheck.score > aiCheck.score) aiCheck = panrbNameCheck;
+      send("log", { level: "info", message: `ID ${id}: Layer 2 — skor ${aiCheck.score}%` });
     }
 
-    deepReview = await deepContentReview(files, deepContents, kriteria, id, deepReadable);
+    // ── Layer 3a: isi dokumen vs standar (tidak butuh kriteria) ──
+    if (aiCheck.score < 40 && existCheck.exists) {
+      send("log", { level: "info", message: `ID ${id}: Layer 3a — membaca isi dokumen vs standar...` });
+      const readableFiles = files.filter((f) => isReadableMime(f.mimeType));
+      const fileContents  = await Promise.all(
+        readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
+      );
+      const contentCheck = await checkWithAIContent(files, fileContents, standar, id, readableFiles);
+      if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
+      send("log", { level: "info", message: `ID ${id}: Layer 3a — skor ${aiCheck.score}%` });
 
-    if (deepReview && deepReview.revisedScore > aiCheck.score) {
-      send("log", { level: "info", message: `ID ${id}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}% berdasarkan konten & kriteria PANRB` });
-      aiCheck.score = deepReview.revisedScore;
-      aiCheck.verdict = deepReview.revisedVerdict || aiCheck.verdict;
-      aiCheck.basedOn = "konten_kriteria_panrb";
+      // ── Layer 3b: isi dokumen vs PANRB (hanya jika ada kriteria) ──
+      if (aiCheck.score < 40 && kriteria) {
+        send("log", { level: "info", message: `ID ${id}: Layer 3b — membaca isi dokumen vs PANRB...` });
+        const deepReadable = readableFiles;
+        const deepContents = await Promise.all(
+          deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+        );
+        deepReview = await deepContentReview(files, deepContents, kriteria, id, deepReadable);
+        if (deepReview && deepReview.revisedScore > aiCheck.score) {
+          send("log", { level: "info", message: `ID ${id}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}%` });
+          aiCheck.score   = deepReview.revisedScore;
+          aiCheck.verdict = deepReview.revisedVerdict || aiCheck.verdict;
+        }
+      }
+
+      // Exhausted: semua layer dijalani, skor masih rendah
+      if (aiCheck.score < 40) exhausted = true;
     }
   }
 
-  const verdict = calculateFinalVerdict(existCheck, aiCheck);
+  const verdict = calculateFinalVerdict(existCheck, aiCheck, exhausted);
 
   send("log", {
     level: verdict.color === "HIJAU" ? "success" : verdict.color === "KUNING" ? "warn" : "error",
@@ -263,8 +281,8 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
 
   const reviuLines = [
     existCheck.detail,
-    aiCheck.dokumenAda?.length > 0 ? `Ada: ${aiCheck.dokumenAda.slice(0, 3).join(", ")}` : "",
-    aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).join(", ")}` : "",
+    aiCheck.dokumenAda?.length    > 0 ? `Ada: ${aiCheck.dokumenAda.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
+    aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
     aiCheck.detail,
   ].filter(Boolean);
 
@@ -334,7 +352,6 @@ export async function POST(req) {
         const standarId = process.env.ZI_STANDARISASI_SHEET_ID;
         const standarName = process.env.ZI_STANDARISASI_SHEET_NAME || "Standarisasi";
         const dataLimit = parseInt(limit) || 0;
-        const startId = String(startFromId ?? "").trim();
 
         if (!standarId) throw new Error("ZI_STANDARISASI_SHEET_ID belum dikonfigurasi di .env");
 
@@ -370,7 +387,7 @@ export async function POST(req) {
           ? await detectFingerprintChanges(allValid, visaMap, auth, fileListCache, send)
           : [];
 
-        const { revisiRows, combined } = classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows, startId);
+        const { revisiRows, combined } = classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows);
 
         if (revisiRows.length > 0)
           send("log", { level: "info", message: `${revisiRows.length} baris status "Revisi" akan dicek ulang` });
@@ -467,7 +484,18 @@ export async function POST(req) {
             message: `${tag}ID ${id} \u2014 ${bukti.substring(0, 50)}${bukti.length > 50 ? "\u2026" : ""}`,
           });
 
-          const processed = await processItem(item, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek });
+          let processed;
+          try {
+            processed = await processItem(item, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek });
+          } catch (err) {
+            if (err instanceof AiCostError) {
+              send("log", { level: "error", message: `Kredit AI habis: ${err.message}` });
+              send("error", { message: `Kredit habis. Proses dihentikan pada ID ${id}.` });
+              await flushBatch(); // simpan hasil yang sudah selesai sebelumnya
+              break;
+            }
+            throw err;
+          }
           if (!processed) continue;
 
           results.push(processed.result);

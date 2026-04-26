@@ -302,10 +302,10 @@ export default function LkeCheckerPage() {
                             )}
                           </td>
                           <td className="py-2.5 px-3">
-                            <div className="font-medium truncate max-w-[180px]">
+                            <div className="font-medium truncate max-w-full">
                               {sub.eselon2}
                             </div>
-                            <div className="text-xs text-default-400 truncate max-w-[180px]">
+                            <div className="text-xs text-default-400 truncate max-w-full">
                               {sub.eselon1}
                             </div>
                           </td>

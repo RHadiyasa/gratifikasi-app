@@ -77,9 +77,13 @@ export async function POST(req) {
     }
 
     const dataStart  = detectDataStart(mainRows);
+    const seenIds = new Set();
     const allDataRows = mainRows.slice(dataStart).filter((row) => {
       const id = String(row[COL.ID - 1] || "").trim();
-      return /^\d+$/.test(id) && parseInt(id) <= 9999;
+      if (!/^\d+$/.test(id) || parseInt(id) > 9999) return false;
+      if (seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
     });
 
     // ── Baca Visa review ──
@@ -130,7 +134,8 @@ export async function POST(req) {
       return {
         id,
         bukti,
-        link: hasLink ? link : null,
+        link:    hasLink ? link : null,
+        rawLink: link || null,
         status,
         verdict:     isChecked ? vr.result    : null,
         verdictColor,

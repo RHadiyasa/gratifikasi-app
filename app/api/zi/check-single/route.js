@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import { connect } from "@/config/dbconfig";
 import LkeSubmission from "@/modules/models/LkeSubmission";
 
-import { COL, STANDAR, KOMPONEN_LABEL, ID_DETAIL_MAP } from "@/lib/zi/constants";
+import { COL, STANDAR, KOMPONEN_LABEL, ID_DETAIL_MAP, AI_PATTERN } from "@/lib/zi/constants";
 import { getGoogleAuth } from "@/lib/zi/google-auth";
 import {
   extractSheetId, extractFolderId, computeFingerprint, detectDataStart,
@@ -14,8 +14,30 @@ import {
   ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows,
 } from "@/lib/zi/visa-review";
 import { listFilesRecursive, getFileContent } from "@/lib/zi/drive";
-import { checkWithAI, deepContentReview, calculateFinalVerdict } from "@/lib/zi/ai-checker";
-import { getAnswerWeight } from "@/lib/zi/scoring";
+import {
+  AiCostError, checkByName,
+  checkWithAINames, checkWithAINamesPanrb,
+  checkWithAIContent, deepContentReview,
+  calculateFinalVerdict,
+} from "@/lib/zi/ai-checker";
+import { getAnswerWeight, calculateNilaiLkeAi } from "@/lib/zi/scoring";
+import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
+
+// Cache in-memory untuk mengurangi Google Sheets API reads per menit.
+// Standarisasi: jarang berubah → TTL 5 menit.
+// Sheet LKE (Jawaban): berubah perlahan → TTL 30 detik.
+const _sheetCache = new Map();
+const STANDAR_TTL = 5 * 60 * 1000;
+const JAWABAN_TTL = 30 * 1000;
+
+async function readSheetCached(auth, sheetId, sheetName, ttl) {
+  const key = `${sheetId}:${sheetName}`;
+  const hit = _sheetCache.get(key);
+  if (hit && Date.now() - hit.ts < ttl) return hit.data;
+  const data = await readSheet(auth, sheetId, sheetName);
+  _sheetCache.set(key, { data, ts: Date.now() });
+  return data;
+}
 
 function createSSESender(controller) {
   const encoder = new TextEncoder();
@@ -96,7 +118,7 @@ export async function POST(req) {
 
         // ── Baca sheet LKE — cari baris target ──
         send("log", { level: "info", message: `Membaca sheet "${penilaianName}"...` });
-        const penilaianRows = await readSheet(auth, penilaianId, penilaianName);
+        const penilaianRows = await readSheetCached(auth, penilaianId, penilaianName, JAWABAN_TTL);
         const dataStart     = detectDataStart(penilaianRows);
 
         const targetEntry = penilaianRows
@@ -118,7 +140,7 @@ export async function POST(req) {
 
         // ── Baca standar ──
         send("log", { level: "info", message: "Membaca standar dokumen..." });
-        const standarRows         = await readSheet(auth, standarId, standarName);
+        const standarRows         = await readSheetCached(auth, standarId, standarName, STANDAR_TTL);
         const { standarMap, kriteriaMap } = buildStandarMap(standarRows);
         const standar             = standarMap[String(rowId)] || "";
         const kriteria            = kriteriaMap[String(rowId)] || "";
@@ -162,42 +184,100 @@ export async function POST(req) {
           detail:    files.length > 0 ? `${files.length} file ditemukan` : "Folder kosong",
         };
 
-        // ── Baca konten file ──
-        let fileContents = [];
-        let readableFiles = [];
-        if (existCheck.exists) {
-          readableFiles = files.filter((f) => isReadableMime(f.mimeType)).slice(0, 5);
-          fileContents  = await Promise.all(
-            readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType)),
-          );
-        }
-
-        // ── Analisis AI ──
-        send("log", { level: "info", message: `ID ${rowId}: analisis AI...` });
-        const aiCheck = await checkWithAI(files, fileContents, standar, rowId, readableFiles);
-
-        // Deep content review jika skor rendah
+        // ── Layer 0: Regex name matching ──
+        const nameCheck = checkByName(files, standar);
+        let aiCheck;
         let deepReview = null;
-        if (aiCheck.score < 60 && kriteria && existCheck.exists) {
-          send("log", { level: "info", message: `ID ${rowId}: skor ${aiCheck.score}% rendah, review ulang dengan kriteria PANRB...` });
-          const allReadable = files.filter((f) => isReadableMime(f.mimeType));
-          let deepReadable = readableFiles;
-          let deepContents = fileContents;
-          if (readableFiles.length < allReadable.length) {
-            deepReadable = allReadable.slice(0, 10);
-            deepContents = await Promise.all(
-              deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType)),
-            );
+        let exhausted  = false;
+
+        if (nameCheck.skip) {
+          send("log", { level: "info", message: `ID ${rowId}: nama file cocok standar — ${nameCheck.result.detail}` });
+          aiCheck = nameCheck.result;
+        } else {
+          // ── Layer 1: AI nama file vs standar ──
+          send("log", { level: "info", message: `ID ${rowId}: Layer 1 — Check folder context vs standar...` });
+          try {
+            aiCheck = await checkWithAINames(files, standar, rowId);
+          } catch (err) {
+            if (err instanceof AiCostError) {
+              send("error", { message: `Kredit AI habis: ${err.message}.` });
+              controller.close();
+              return;
+            }
+            throw err;
           }
-          deepReview = await deepContentReview(files, deepContents, kriteria, rowId, deepReadable);
-          if (deepReview && deepReview.revisedScore > aiCheck.score) {
-            send("log", { level: "info", message: `ID ${rowId}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}%` });
-            aiCheck.score   = deepReview.revisedScore;
-            aiCheck.verdict = deepReview.revisedVerdict || aiCheck.verdict;
+          send("log", { level: "info", message: `ID ${rowId}: Layer 1 — skor ${aiCheck.score}%` });
+
+          // ── Layer 2: nama file vs PANRB (hanya jika ada kriteria) ──
+          if (aiCheck.score < 65 && !kriteria) {
+            send("log", { level: "warn", message: `ID ${rowId}: Layer 2 — dilewati (kolom kriteria PANRB kosong di sheet Standarisasi)` });
+          }
+          if (aiCheck.score < 65 && kriteria && existCheck.exists) {
+            send("log", { level: "info", message: `ID ${rowId}: Layer 2 — nama file vs PANRB...` });
+            try {
+              const panrbNameCheck = await checkWithAINamesPanrb(files, kriteria, rowId);
+              if (panrbNameCheck.score > aiCheck.score) aiCheck = panrbNameCheck;
+            } catch (err) {
+              if (err instanceof AiCostError) {
+                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                controller.close();
+                return;
+              }
+              throw err;
+            }
+            send("log", { level: "info", message: `ID ${rowId}: Layer 2 — skor ${aiCheck.score}%` });
+          }
+
+          // ── Layer 3a: isi dokumen vs standar (tidak butuh kriteria) ──
+          if (aiCheck.score < 40 && existCheck.exists) {
+            send("log", { level: "info", message: `ID ${rowId}: Layer 3a — membaca isi dokumen vs standar...` });
+            const readableFiles = files.filter((f) => isReadableMime(f.mimeType));
+            const fileContents  = await Promise.all(
+              readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
+            );
+            try {
+              const contentCheck = await checkWithAIContent(files, fileContents, standar, rowId, readableFiles);
+              if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
+            } catch (err) {
+              if (err instanceof AiCostError) {
+                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                controller.close();
+                return;
+              }
+              throw err;
+            }
+            send("log", { level: "info", message: `ID ${rowId}: Layer 3a — skor ${aiCheck.score}%` });
+
+            // ── Layer 3b: isi dokumen vs PANRB (hanya jika ada kriteria) ──
+            if (aiCheck.score < 40 && kriteria) {
+              send("log", { level: "info", message: `ID ${rowId}: Layer 3b — membaca isi dokumen vs PANRB...` });
+              const deepReadable = readableFiles;
+              const deepContents = await Promise.all(
+                deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+              );
+              try {
+                deepReview = await deepContentReview(files, deepContents, kriteria, rowId, deepReadable);
+              } catch (err) {
+                if (err instanceof AiCostError) {
+                  send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                  controller.close();
+                  return;
+                }
+                throw err;
+              }
+              if (deepReview && deepReview.revisedScore > aiCheck.score) {
+                send("log", { level: "info", message: `ID ${rowId}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}%` });
+                aiCheck.score   = deepReview.revisedScore;
+                aiCheck.verdict = deepReview.revisedVerdict || aiCheck.verdict;
+              }
+            }
+
+            // Exhausted: semua layer dijalani, skor masih rendah
+            if (aiCheck.score < 40) exhausted = true;
           }
         }
 
-        const verdict = calculateFinalVerdict(existCheck, aiCheck);
+        const verdict = calculateFinalVerdict(existCheck, aiCheck, exhausted);
         send("log", {
           level:   verdict.color === "HIJAU" ? "success" : verdict.color === "KUNING" ? "warn" : "error",
           message: `ID ${rowId}: ${verdict.status} (skor: ${aiCheck.score}%)`,
@@ -205,8 +285,8 @@ export async function POST(req) {
 
         const reviuLines = [
           existCheck.detail,
-          aiCheck.dokumenAda?.length    > 0 ? `Ada: ${aiCheck.dokumenAda.slice(0, 3).join(", ")}`     : "",
-          aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).join(", ")}` : "",
+          aiCheck.dokumenAda?.length    > 0 ? `Ada: ${aiCheck.dokumenAda.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
+          aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
           aiCheck.detail,
         ].filter(Boolean);
         if (deepReview) {
@@ -229,25 +309,44 @@ export async function POST(req) {
           send("log", { level: "warn", message: `Gagal simpan ke sheet: ${e.message}` });
         }
 
-        // ── Update MongoDB stats ──
+        // ── Update Ringkasan AI setelah setiap single check ──
         try {
-          const submission = await LkeSubmission.findById(submissionId).lean();
-          if (submission && !existingEntry) {
-            // Hanya tambah checked_count jika ini baris baru (belum pernah dicek)
-            const newChecked = Math.min(submission.total_data || 0, (submission.checked_count || 0) + 1);
-            const newPct     = submission.total_data > 0
-              ? Math.round((newChecked / submission.total_data) * 100)
-              : 0;
-            await LkeSubmission.findByIdAndUpdate(submissionId, {
-              checked_count:    newChecked,
-              unchecked_count:  submission.total_data - newChecked,
-              progress_percent: newPct,
-              status:           newPct >= 100 ? "Selesai" : "Sedang Dicek",
-              last_checked_at:  new Date(),
-            });
-          }
+          // Tambahkan/update entry di in-memory visaMap dengan verdict baru
+          visaMap[String(rowId)] = {
+            ...(existingEntry || {}),
+            result: verdict.status,
+            rowNum: existingEntry?.rowNum ?? (Object.keys(visaMap).length + 2),
+          };
+          // Bangun data scoring dari visaMap yang sudah diperbarui
+          const resultsForScoring = Object.entries(visaMap)
+            .filter(([, e]) => AI_PATTERN.test(e.result))
+            .map(([id, e]) => ({
+              id,
+              verdict: {
+                color: /^✅/u.test(e.result) ? "HIJAU"
+                       : /^⚠️/u.test(e.result) ? "KUNING" : "MERAH",
+              },
+            }));
+          const submission = await LkeSubmission.findById(submissionId).select("target total_data checked_count").lean();
+          const target = submission?.target || "WBK";
+          const nilaiLkeAi = calculateNilaiLkeAi(resultsForScoring, target);
+          await writeRingkasanAi(sheets, penilaianId, nilaiLkeAi, target);
+          send("log", { level: "success", message: "Ringkasan AI diperbarui ✓" });
+
+          // Update progress + nilai di MongoDB
+          const newChecked = resultsForScoring.length;
+          const totalData  = submission?.total_data || 0;
+          const newPct     = totalData > 0 ? Math.round((newChecked / totalData) * 100) : 0;
+          await LkeSubmission.findByIdAndUpdate(submissionId, {
+            nilai_lke_ai:     nilaiLkeAi,
+            checked_count:    newChecked,
+            unchecked_count:  Math.max(0, totalData - newChecked),
+            progress_percent: newPct,
+            status:           newPct >= 100 ? "Selesai" : "Sedang Dicek",
+            last_checked_at:  new Date(),
+          });
         } catch (e) {
-          send("log", { level: "warn", message: `Gagal update monitoring: ${e.message}` });
+          send("log", { level: "warn", message: `Gagal update Ringkasan AI: ${e.message}` });
         }
 
         // ── Done ──
