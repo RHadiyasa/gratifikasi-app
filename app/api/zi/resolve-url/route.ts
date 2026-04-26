@@ -68,9 +68,8 @@ export async function POST(req: Request) {
     // ── Temukan baris di sheet berdasarkan ID ──
     const spreadsheetId = extractSheetId(sheetUrl);
     const tabName       = sheetName?.trim() || "Jawaban";
-    const auth          = getGoogleAuth();
-    const client        = await auth.getClient();
-    const sheets        = google.sheets({ version: "v4", auth: client });
+    const auth   = getGoogleAuth();
+    const sheets = google.sheets({ version: "v4", auth } as any);
 
     const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
