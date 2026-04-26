@@ -20,6 +20,9 @@ import {
   Play,
   Info,
   StopCircle,
+  DatabaseBackup,
+  SheetIcon,
+  Sheet,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -56,6 +59,7 @@ interface DetailRow {
   id: string;
   bukti: string;
   link: string | null;
+  rawLink: string | null;
   status: RowStatus;
   verdict: string | null;
   verdictColor: VerdictColor;
@@ -222,6 +226,9 @@ export default function UnitDetailPage() {
   const [loading, setLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
 
+  const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
+  const [bulkResolving, setBulkResolving] = useState(false);
+
   const [nilaiOpen, setNilaiOpen] = useState(false);
   const [sheetName, setSheetName] = useState("Jawaban");
   const [activeTab, setActiveTab] = useState<TabKey>("semua");
@@ -232,9 +239,14 @@ export default function UnitDetailPage() {
   const [expandedReviu, setExpandedReviu] = useState<string | null>(null);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
+  const [syncing, setSyncing] = useState(false);
+
   // Per-row check jobs
   const [rowJobs, setRowJobs] = useState<Record<string, RowJob>>({});
-  const abortRefs = useRef<Record<string, AbortController>>({});
+  const abortRefs      = useRef<Record<string, AbortController>>({});
+  const checkQueueRef  = useRef<string[]>([]);
+  const activeChecksRef = useRef(0);
+  const MAX_CONCURRENT = 3;
 
   const runningCount = Object.values(rowJobs).filter(
     (j) => j.status === "running",
@@ -272,6 +284,18 @@ export default function UnitDetailPage() {
         setSummary(data.summary);
         setExpandedReviu(null);
         setExpandedLog(null);
+
+        // Patch total_data ke MongoDB jika berbeda dari yang tersimpan
+        if (data.summary.total > 0 && data.summary.total !== unit?.total_data) {
+          fetch(`/api/zi/submissions/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ total_data: data.summary.total }),
+          })
+            .then((r) => r.json())
+            .then((d) => { if (d.submission) setUnit(d.submission); })
+            .catch(() => {});
+        }
       } catch (e: any) {
         setDetailError(e.message);
       } finally {
@@ -284,6 +308,75 @@ export default function UnitDetailPage() {
   useEffect(() => {
     if (unit) loadDetail();
   }, [unit]);
+
+  // ── Refresh ringan: reload unit dari MongoDB + rows dari sheet (2 reads) ──
+  async function handleRefresh() {
+    try {
+      const r = await fetch(`/api/zi/submissions/${id}`);
+      const d = await r.json();
+      if (d.submission) setUnit(d.submission);
+    } catch { /* lanjut meski gagal */ }
+    await loadDetail();
+  }
+
+  // ── Sync penuh: baca Google Sheets → update MongoDB → reload rows ──
+  async function handleSync() {
+    if (!unit?.link) return;
+    setSyncing(true);
+    setDetailError(null);
+    try {
+      const syncRes = await fetch(`/api/zi/submissions/${id}/sync`, { method: "POST" });
+      const syncData = await syncRes.json();
+      if (syncData.submission) setUnit(syncData.submission);
+      await loadDetail();
+    } catch (e: any) {
+      setDetailError(e.message);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // ── Resolve short URL ──
+  async function resolveUrl(rowId: string, shortUrl: string) {
+    if (!unit?.link) return;
+    setResolvingIds((prev) => new Set(prev).add(rowId));
+    try {
+      const res = await fetch("/api/zi/resolve-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shortUrl,
+          sheetUrl: unit.link,
+          sheetName,
+          rowId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal resolve URL");
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? { ...r, link: data.resolvedUrl, rawLink: data.resolvedUrl, status: "unchecked" as RowStatus }
+            : r,
+        ),
+      );
+    } catch (e: any) {
+      alert(`Gagal resolve URL: ${e.message}`);
+    } finally {
+      setResolvingIds((prev) => { const s = new Set(prev); s.delete(rowId); return s; });
+    }
+  }
+
+  // ── Bulk Resolve URL ──
+  async function handleBulkResolve() {
+    const targets = rows.filter((r) => r.rawLink && !r.link);
+    if (targets.length <= 10) return;
+    setBulkResolving(true);
+    for (const row of targets) {
+      await resolveUrl(row.id, row.rawLink!);
+    }
+    setBulkResolving(false);
+  }
 
   // ── Export ──
   async function handleExport() {
@@ -319,6 +412,15 @@ export default function UnitDetailPage() {
   // ── Per-row Visa check ──
   async function startRowCheck(rowId: string) {
     if (!unit?.link) return;
+
+    // Batasi maksimal MAX_CONCURRENT parallel check untuk jaga quota Google Sheets API
+    if (activeChecksRef.current >= MAX_CONCURRENT) {
+      if (!checkQueueRef.current.includes(rowId)) {
+        checkQueueRef.current.push(rowId);
+      }
+      return;
+    }
+    activeChecksRef.current++;
 
     // Abort previous job for this row if any
     abortRefs.current[rowId]?.abort();
@@ -425,6 +527,11 @@ export default function UnitDetailPage() {
           },
         }));
       }
+    } finally {
+      // Bebaskan slot dan proses antrian berikutnya
+      activeChecksRef.current = Math.max(0, activeChecksRef.current - 1);
+      const nextId = checkQueueRef.current.shift();
+      if (nextId) startRowCheck(nextId);
     }
   }
 
@@ -434,6 +541,10 @@ export default function UnitDetailPage() {
       ...prev,
       [rowId]: { ...prev[rowId], status: "error" },
     }));
+    // Bebaskan slot saat check di-stop manual
+    activeChecksRef.current = Math.max(0, activeChecksRef.current - 1);
+    const nextId = checkQueueRef.current.shift();
+    if (nextId) startRowCheck(nextId);
   }
 
   // ── Filter ──
@@ -554,12 +665,24 @@ export default function UnitDetailPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
-            size="icon-sm"
+            size="sm"
             isLoading={loading}
-            onClick={() => loadDetail()}
+            onClick={handleRefresh}
             title="Refresh dari sheet"
           >
-            {!loading && <RefreshCw size={13} />}
+            {!loading && <Sheet size={13} />}
+            Sync ke Googel Sheet
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            isLoading={syncing}
+            disabled={syncing || loading}
+            onClick={handleSync}
+            title="Sinkron nilai & progress ke database"
+          >
+            {!syncing && <DatabaseBackup size={13} />}
+            Sync ke Database
           </Button>
           <Button
             variant="success"
@@ -580,19 +703,25 @@ export default function UnitDetailPage() {
           <div className="flex justify-between text-xs text-default-500">
             <span>Progress Pengecekan</span>
             <span className="font-mono tabular-nums font-medium">
-              {unit.checked_count} / {unit.total_data || "?"}
+              {unit.checked_count} / {summary?.total ?? unit.total_data ?? "?"}
             </span>
           </div>
-          <Progress
-            value={unit.progress_percent}
-            indicatorClassName={
-              unit.progress_percent >= 100
-                ? "bg-emerald-500"
-                : unit.progress_percent >= 60
-                  ? "bg-amber-500"
-                  : "bg-indigo-500"
-            }
-          />
+          {(() => {
+            const total = summary?.total || unit.total_data || 0;
+            const pct   = total > 0 ? Math.round((unit.checked_count / total) * 100) : unit.progress_percent;
+            return (
+              <Progress
+                value={pct}
+                indicatorClassName={
+                  pct >= 100
+                    ? "bg-emerald-500"
+                    : pct >= 60
+                      ? "bg-amber-500"
+                      : "bg-indigo-500"
+                }
+              />
+            );
+          })()}
         </CardContent>
       </Card>
 
@@ -790,6 +919,20 @@ export default function UnitDetailPage() {
                   >
                     Reload
                   </Button>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    isLoading={bulkResolving}
+                    disabled={bulkResolving || rows.filter((r) => r.rawLink && !r.link).length <= 10}
+                    onClick={handleBulkResolve}
+                    title={
+                      rows.filter((r) => r.rawLink && !r.link).length <= 10
+                        ? "Bulk resolve hanya tersedia jika short URL > 10 item"
+                        : `Resolve ${rows.filter((r) => r.rawLink && !r.link).length} short URL`
+                    }
+                  >
+                    {!bulkResolving && "Resolve URL"}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -821,7 +964,7 @@ export default function UnitDetailPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((row) => {
+                  filtered.map((row, idx) => {
                     const statusCfg = STATUS_CONFIG[row.status];
                     const job = rowJobs[row.id];
                     const isLogOpen = expandedLog === row.id;
@@ -829,7 +972,7 @@ export default function UnitDetailPage() {
                     const canCheck = row.status !== "no_link";
 
                     return (
-                      <Fragment key={row.id}>
+                      <Fragment key={`${row.id}-${idx}`}>
                         {/* ── Main row ── */}
                         <TableRow
                           className={cn(
@@ -958,6 +1101,16 @@ export default function UnitDetailPage() {
                               >
                                 <ExternalLink size={12} />
                               </a>
+                            ) : row.rawLink ? (
+                              <Button
+                                size="sm"
+                                variant="warning"
+                                isLoading={resolvingIds.has(row.id)}
+                                onClick={() => resolveUrl(row.id, row.rawLink!)}
+                                className="h-5 min-w-0 px-2 text-[10px]"
+                              >
+                                {!resolvingIds.has(row.id) && "Resolve"}
+                              </Button>
                             ) : (
                               <Link2Off
                                 size={12}
@@ -1154,7 +1307,12 @@ export default function UnitDetailPage() {
               {runningCount > 0 && (
                 <span className="text-[10px] text-indigo-500 flex items-center gap-1">
                   <Loader2 size={9} className="animate-spin" />
-                  {runningCount} pemeriksaan paralel berjalan
+                  {runningCount}/{MAX_CONCURRENT} berjalan
+                  {checkQueueRef.current.length > 0 && (
+                    <span className="text-default-400">
+                      · {checkQueueRef.current.length} menunggu
+                    </span>
+                  )}
                 </span>
               )}
             </div>

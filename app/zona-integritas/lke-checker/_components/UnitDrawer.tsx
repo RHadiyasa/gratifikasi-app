@@ -1,13 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@heroui/button'
-import { X, ExternalLink, RefreshCw, Clock, User, Bot } from 'lucide-react'
+import { Input } from '@heroui/input'
+import { X, ExternalLink, RefreshCw, Clock, User, Bot, Pencil, Check, X as XIcon } from 'lucide-react'
 import type { LkeSubmission } from '@/types/zi'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TargetBadge } from '@/components/TargetBadge'
 import { ZiProgressBar } from '@/components/ZiProgressBar'
 import { TARGET_THRESHOLD } from '@/types/zi'
+import { useAuthStore } from '@/store/authStore'
+import { useZiStore } from '@/store/ziStore'
 
 interface Props {
   unit:       LkeSubmission | null
@@ -135,12 +139,115 @@ function KomponenTable({ ai }: { ai: LkeSubmission['nilai_lke_ai'] }) {
   )
 }
 
+// ── Inline editable field ────────────────────────────────────────────────────
+
+function InlineEdit({
+  value,
+  onSave,
+  label,
+  saving,
+}: {
+  value: string
+  onSave: (v: string) => Promise<void>
+  label: string
+  saving: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const [busy, setBusy] = useState(false)
+
+  function startEdit() {
+    setDraft(value)
+    setEditing(true)
+  }
+
+  function cancel() {
+    setEditing(false)
+    setDraft(value)
+  }
+
+  async function save() {
+    if (!draft.trim() || draft.trim() === value) { cancel(); return }
+    setBusy(true)
+    try {
+      await onSave(draft.trim())
+      setEditing(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5 w-full">
+        <Input
+          size="sm"
+          value={draft}
+          onValueChange={setDraft}
+          placeholder={label}
+          autoFocus
+          classNames={{ input: 'text-sm', inputWrapper: 'h-7 min-h-7' }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') save()
+            if (e.key === 'Escape') cancel()
+          }}
+        />
+        <button
+          onClick={save}
+          disabled={busy || !draft.trim()}
+          className="shrink-0 p-1 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 disabled:opacity-40 transition-colors"
+          title="Simpan"
+        >
+          <Check size={14} />
+        </button>
+        <button
+          onClick={cancel}
+          disabled={busy}
+          className="shrink-0 p-1 rounded-md hover:bg-default-100 text-default-400 transition-colors"
+          title="Batal"
+        >
+          <XIcon size={14} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 group min-w-0">
+      <span className="truncate">{value}</span>
+      <button
+        onClick={startEdit}
+        className="shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-default-100 text-default-400 hover:text-default-600 transition-all"
+        title={`Edit ${label}`}
+      >
+        <Pencil size={11} />
+      </button>
+    </div>
+  )
+}
+
+// ── Main Drawer ──────────────────────────────────────────────────────────────
+
 export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props) {
+  const { role } = useAuthStore()
+  const { updateSubmission } = useZiStore()
+  const [savingField, setSavingField] = useState<string | null>(null)
+
   if (!unit) return null
 
   const isSyncing = syncingIds.includes(unit._id)
   const threshold = TARGET_THRESHOLD[unit.target]
   const hasAi     = unit.nilai_lke_ai?.nilai_akhir != null
+  const isDev     = role === 'developer'
+
+  async function handleSave(field: 'eselon2' | 'pic_unit', value: string) {
+    setSavingField(field)
+    try {
+      await updateSubmission(unit!._id, { [field]: value })
+    } finally {
+      setSavingField(null)
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -164,8 +271,15 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
         >
           {/* ── Header ── */}
           <div className="shrink-0 bg-background/95 backdrop-blur border-b border-default-200 px-5 py-4 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="font-bold text-base leading-tight">{unit.eselon2}</h2>
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-base leading-tight">
+                <InlineEdit
+                  value={unit.eselon2}
+                  onSave={(v) => handleSave('eselon2', v)}
+                  label="Nama Unit"
+                  saving={savingField === 'eselon2'}
+                />
+              </div>
               <p className="text-xs text-default-400 mt-0.5 truncate">{unit.eselon1}</p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <TargetBadge target={unit.target} tercapai={hasAi ? (unit.nilai_lke_ai!.nilai_akhir! >= threshold) : undefined} showStatus={hasAi} />
@@ -233,13 +347,21 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
               <KomponenTable ai={unit.nilai_lke_ai} />
 
               {/* ── Meta ── */}
-              <div className="grid grid-cols-2 gap-2 text-xs text-default-500">
-                {unit.pic_unit && (
-                  <div className="flex items-center gap-1.5">
-                    <User size={11} className="shrink-0" />
-                    <span className="truncate">{unit.pic_unit}</span>
-                  </div>
-                )}
+              <div className="space-y-1.5 text-xs text-default-500">
+                {/* PIC — editable only for developer */}
+                <div className="flex items-center gap-1.5">
+                  <User size={11} className="shrink-0 text-default-400" />
+                  {isDev ? (
+                    <InlineEdit
+                      value={unit.pic_unit || ''}
+                      onSave={(v) => handleSave('pic_unit', v)}
+                      label="PIC Unit"
+                      saving={savingField === 'pic_unit'}
+                    />
+                  ) : (
+                    <span className="truncate">{unit.pic_unit || '—'}</span>
+                  )}
+                </div>
                 <a
                   href={unit.link}
                   target="_blank"
