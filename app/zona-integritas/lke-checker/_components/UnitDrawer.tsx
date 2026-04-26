@@ -185,7 +185,6 @@ function InlineEdit({
           value={draft}
           onValueChange={setDraft}
           placeholder={label}
-          autoFocus
           classNames={{ input: 'text-sm', inputWrapper: 'h-7 min-h-7' }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') save()
