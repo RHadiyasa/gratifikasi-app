@@ -1210,7 +1210,7 @@ export default function UnitDetailPage() {
 
                                     {/* Content */}
                                     <ul className="space-y-1.5">
-                                      {row.reviu.split(" | ").map((line, i) => (
+                                      {row.reviu.split("\n").map((line, i) => (
                                         <li
                                           key={i}
                                           className="text-[12px] text-default-600 dark:text-default-300 leading-snug flex gap-2"
@@ -1235,7 +1235,7 @@ export default function UnitDetailPage() {
                               <div className="rounded-xl border border-default-200/60 dark:border-default-700/40 bg-white/70 dark:bg-default-900/30 backdrop-blur-sm p-4 space-y-3">
                                 {/* Summary Highlight */}
                                 {(() => {
-                                  const parts = row.reviu.split(" | ");
+                                  const parts = row.reviu.split("\n");
                                   const found = parts.find((p) =>
                                     p.toLowerCase().includes("file ditemukan"),
                                   );
@@ -1256,7 +1256,7 @@ export default function UnitDetailPage() {
 
                                 {/* Content */}
                                 <ul className="space-y-2">
-                                  {row.reviu.split(" | ").map((line, i) => {
+                                  {row.reviu.split("\n").map((line, i) => {
                                     const isWarning =
                                       line.toLowerCase().includes("kurang") ||
                                       line.toLowerCase().includes("tidak") ||

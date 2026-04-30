@@ -19,6 +19,7 @@ import {
   AiCostError, checkByName,
   checkWithAINames, checkWithAINamesPanrb,
   checkWithAIContent, deepContentReview,
+  confidenceRouting, shouldSampleForQC,
   calculateFinalVerdict,
 } from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
@@ -144,7 +145,7 @@ function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines
   return [
     id, bukti, linkDrive, fingerprint,
     verdict.status,
-    reviuLines.join(" | "),
+    reviuLines.join("\n"),
     "Sudah Dicek AI",
     tglCek,
     detail ? KOMPONEN_LABEL[detail.komponen] : "",
@@ -214,52 +215,63 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   };
 
   const kriteria = kriteriaMap[id] || "";
+  const detail = ID_DETAIL_MAP[parseInt(id)];
+  const bobot = detail?.bobot ?? 0;
 
-  // ── Layer 0: Regex name matching ──
+  // ── Layer 0: Smart Heuristic ──
   const nameCheck = checkByName(files, standar);
+  const heuristic = {
+    heuristicScore: nameCheck.heuristicScore || 0,
+    ambiguity: nameCheck.ambiguity || false,
+    confidence: nameCheck.confidence || "low",
+  };
   let aiCheck;
   let deepReview = null;
   let exhausted  = false;
+  let readableFiles = null;
+  let deepFileContents = null;
 
   if (nameCheck.skip) {
-    send("log", { level: "info", message: `ID ${id}: nama file cocok standar — ${nameCheck.result.detail}` });
+    send("log", { level: "info", message: `ID ${id}: Layer 0 — ${nameCheck.result.detail}` });
     aiCheck = nameCheck.result;
   } else {
-    // ── Layer 1: AI nama file vs standar (AiCostError bubble ke batch loop) ──
-    send("log", { level: "info", message: `ID ${id}: Layer 1 — Analisis Folder vs Standar dokumen...` });
+    // ── Layer 1: AI nama file vs standar ──
+    send("log", { level: "info", message: `ID ${id}: Layer 1 — Analisis folder vs standar dokumen...` });
     aiCheck = await checkWithAINames(files, standar, id);
-    send("log", { level: "info", message: `ID ${id}: Layer 1 — skor ${aiCheck.score}%` });
+    send("log", { level: "info", message: `ID ${id}: Layer 1 — skor ${aiCheck.score}% (confidence: ${aiCheck.confidence})` });
 
-    // ── Layer 2: nama file vs PANRB (hanya jika ada kriteria) ──
+    // ── Layer 1b: nama file vs PANRB (hanya jika skor masih rendah & ada kriteria) ──
     if (aiCheck.score < 65 && !kriteria) {
-      send("log", { level: "warn", message: `ID ${id}: Layer 2 — dilewati (kolom kriteria PANRB kosong di sheet Standarisasi)` });
+      send("log", { level: "warn", message: `ID ${id}: Layer 1b — dilewati (kriteria PANRB kosong)` });
     }
     if (aiCheck.score < 65 && kriteria && existCheck.exists) {
-      send("log", { level: "info", message: `ID ${id}: Layer 2 — nama file vs PANRB...` });
+      send("log", { level: "info", message: `ID ${id}: Layer 1b — nama file vs PANRB...` });
       const panrbNameCheck = await checkWithAINamesPanrb(files, kriteria, id);
       if (panrbNameCheck.score > aiCheck.score) aiCheck = panrbNameCheck;
-      send("log", { level: "info", message: `ID ${id}: Layer 2 — skor ${aiCheck.score}%` });
+      send("log", { level: "info", message: `ID ${id}: Layer 1b — skor ${aiCheck.score}%` });
     }
 
-    // ── Layer 3a: isi dokumen vs standar (tidak butuh kriteria) ──
-    if (aiCheck.score < 40 && existCheck.exists) {
-      send("log", { level: "info", message: `ID ${id}: Layer 3a — membaca isi dokumen vs standar...` });
-      const readableFiles = files.filter((f) => isReadableMime(f.mimeType));
-      const fileContents  = await Promise.all(
+    // ── Layer 2: Confidence Routing ──
+    const routing = confidenceRouting(heuristic, aiCheck, existCheck, bobot);
+
+    if (routing.needsContentCheck) {
+      // ── Layer 3: isi dokumen vs standar ──
+      send("log", { level: "info", message: `ID ${id}: Layer 3 — membaca isi dokumen (alasan: ${routing.reason})...` });
+      readableFiles = files.filter((f) => isReadableMime(f.mimeType));
+      const fileContents = await Promise.all(
         readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
       );
       const contentCheck = await checkWithAIContent(files, fileContents, standar, id, readableFiles);
       if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
-      send("log", { level: "info", message: `ID ${id}: Layer 3a — skor ${aiCheck.score}%` });
+      send("log", { level: "info", message: `ID ${id}: Layer 3 — skor ${aiCheck.score}%${contentCheck.isTemplate ? " ⚠️ template terdeteksi" : ""}` });
 
-      // ── Layer 3b: isi dokumen vs PANRB (hanya jika ada kriteria) ──
+      // ── Layer 4 Rescue: deep review vs PANRB (hanya jika masih rendah & ada kriteria) ──
       if (aiCheck.score < 40 && kriteria) {
-        send("log", { level: "info", message: `ID ${id}: Layer 3b — membaca isi dokumen vs PANRB...` });
-        const deepReadable = readableFiles;
-        const deepContents = await Promise.all(
-          deepReadable.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+        send("log", { level: "info", message: `ID ${id}: Layer 4 rescue — deep review vs PANRB...` });
+        deepFileContents = await Promise.all(
+          readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
         );
-        deepReview = await deepContentReview(files, deepContents, kriteria, id, deepReadable);
+        deepReview = await deepContentReview(files, deepFileContents, kriteria, id, readableFiles);
         if (deepReview && deepReview.revisedScore > aiCheck.score) {
           send("log", { level: "info", message: `ID ${id}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}%` });
           aiCheck.score   = deepReview.revisedScore;
@@ -267,8 +279,30 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
         }
       }
 
-      // Exhausted: semua layer dijalani, skor masih rendah
       if (aiCheck.score < 40) exhausted = true;
+    }
+
+    // ── Layer 4 QC Sampling: Sonnet spot-check (independen dari skor) ──
+    if (!deepReview && kriteria && shouldSampleForQC(heuristic, aiCheck, aiCheck.score)) {
+      send("log", { level: "info", message: `ID ${id}: [QC] Sampling Sonnet...` });
+      if (!readableFiles) readableFiles = files.filter((f) => isReadableMime(f.mimeType));
+      if (!deepFileContents) {
+        deepFileContents = await Promise.all(
+          readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+        );
+      }
+      const qcReview = await deepContentReview(files, deepFileContents, kriteria, id, readableFiles);
+      if (qcReview) {
+        deepReview = { ...qcReview, _qcSampling: true };
+        if (qcReview.inconsistencyFlag) {
+          send("log", { level: "warn", message: `ID ${id}: [QC] Inkonsistensi — ${qcReview.auditFinding || qcReview.alasan}` });
+        }
+        if (Math.abs(qcReview.revisedScore - aiCheck.score) > 15) {
+          send("log", { level: "info", message: `ID ${id}: [QC] Skor dikoreksi ${aiCheck.score}% → ${qcReview.revisedScore}%` });
+          aiCheck.score   = qcReview.revisedScore;
+          aiCheck.verdict = qcReview.revisedVerdict || aiCheck.verdict;
+        }
+      }
     }
   }
 
@@ -287,7 +321,11 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   ].filter(Boolean);
 
   if (deepReview) {
-    reviuLines.push(`[Review PANRB] ${deepReview.review || deepReview.alasan || ""}`);
+    const label = deepReview._qcSampling ? "[QC]" : "[Review PANRB]";
+    reviuLines.push(`${label} ${deepReview.review || deepReview.alasan || ""}`);
+    if (deepReview.inconsistencyFlag && deepReview.auditFinding) {
+      reviuLines.push(`[Temuan] ${deepReview.auditFinding}`);
+    }
   }
 
   const vrData = buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek);
