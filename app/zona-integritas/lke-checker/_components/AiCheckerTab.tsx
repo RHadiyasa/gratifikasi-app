@@ -462,15 +462,17 @@ export default function AiCheckerTab() {
                   <p className="font-semibold text-sm leading-tight truncate">{selectedUnit.eselon2}</p>
                   <p className="text-xs text-default-400 mt-0.5 truncate">{selectedUnit.eselon1}</p>
                 </div>
-                <a
-                  href={selectedUnit.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
-                >
-                  <ExternalLink size={11} />
-                  Sheet
-                </a>
+                {selectedUnit.link && (
+                  <a
+                    href={selectedUnit.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"
+                  >
+                    <ExternalLink size={11} />
+                    Sheet
+                  </a>
+                )}
               </div>
 
               {/* Stats row */}

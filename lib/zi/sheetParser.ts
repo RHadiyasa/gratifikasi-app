@@ -1,9 +1,10 @@
 import { google } from 'googleapis'
 import fs from 'fs'
 import type { NilaiLKE, NilaiKomponen } from '@/types/zi'
-import { AI_PATTERN, VR_COL } from '@/lib/zi/constants'
+import { AI_PATTERN, COL, VR_COL } from '@/lib/zi/constants'
 import { calculateNilaiLkeAi } from '@/lib/zi/scoring'
 import { writeRingkasanAi } from '@/lib/zi/ringkasan-ai'
+import { detectDataStart } from '@/lib/zi/helpers'
 
 function getGoogleAuth() {
   let credentials
@@ -34,6 +35,32 @@ function parseNum(val: any): number | null {
   if (val === undefined || val === null || String(val).trim() === '') return null
   const n = parseFloat(String(val).replace(/[,%]/g, '').trim())
   return isNaN(n) ? null : n
+}
+
+async function readJawabanUnitMap(
+  sheets: any,
+  spreadsheetId: string,
+  detailMap?: Record<number, any>,
+): Promise<Record<string, string>> {
+  const map: Record<string, string> = {}
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Jawaban!A:N',
+      valueRenderOption: 'UNFORMATTED_VALUE',
+    })
+    const rows = res.data.values || []
+    const start = detectDataStart(rows)
+    for (const row of rows.slice(start)) {
+      const id = String(row[0] || '').trim()
+      if (!/^\d+$/.test(id)) continue
+      if (detailMap && !detailMap[Number(id)]) continue
+      map[id] = String(row[COL.JAWABAN_UNIT - 1] ?? '').trim()
+    }
+  } catch {
+    // Jawaban sheet is optional for legacy score sync; callers will fall back to verdict weights.
+  }
+  return map
 }
 
 export async function parseRingkasanAI(sheetUrl: string): Promise<NilaiLKE | null> {
@@ -115,7 +142,10 @@ export async function parseRingkasanAI(sheetUrl: string): Promise<NilaiLKE | nul
  * Baca Visa review → return { checked, total }.
  * checked = baris yang sudah ada hasil AI, total = semua baris valid (ada ID-nya).
  */
-export async function readVisaReviewStats(sheetUrl: string): Promise<{ checked: number; total: number }> {
+export async function readVisaReviewStats(
+  sheetUrl: string,
+  allowedIds?: Set<number>,
+): Promise<{ checked: number; total: number }> {
   const spreadsheetId = extractSheetId(sheetUrl)
   const auth   = getGoogleAuth()
   const sheets = google.sheets({ version: 'v4', auth } as any)
@@ -126,7 +156,11 @@ export async function readVisaReviewStats(sheetUrl: string): Promise<{ checked: 
       valueRenderOption: 'UNFORMATTED_VALUE',
     })
     const rows = (res.data.values || []).slice(1) // skip header
-    const validRows = rows.filter((r: any[]) => String(r[VR_COL.ID - 1] || '').trim())
+    const validRows = rows.filter((r: any[]) => {
+      const id = String(r[VR_COL.ID - 1] || '').trim()
+      if (!id) return false
+      return !allowedIds || allowedIds.has(Number(id))
+    })
     const checked   = validRows.filter((r: any[]) => AI_PATTERN.test(String(r[VR_COL.RESULT - 1] || ''))).length
     return { checked, total: validRows.length }
   } catch {
@@ -147,6 +181,7 @@ export async function countCheckedInVisaReview(sheetUrl: string): Promise<number
 export async function syncFromVisaReview(
   sheetUrl: string,
   target: string,
+  detailMap?: Record<number, any>,
 ): Promise<{ stats: { checked: number; total: number }; ringkasan: NilaiLKE | null }> {
   const spreadsheetId = extractSheetId(sheetUrl)
   const auth   = getGoogleAuth()
@@ -164,23 +199,29 @@ export async function syncFromVisaReview(
     return { stats: { checked: 0, total: 0 }, ringkasan: null }
   }
 
-  const validRows   = rows.filter((r: any[]) => String(r[VR_COL.ID - 1] || '').trim())
+  const allowedIds = detailMap ? new Set(Object.keys(detailMap).map((id) => Number(id))) : null
+  const jawabanUnitMap = await readJawabanUnitMap(sheets, spreadsheetId, detailMap)
+  const validRows   = rows.filter((r: any[]) => {
+    const id = String(r[VR_COL.ID - 1] || '').trim()
+    if (!id) return false
+    return !allowedIds || allowedIds.has(Number(id))
+  })
   const checkedRows = validRows.filter((r: any[]) => AI_PATTERN.test(String(r[VR_COL.RESULT - 1] || '')))
   const stats = { checked: checkedRows.length, total: validRows.length }
 
   // Build ringkasan dari baris yang sudah ada hasilnya
-  const results: { id: string; verdict: { color: string } }[] = []
+  const results: { id: string; verdict: { color: string }; jawaban_unit?: string }[] = []
   for (const row of checkedRows) {
     const id     = String(row[VR_COL.ID     - 1] || '').trim()
     const result = String(row[VR_COL.RESULT - 1] || '')
     const color  = /^✅/u.test(result) ? 'HIJAU'
       : /^⚠️/u.test(result) ? 'KUNING' : 'MERAH'
-    results.push({ id, verdict: { color } })
+    results.push({ id, verdict: { color }, jawaban_unit: jawabanUnitMap[id] ?? '' })
   }
 
   if (results.length === 0) return { stats, ringkasan: null }
 
-  const nilaiLkeAi = calculateNilaiLkeAi(results, target) as NilaiLKE
+  const nilaiLkeAi = calculateNilaiLkeAi(results, target, detailMap as any) as NilaiLKE
   try {
     await writeRingkasanAi(sheets, spreadsheetId, nilaiLkeAi, target)
   } catch { /* lanjut walau gagal tulis */ }
@@ -192,7 +233,11 @@ export async function syncFromVisaReview(
  * Baca Visa review → hitung skor → tulis Ringkasan AI → return NilaiLKE.
  * Dipanggil saat sync dan sheet "Ringkasan AI" belum ada tapi "Visa review" sudah ada.
  */
-export async function buildRingkasanFromVisaReview(sheetUrl: string, target: string): Promise<NilaiLKE | null> {
+export async function buildRingkasanFromVisaReview(
+  sheetUrl: string,
+  target: string,
+  detailMap?: Record<number, any>,
+): Promise<NilaiLKE | null> {
   const spreadsheetId = extractSheetId(sheetUrl)
   const auth   = getGoogleAuth()
   const sheets = google.sheets({ version: 'v4', auth } as any)
@@ -211,24 +256,26 @@ export async function buildRingkasanFromVisaReview(sheetUrl: string, target: str
   }
 
   if (rows.length < 2) return null
+  const jawabanUnitMap = await readJawabanUnitMap(sheets, spreadsheetId, detailMap)
 
   // Konversi visa review rows ke format scoring
-  const results: { id: string; verdict: { color: string } }[] = []
+  const results: { id: string; verdict: { color: string }; jawaban_unit?: string }[] = []
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i]
     const id = String(row[VR_COL.ID - 1] || '').trim()
     const result = String(row[VR_COL.RESULT - 1] || '')
     if (!id || !AI_PATTERN.test(result)) continue
+    if (detailMap && !detailMap[Number(id)]) continue
 
     const color = /^\u2705/u.test(result) ? 'HIJAU'
       : /^\u26A0\uFE0F/u.test(result) ? 'KUNING' : 'MERAH'
-    results.push({ id, verdict: { color } })
+    results.push({ id, verdict: { color }, jawaban_unit: jawabanUnitMap[id] ?? '' })
   }
 
   if (results.length === 0) return null
 
   // Hitung skor
-  const nilaiLkeAi = calculateNilaiLkeAi(results, target)
+  const nilaiLkeAi = calculateNilaiLkeAi(results, target, detailMap as any)
 
   // Tulis Ringkasan AI sheet
   try {

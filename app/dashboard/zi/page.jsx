@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import {
   Award, CheckCircle2, Clock, AlertTriangle,
   Users, ArrowRight, RefreshCw, X, Shield,
-  ChevronRight, Activity, Zap,
+  ChevronRight, Activity, Zap, ListChecks,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -15,6 +15,7 @@ import {
   PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from "recharts";
 import { useZiStore } from "@/store/ziStore";
+import { useAuthStore } from "@/store/authStore";
 import { TARGET_THRESHOLD } from "@/types/zi";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -200,6 +201,7 @@ export default function DashboardZI() {
     submissions, summary, isLoading, syncingIds,
     fetchSubmissions, syncSubmission,
   } = useZiStore();
+  const role = useAuthStore((s) => s.role);
 
   const [drawerUnit, setDrawerUnit] = useState(null);
   const { resolvedTheme } = useTheme();
@@ -252,6 +254,18 @@ export default function DashboardZI() {
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
+            {(role === "admin" || role === "developer") && (
+              <NextLink
+                href="/dashboard/zi/kriteria"
+                className={cn(
+                  "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                  "border border-default-200 bg-default-100 hover:bg-default-200 text-default-600",
+                )}
+              >
+                <ListChecks size={14} />
+                Master Kriteria
+              </NextLink>
+            )}
             <button
               onClick={fetchSubmissions}
               disabled={isLoading}

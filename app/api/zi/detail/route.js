@@ -1,5 +1,8 @@
 import { google } from "googleapis";
 import fs from "fs";
+import { connect } from "@/config/dbconfig";
+import LkeKriteria from "@/modules/models/LkeKriteria";
+import { isDetailKriteria } from "@/lib/zi/scoring";
 
 function getGoogleAuth() {
   let credentials;
@@ -42,7 +45,7 @@ const AI_PATTERN = /^[✅⚠️❌]/u;
 const VR_SHEET   = "Visa review";
 
 // COL = kolom di sheet LKE utama
-const COL = { ID: 1, BUKTI: 13, LINK: 14 };
+const COL = { ID: 1, LINK: 14, NARASI: 12, BUKTI: 13 };
 
 // VR_COL = kolom di sheet Visa review
 const VR_COL = { ID: 1, RESULT: 5, REVIU: 6, SUPERVISI: 7, TGL_CEK: 8 };
@@ -56,6 +59,14 @@ export async function POST(req) {
 
     const spreadsheetId = extractSheetId(sheetUrl);
     const tabName       = sheetName?.trim() || "Jawaban";
+
+    await connect();
+    const kriteriaList = await LkeKriteria.find({ aktif: true }).lean();
+    const primaryIds = new Set(
+      kriteriaList
+        .filter((k) => !isDetailKriteria(k))
+        .map((k) => Number(k.question_id)),
+    );
 
     const auth       = getGoogleAuth();
     const authClient = await auth.getClient();
@@ -81,6 +92,7 @@ export async function POST(req) {
     const allDataRows = mainRows.slice(dataStart).filter((row) => {
       const id = String(row[COL.ID - 1] || "").trim();
       if (!/^\d+$/.test(id) || parseInt(id) > 9999) return false;
+      if (!primaryIds.has(parseInt(id))) return false;
       if (seenIds.has(id)) return false;
       seenIds.add(id);
       return true;
@@ -110,9 +122,10 @@ export async function POST(req) {
 
     // ── Susun per-row data ──
     const rows = allDataRows.map((row) => {
-      const id    = String(row[COL.ID   - 1] || "").trim();
-      const bukti = String(row[COL.BUKTI - 1] || "").trim();
-      const link  = String(row[COL.LINK  - 1] || "").trim();
+      const id     = String(row[COL.ID     - 1] || "").trim();
+      const narasi = String(row[COL.NARASI - 1] || "").trim();
+      const bukti  = String(row[COL.BUKTI  - 1] || "").trim();
+      const link   = String(row[COL.LINK   - 1] || "").trim();
       const hasLink = link.includes("drive.google");
 
       const vr = vrMap[id];
@@ -133,7 +146,7 @@ export async function POST(req) {
 
       return {
         id,
-        bukti,
+        bukti: narasi || bukti,
         link:    hasLink ? link : null,
         rawLink: link || null,
         status,

@@ -270,7 +270,7 @@ export default function UnitDetailModal({
               {/* Search */}
               <Input
                 size="sm"
-                placeholder="Cari ID atau nama data..."
+                placeholder="Cari ID atau narasi..."
                 startContent={<Search size={13} className="text-default-400" />}
                 value={search}
                 onValueChange={setSearch}
@@ -287,7 +287,7 @@ export default function UnitDetailModal({
                         ID
                       </th>
                       <th className="text-left py-2 px-3 font-medium text-default-500">
-                        Nama Data
+                        Narasi Unit
                       </th>
                       <th className="text-left py-2 px-3 font-medium text-default-500 w-24">
                         Status

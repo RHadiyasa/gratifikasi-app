@@ -29,9 +29,76 @@ export interface NilaiLKE {
   target_tercapai: boolean
 }
 
+export type FormulaOp = '+' | '-' | '*' | '/'
+
+export type FormulaTokenKind = 'operand' | 'op' | 'open_paren' | 'close_paren'
+
+export interface FormulaToken {
+  kind: FormulaTokenKind
+  ref?: number    // only when kind === 'operand'
+  op?:  FormulaOp // only when kind === 'op'
+}
+
+export interface LkeKriteria {
+  _id:                string
+  question_id:        number
+  parent_question_id: number | null
+  komponen:           'mp' | 'tt' | 'sdm' | 'ak' | 'pw' | 'pp' | 'ipak' | 'capaian_kinerja' | 'prima'
+  seksi:              'pemenuhan' | 'reform' | 'hasil'
+  sub_komponen:       string
+  urutan:             number
+  pertanyaan:         string
+  standar_dokumen:    string
+  kriteria_panrb:     string
+  bobot:              number
+  answer_type:        'ya_tidak' | 'abc' | 'abcd' | 'abcde' | 'persen' | 'nilai_04' | 'jumlah'
+  is_computed:        boolean
+  formula_tokens:     FormulaToken[] | null
+  formula_min:        number
+  formula_max:        number
+  aktif:              boolean
+  createdAt:          string
+  updatedAt:          string
+}
+
+export interface AiResult {
+  score:          number | null
+  verdict:        string | null
+  color:          string | null
+  status:         string | null
+  reviu:          string | null
+  pendapat:       string | null
+  temuan_kritis:  string | null
+  dokumen_ada:    string[]
+  dokumen_kurang: string[]
+  fingerprint:    string | null
+  checked_at:     string | null
+  based_on:       string | null
+  supervisi:      string | null
+}
+
+export interface LkeJawaban {
+  _id:               string
+  submission_id:     string
+  question_id:       number
+  jawaban_unit:      string
+  narasi:            string
+  bukti:             string
+  link_drive:        string
+  jawaban_tpi_unit:  string
+  catatan_tpi_unit:  string
+  jawaban_tpi_itjen: string
+  catatan_tpi_itjen: string
+  ai_result:         AiResult
+  createdAt:         string
+  updatedAt:         string
+  kriteria?:         LkeKriteria
+}
+
 export interface LkeSubmission {
   _id:              string
-  link:             string
+  link:             string | null
+  source:           'sheet' | 'app'
   target:           'WBK' | 'WBBM'
   eselon1:          string
   eselon2:          string

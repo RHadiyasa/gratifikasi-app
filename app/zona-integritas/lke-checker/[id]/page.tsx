@@ -23,6 +23,7 @@ import {
   DatabaseBackup,
   SheetIcon,
   Sheet,
+  PencilLine,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -84,6 +85,13 @@ interface LogEntry {
 interface RowJob {
   status: JobStatus;
   logs: LogEntry[];
+}
+
+function isDetailKriteria(kriteria: any) {
+  return (
+    kriteria?.answer_type === "jumlah" &&
+    kriteria?.parent_question_id != null
+  );
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -266,10 +274,83 @@ export default function UnitDetailPage() {
   // ── Load detail ──
   const loadDetail = useCallback(
     async (sName?: string) => {
-      if (!unit?.link) return;
+      if (!unit) return;
       setLoading(true);
       setDetailError(null);
       try {
+        // ── App mode: baca dari MongoDB ──
+        if (unit.source === 'app') {
+          const res = await fetch(`/api/zi/submissions/${id}/jawaban`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Gagal memuat jawaban");
+
+          const allEntries: any[] = Object.values(data.grouped ?? {}).flat();
+          const mainEntries = allEntries.filter(
+            (entry: any) => !isDetailKriteria(entry.kriteria),
+          );
+          const detailRows: DetailRow[] = mainEntries.sort((a: any, b: any) =>
+            a.kriteria.question_id - b.kriteria.question_id
+          ).map((entry: any) => {
+            const ai = entry.jawaban?.ai_result ?? {};
+            const link = entry.jawaban?.link_drive || null;
+            const hasLink = !!link?.includes('drive.google');
+            const isChecked = !!ai.color;
+            const isRevisi = ai.supervisi === 'Revisi';
+
+            let status: RowStatus;
+            if (!hasLink)       status = 'no_link';
+            else if (isRevisi)  status = 'revisi';
+            else if (isChecked) status = 'checked';
+            else                status = 'unchecked';
+
+            return {
+              id:           String(entry.kriteria.question_id),
+              bukti:        entry.jawaban?.narasi || entry.jawaban?.bukti || entry.kriteria?.pertanyaan || '',
+              link:         hasLink ? link : null,
+              rawLink:      link,
+              status,
+              verdict:      isChecked ? (ai.status || ai.verdict || ai.color) : null,
+              verdictColor: isChecked ? (ai.color as VerdictColor) : null,
+              reviu:        ai.reviu || null,
+              supervisi:    ai.supervisi || null,
+              tglCek:       ai.checked_at ? new Date(ai.checked_at).toLocaleString('id-ID') : null,
+            };
+          });
+
+          const checked   = detailRows.filter((r) => r.status === 'checked').length;
+          const unchecked = detailRows.filter((r) => r.status === 'unchecked').length;
+          const noLink    = detailRows.filter((r) => r.status === 'no_link').length;
+          const revisi    = detailRows.filter((r) => r.status === 'revisi').length;
+
+          setRows(detailRows);
+          setSummary({ total: detailRows.length, checked, unchecked, noLink, revisi });
+          setExpandedReviu(null);
+          setExpandedLog(null);
+
+          if (
+            detailRows.length > 0 &&
+            (detailRows.length !== unit.total_data || checked !== unit.checked_count)
+          ) {
+            fetch(`/api/zi/submissions/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                total_data: detailRows.length,
+                checked_count: checked,
+                unchecked_count: Math.max(0, detailRows.length - checked),
+              }),
+            })
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.submission) setUnit(d.submission);
+              })
+              .catch(() => {});
+          }
+          return;
+        }
+
+        // ── Sheet mode: baca dari Google Sheets ──
+        if (!unit.link) return;
         const res = await fetch("/api/zi/detail", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -380,20 +461,10 @@ export default function UnitDetailPage() {
 
   // ── Export ──
   async function handleExport() {
-    if (!unit?.link) return;
+    if (!unit) return;
     setExporting(true);
     try {
-      const res = await fetch("/api/zi/detail/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sheetUrl: unit.link,
-          sheetName,
-          unitName: unit.eselon2,
-          eselon1: unit.eselon1,
-          target: unit.target,
-        }),
-      });
+      const res = await fetch(`/api/zi/submissions/${unit._id}/export-lke`);
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -411,7 +482,7 @@ export default function UnitDetailPage() {
 
   // ── Per-row Visa check ──
   async function startRowCheck(rowId: string) {
-    if (!unit?.link) return;
+    if (unit?.source !== 'app' && !unit?.link) return;
 
     // Batasi maksimal MAX_CONCURRENT parallel check untuk jaga quota Google Sheets API
     if (activeChecksRef.current >= MAX_CONCURRENT) {
@@ -441,8 +512,7 @@ export default function UnitDetailPage() {
         body: JSON.stringify({
           submissionId: id,
           rowId,
-          sheetUrl: unit.link,
-          sheetName,
+          ...(unit?.source !== 'app' && { sheetUrl: unit?.link, sheetName }),
         }),
         signal: ctrl.signal,
       });
@@ -585,6 +655,8 @@ export default function UnitDetailPage() {
   const sesuai = rows.filter((r) => r.verdictColor === "HIJAU").length;
   const sebagian = rows.filter((r) => r.verdictColor === "KUNING").length;
   const tidak = rows.filter((r) => r.verdictColor === "MERAH").length;
+  const displayChecked = summary?.checked ?? unit?.checked_count ?? 0;
+  const displayTotal = summary?.total ?? unit?.total_data ?? 0;
 
   // ── Error / Loading states ──
   if (unitError)
@@ -652,43 +724,57 @@ export default function UnitDetailPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-default-400">{unit.eselon1}</p>
-            <a
-              href={unit.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              <ExternalLink size={11} /> Buka Sheet
-            </a>
+            {unit.link && (
+              <a
+                href={unit.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                <ExternalLink size={11} /> Buka Sheet
+              </a>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
-            isLoading={loading}
-            onClick={handleRefresh}
-            title="Refresh dari sheet"
+            onClick={() => router.push(`/zona-integritas/lke-checker/${unit._id}/input`)}
           >
-            {!loading && <Sheet size={13} />}
-            Sync ke Googel Sheet
+            <PencilLine size={13} />
+            Input Jawaban
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            isLoading={syncing}
-            disabled={syncing || loading}
-            onClick={handleSync}
-            title="Sinkron nilai & progress ke database"
-          >
-            {!syncing && <DatabaseBackup size={13} />}
-            Sync ke Database
-          </Button>
+          {unit.source !== 'app' && (
+            <Button
+              variant="outline"
+              size="sm"
+              isLoading={loading}
+              onClick={handleRefresh}
+              title="Refresh dari sheet"
+            >
+              {!loading && <Sheet size={13} />}
+              Sync ke Google Sheet
+            </Button>
+          )}
+          {unit.source !== 'app' && (
+            <Button
+              variant="outline"
+              size="sm"
+              isLoading={syncing}
+              disabled={syncing || loading}
+              onClick={handleSync}
+              title="Sinkron nilai & progress ke database"
+            >
+              {!syncing && <DatabaseBackup size={13} />}
+              Sync ke Database
+            </Button>
+          )}
           <Button
             variant="success"
             size="sm"
             isLoading={exporting}
-            disabled={!summary || exporting}
+            disabled={exporting}
             onClick={handleExport}
           >
             {!exporting && <Download size={13} />}
@@ -703,12 +789,12 @@ export default function UnitDetailPage() {
           <div className="flex justify-between text-xs text-default-500">
             <span>Progress Pengecekan</span>
             <span className="font-mono tabular-nums font-medium">
-              {unit.checked_count} / {summary?.total ?? unit.total_data ?? "?"}
+              {displayChecked} / {displayTotal || "?"}
             </span>
           </div>
           {(() => {
-            const total = summary?.total || unit.total_data || 0;
-            const pct   = total > 0 ? Math.round((unit.checked_count / total) * 100) : unit.progress_percent;
+            const total = displayTotal;
+            const pct   = total > 0 ? Math.round((displayChecked / total) * 100) : unit.progress_percent;
             return (
               <Progress
                 value={pct}
@@ -889,7 +975,7 @@ export default function UnitDetailPage() {
                   />
                   <input
                     type="text"
-                    placeholder="Cari ID atau nama data..."
+                    placeholder="Cari ID atau narasi..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className={cn(
@@ -945,7 +1031,7 @@ export default function UnitDetailPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-12">ID</TableHead>
-                  <TableHead>Nama Bukti Data</TableHead>
+                  <TableHead>Narasi Unit</TableHead>
                   <TableHead className="w-32">Hasil AI</TableHead>
                   <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-24">Tgl Cek</TableHead>
@@ -993,7 +1079,7 @@ export default function UnitDetailPage() {
                             {row.id}
                           </TableCell>
 
-                          {/* Bukti Data */}
+                          {/* Narasi Unit */}
                           <TableCell>
                             <div className="flex items-center gap-1.5">
                               <button
