@@ -686,9 +686,9 @@ function JawabanCard({
           <div className="grid grid-cols-12 gap-2">
             {/* Jawaban Mandiri — untuk persen dengan jumlah sub-items, tampilkan computed result */}
             <div className="col-span-2">
-              <label className="block text-[10px] text-default-500 mb-1">
+              <span className="block text-[10px] text-default-500 mb-1">
                 {kriteria.answer_type === 'jumlah' ? 'Jumlah' : 'Jawaban Mandiri'}
-              </label>
+              </span>
               <AnswerSelect
                 answerType={kriteria.answer_type}
                 value={localValues.jawaban_unit}
@@ -698,10 +698,11 @@ function JawabanCard({
             </div>
             {/* Narasi */}
             <div className="col-span-4">
-              <label className="block text-[10px] text-default-500 mb-1">
+              <span className="block text-[10px] text-default-500 mb-1">
                 {kriteria.answer_type === 'jumlah' ? 'Keterangan tambahan (opsional)' : 'Narasi / Penjelasan'}
-              </label>
+              </span>
               <textarea
+                aria-label={kriteria.answer_type === 'jumlah' ? 'Keterangan tambahan unit' : 'Narasi atau penjelasan unit'}
                 value={localValues.narasi}
                 onChange={(e) => onChange(qid, 'narasi', e.target.value)}
                 placeholder="Uraian singkat kondisi unit..."
@@ -711,8 +712,9 @@ function JawabanCard({
             </div>
             {/* Bukti */}
             <div className="col-span-3">
-              <label className="block text-[10px] text-default-500 mb-1">Nama Dokumen / Bukti</label>
+              <span className="block text-[10px] text-default-500 mb-1">Nama Dokumen / Bukti</span>
               <textarea
+                aria-label="Nama dokumen atau bukti"
                 value={localValues.bukti}
                 onChange={(e) => onChange(qid, 'bukti', e.target.value)}
                 placeholder="Nama file atau dokumen..."
@@ -722,8 +724,9 @@ function JawabanCard({
             </div>
             {/* Link Drive */}
             <div className="col-span-3">
-              <label className="block text-[10px] text-default-500 mb-1">Link Google Drive</label>
+              <span className="block text-[10px] text-default-500 mb-1">Link Google Drive</span>
               <input
+                aria-label="Link Google Drive"
                 value={localValues.link_drive}
                 onChange={(e) => onChange(qid, 'link_drive', e.target.value)}
                 placeholder="https://drive.google.com/..."
@@ -763,7 +766,7 @@ function JawabanCard({
               )}
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-2">
-                  <label className="block text-[10px] text-default-500 mb-1">Jawaban TPI Unit</label>
+                  <span className="block text-[10px] text-default-500 mb-1">Jawaban TPI Unit</span>
                   <AnswerSelect
                     answerType={kriteria.answer_type}
                     value={localValues.jawaban_tpi_unit}
@@ -772,8 +775,9 @@ function JawabanCard({
                   />
                 </div>
                 <div className="col-span-10">
-                  <label className="block text-[10px] text-default-500 mb-1">Catatan TPI Unit</label>
+                  <span className="block text-[10px] text-default-500 mb-1">Catatan TPI Unit</span>
                   <textarea
+                    aria-label="Catatan TPI Unit"
                     value={localValues.catatan_tpi_unit}
                     onChange={(e) => onChange(qid, 'catatan_tpi_unit', e.target.value)}
                     placeholder="Catatan hasil review TPI dari Unit..."
@@ -821,7 +825,7 @@ function JawabanCard({
                   </p>
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-12 sm:col-span-4">
-                      <label className="block text-[10px] text-default-500 mb-1">Jawaban TPI Itjen</label>
+                      <span className="block text-[10px] text-default-500 mb-1">Jawaban TPI Itjen</span>
                       <AnswerSelect
                         answerType={kriteria.answer_type}
                         value={localValues.jawaban_tpi_itjen}
@@ -830,8 +834,9 @@ function JawabanCard({
                       />
                     </div>
                     <div className="col-span-12 sm:col-span-8">
-                      <label className="block text-[10px] text-default-500 mb-1">Catatan TPI Itjen</label>
+                      <span className="block text-[10px] text-default-500 mb-1">Catatan TPI Itjen</span>
                       <textarea
+                        aria-label="Catatan TPI Itjen"
                         value={localValues.catatan_tpi_itjen}
                         onChange={(e) => onChange(qid, 'catatan_tpi_itjen', e.target.value)}
                         placeholder="Catatan hasil review TPI Itjen KESDM..."
@@ -848,13 +853,13 @@ function JawabanCard({
                   </p>
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-12 sm:col-span-4">
-                      <label className="block text-[10px] text-default-500 mb-1">Jawaban Visa</label>
+                      <span className="block text-[10px] text-default-500 mb-1">Jawaban Visa</span>
                       <div className="min-h-[32px] rounded border border-blue-200 bg-white px-2 py-1.5 text-xs font-semibold text-blue-700 dark:border-blue-800/50 dark:bg-blue-950/20 dark:text-blue-200">
                         {getVisaJawaban(aiResult)}
                       </div>
                     </div>
                     <div className="col-span-12 sm:col-span-8">
-                      <label className="block text-[10px] text-default-500 mb-1">Catatan Visa</label>
+                      <span className="block text-[10px] text-default-500 mb-1">Catatan Visa</span>
                       <div className="min-h-[78px] whitespace-pre-wrap rounded border border-blue-200 bg-white px-2 py-1.5 text-xs leading-relaxed text-default-700 dark:border-blue-800/50 dark:bg-blue-950/20">
                         {getVisaCatatan(aiResult) || 'Belum ada catatan Visa.'}
                       </div>

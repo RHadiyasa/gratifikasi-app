@@ -838,18 +838,25 @@ export default function KriteriaPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 align-top">
-                          <div
-                            className="flex items-center gap-1 justify-end"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <div className="flex items-center gap-1 justify-end">
                             <button
-                              onClick={() => openEdit(k)}
+                              type="button"
+                              aria-label={`Edit kriteria ID ${k.question_id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEdit(k);
+                              }}
                               className="p-1.5 rounded hover:bg-default-100 text-default-500 hover:text-primary transition-colors"
                             >
                               <Pencil size={13} />
                             </button>
                             <button
-                              onClick={() => handleDelete(k)}
+                              type="button"
+                              aria-label={`Hapus kriteria ID ${k.question_id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(k);
+                              }}
                               className="p-1.5 rounded hover:bg-rose-50 text-default-500 hover:text-rose-600 transition-colors"
                             >
                               <Trash2 size={13} />
@@ -1206,7 +1213,7 @@ export default function KriteriaPage() {
                           </div>
                         ) : activeSubs.length === 0 ? (
                           <p className="text-[10px] text-blue-400 italic">
-                            Belum ada detil. Klik "Tambah" untuk menambahkan.
+                            Belum ada detil. Klik &quot;Tambah&quot; untuk menambahkan.
                           </p>
                         ) : (
                           <div className="space-y-3">
