@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { connect } from '@/config/dbconfig'
 import LkeSubmission from '@/modules/models/LkeSubmission'
+import LkeKriteria from '@/modules/models/LkeKriteria'
 import LkeSyncLog from '@/modules/models/LkeSyncLog'
 import { parseRingkasanAI, syncFromVisaReview, readVisaReviewStats } from '@/lib/zi/sheetParser'
+import { buildScoringDetailMap, isDetailKriteria } from '@/lib/zi/scoring'
 import { TARGET_THRESHOLD } from '@/types/zi'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
@@ -35,6 +37,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const threshold  = TARGET_THRESHOLD[submission.target as 'WBK' | 'WBBM']
       let ringkasan = null
       let vrStats   = { checked: 0, total: 0 }
+      const kriteriaList = await LkeKriteria.find({ aktif: true }).lean() as any[]
+      const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k))
+      const scoringDetailMap = buildScoringDetailMap(primaryKriteria)
+      const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)))
 
       // Coba baca Ringkasan AI sheet langsung (1 read)
       try {
@@ -44,14 +50,14 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       if (!ringkasan) {
         // Ringkasan AI belum ada → baca Visa Review SEKALI untuk stats + build ringkasan (1 read)
         try {
-          const vr  = await syncFromVisaReview(submission.link, submission.target || 'WBK')
+          const vr  = await syncFromVisaReview(submission.link, submission.target || 'WBK', scoringDetailMap)
           ringkasan = vr.ringkasan
           vrStats   = vr.stats
         } catch { /* lanjut ke sync progress saja */ }
       } else {
         // Ringkasan AI ada → tetap perlu stats dari Visa Review (1 read)
         try {
-          vrStats = await readVisaReviewStats(submission.link)
+          vrStats = await readVisaReviewStats(submission.link, primaryIds)
         } catch { /* gunakan default 0 */ }
       }
 

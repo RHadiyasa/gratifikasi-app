@@ -8,7 +8,8 @@ const NilaiKomponenSchema = new Schema(
 
 const LkeSubmissionSchema = new Schema(
   {
-    link:     { type: String, required: true },
+    link:     { type: String, default: null },
+    source:   { type: String, enum: ['sheet', 'app'], default: 'sheet' },
     target:   { type: String, enum: ['WBK', 'WBBM'], required: true },
     eselon1:  { type: String, required: true, enum: ESELON1_LIST },
     eselon2:  { type: String, required: true },

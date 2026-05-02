@@ -3,9 +3,10 @@ export const maxDuration = 300;
 import { google } from "googleapis";
 import { connect } from "@/config/dbconfig";
 import LkeSubmission from "@/modules/models/LkeSubmission";
+import LkeKriteria from "@/modules/models/LkeKriteria";
 
 // ── Lib modules ─────────────────────────────────────────
-import { COL, STANDAR, AI_PATTERN, KOMPONEN_LABEL, ID_DETAIL_MAP } from "@/lib/zi/constants";
+import { COL, STANDAR, AI_PATTERN, KOMPONEN_LABEL } from "@/lib/zi/constants";
 import { getGoogleAuth } from "@/lib/zi/google-auth";
 import {
   extractSheetId, extractFolderId, computeFingerprint,
@@ -17,14 +18,15 @@ import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
 import { listFilesInFolder, listFilesRecursive, getFileContent } from "@/lib/zi/drive";
 import {
   AiCostError, checkByName,
-  checkWithAINames, checkWithAINamesPanrb,
+  auditFolderVsNarasi,
   checkWithAIContent, deepContentReview,
-  confidenceRouting, shouldSampleForQC,
+  shouldSampleForQC,
   calculateFinalVerdict,
 } from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
 import { sendEmailReport } from "@/lib/zi/email";
-import { getAnswerWeight, calculateNilaiLkeAi } from "@/lib/zi/scoring";
+import { buildScoringDetailMap, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
+import { handleAppModeCheck } from "@/lib/zi/app-check";
 
 // ── Helpers ─────────────────────────────────────────────
 
@@ -52,14 +54,15 @@ function buildStandarMap(standarRows) {
   return { standarMap, kriteriaMap };
 }
 
-function extractDataRows(penilaianRows) {
+function extractDataRows(penilaianRows, primaryIds = null) {
   const dataStart = detectDataStart(penilaianRows);
   const allDataRows = penilaianRows
     .slice(dataStart)
     .map((row, i) => ({ row, rowNum: i + dataStart + 1 }))
     .filter(({ row }) => {
       const id = String(row[COL.ID - 1] || "").trim();
-      return /^\d+$/.test(id) && parseInt(id) <= 9999;
+      if (!/^\d+$/.test(id) || parseInt(id) > 9999) return false;
+      return !primaryIds || primaryIds.has(parseInt(id));
     });
 
   const allValid = allDataRows.filter(({ row }) =>
@@ -67,6 +70,15 @@ function extractDataRows(penilaianRows) {
   );
 
   return { dataStart, allDataRows, allValid };
+}
+
+function buildJawabanUnitMap(allDataRows) {
+  return Object.fromEntries(
+    allDataRows.map(({ row }) => [
+      String(row[COL.ID - 1] || "").trim(),
+      String(row[COL.JAWABAN_UNIT - 1] || "").trim(),
+    ]),
+  );
 }
 
 function classifyRows(allValid, visaMap, linkChangedRows, fingerprintRows) {
@@ -137,9 +149,9 @@ async function detectFingerprintChanges(allValid, visaMap, auth, fileListCache, 
   return changed;
 }
 
-function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek) {
-  const detail = ID_DETAIL_MAP[parseInt(id)];
-  const weight = getAnswerWeight(verdict.color, detail?.answer_type);
+function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek, scoringDetailMap, jawabanUnit = "") {
+  const detail = scoringDetailMap[parseInt(id)];
+  const weight = getScoringWeight({ verdict, jawaban_unit: jawabanUnit }, detail);
   const nilaiAi = detail ? Math.round(weight * detail.bobot * 100) / 100 : 0;
 
   return [
@@ -165,10 +177,12 @@ function isReadableMime(mimeType) {
   );
 }
 
-async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek }) {
+async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek, scoringDetailMap }) {
   const id = String(row[COL.ID - 1]).trim();
   const bukti = String(row[COL.BUKTI - 1] || "").trim();
   const linkDrive = String(row[COL.LINK - 1] || "").trim();
+  const narasi = String(row[COL.NARASI - 1] || "").trim();
+  const jawabanUnit = String(row[COL.JAWABAN_UNIT - 1] || "").trim();
   const standar = standarMap[id] || "";
 
   if (!standar) {
@@ -180,10 +194,10 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   if (!folderId) {
     send("log", { level: "error", message: `ID ${id}: URL Drive tidak valid` });
     const verdict = { status: "\u274C URL Tidak Valid", score: 0, color: "MERAH" };
-    const vrData = buildVisaRowData(id, bukti, linkDrive, "", verdict, ["URL Google Drive tidak valid"], tglCek);
+    const vrData = buildVisaRowData(id, bukti, linkDrive, "", verdict, ["URL Google Drive tidak valid"], tglCek, scoringDetailMap, jawabanUnit);
     return {
       result: {
-        id, bukti, files: [],
+        id, bukti, jawaban_unit: jawabanUnit, files: [],
         existCheck: { exists: false, fileCount: 0, detail: "URL tidak valid" },
         aiCheck: { score: 0, verdict: "N/A", detail: "URL Drive tidak valid", dokumenAda: [], dokumenKurang: [] },
         verdict,
@@ -215,7 +229,7 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   };
 
   const kriteria = kriteriaMap[id] || "";
-  const detail = ID_DETAIL_MAP[parseInt(id)];
+  const detail = scoringDetailMap[parseInt(id)];
   const bobot = detail?.bobot ?? 0;
 
   // ── Layer 0: Smart Heuristic ──
@@ -235,28 +249,20 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
     send("log", { level: "info", message: `ID ${id}: Layer 0 — ${nameCheck.result.detail}` });
     aiCheck = nameCheck.result;
   } else {
-    // ── Layer 1: AI nama file vs standar ──
-    send("log", { level: "info", message: `ID ${id}: Layer 1 — Analisis folder vs standar dokumen...` });
-    aiCheck = await checkWithAINames(files, standar, id);
-    send("log", { level: "info", message: `ID ${id}: Layer 1 — skor ${aiCheck.score}% (confidence: ${aiCheck.confidence})` });
+    // ── Layer 1 (Auditor): Folder + Narasi vs PANRB ──
+    send("log", { level: "info", message: `ID ${id}: Auditor — analisis struktur folder, narasi unit, dan kriteria PANRB...` });
+    aiCheck = await auditFolderVsNarasi(files, narasi, kriteria, standar, id);
+    const temuanLog = aiCheck.temuanKritis ? ` ⚠️ ${aiCheck.temuanKritis}` : "";
+    send("log", { level: "info", message: `ID ${id}: Auditor — skor ${aiCheck.score}% (${aiCheck.verdict})${temuanLog}` });
 
-    // ── Layer 1b: nama file vs PANRB (hanya jika skor masih rendah & ada kriteria) ──
-    if (aiCheck.score < 65 && !kriteria) {
-      send("log", { level: "warn", message: `ID ${id}: Layer 1b — dilewati (kriteria PANRB kosong)` });
-    }
-    if (aiCheck.score < 65 && kriteria && existCheck.exists) {
-      send("log", { level: "info", message: `ID ${id}: Layer 1b — nama file vs PANRB...` });
-      const panrbNameCheck = await checkWithAINamesPanrb(files, kriteria, id);
-      if (panrbNameCheck.score > aiCheck.score) aiCheck = panrbNameCheck;
-      send("log", { level: "info", message: `ID ${id}: Layer 1b — skor ${aiCheck.score}%` });
-    }
+    if (aiCheck.score >= 70) {
+      // ── Sesuai: tidak perlu baca konten ──
+      send("log", { level: "success", message: `ID ${id}: Auditor menyimpulkan Sesuai — pengecekan konten dilewati` });
 
-    // ── Layer 2: Confidence Routing ──
-    const routing = confidenceRouting(heuristic, aiCheck, existCheck, bobot);
+    } else if (aiCheck.score >= 40) {
+      // ── Sebagian Sesuai: lanjut baca isi dokumen ──
+      send("log", { level: "info", message: `ID ${id}: Sebagian sesuai — lanjut ke pengecekan isi dokumen...` });
 
-    if (routing.needsContentCheck) {
-      // ── Layer 3: isi dokumen vs standar ──
-      send("log", { level: "info", message: `ID ${id}: Layer 3 — membaca isi dokumen (alasan: ${routing.reason})...` });
       readableFiles = files.filter((f) => isReadableMime(f.mimeType));
       const fileContents = await Promise.all(
         readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
@@ -265,7 +271,7 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
       if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
       send("log", { level: "info", message: `ID ${id}: Layer 3 — skor ${aiCheck.score}%${contentCheck.isTemplate ? " ⚠️ template terdeteksi" : ""}` });
 
-      // ── Layer 4 Rescue: deep review vs PANRB (hanya jika masih rendah & ada kriteria) ──
+      // ── Layer 4 Rescue: deep review vs PANRB jika konten masih rendah ──
       if (aiCheck.score < 40 && kriteria) {
         send("log", { level: "info", message: `ID ${id}: Layer 4 rescue — deep review vs PANRB...` });
         deepFileContents = await Promise.all(
@@ -280,9 +286,13 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
       }
 
       if (aiCheck.score < 40) exhausted = true;
+
+    } else {
+      // ── Tidak Sesuai: auditor sudah yakin, tidak perlu cek konten ──
+      send("log", { level: "warn", message: `ID ${id}: Auditor menyimpulkan Tidak Sesuai (skor ${aiCheck.score}%) — pengecekan konten tidak diperlukan` });
     }
 
-    // ── Layer 4 QC Sampling: Sonnet spot-check (independen dari skor) ──
+    // ── QC Sampling: Sonnet spot-check independen (8% random + flag tertentu) ──
     if (!deepReview && kriteria && shouldSampleForQC(heuristic, aiCheck, aiCheck.score)) {
       send("log", { level: "info", message: `ID ${id}: [QC] Sampling Sonnet...` });
       if (!readableFiles) readableFiles = files.filter((f) => isReadableMime(f.mimeType));
@@ -317,7 +327,8 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
     existCheck.detail,
     aiCheck.dokumenAda?.length    > 0 ? `Ada: ${aiCheck.dokumenAda.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
     aiCheck.dokumenKurang?.length > 0 ? `Kurang: ${aiCheck.dokumenKurang.slice(0, 3).map((s) => s.substring(0, 70)).join(", ")}` : "",
-    aiCheck.detail,
+    aiCheck.pendapat || aiCheck.detail,
+    aiCheck.temuanKritis ? `[Temuan Auditor] ${aiCheck.temuanKritis}` : "",
   ].filter(Boolean);
 
   if (deepReview) {
@@ -328,15 +339,15 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
     }
   }
 
-  const vrData = buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek);
+  const vrData = buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek, scoringDetailMap, jawabanUnit);
 
   return {
-    result: { id, bukti, standar, files, existCheck, aiCheck, verdict },
+    result: { id, bukti, jawaban_unit: jawabanUnit, standar, files, existCheck, aiCheck, verdict },
     vrData,
   };
 }
 
-async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets, penilaianId, send }) {
+async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap }) {
   const submission = await LkeSubmission.findById(submissionId).select("target").lean();
   const target = submission?.target || "WBK";
 
@@ -346,14 +357,14 @@ async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets,
     if (!AI_PATTERN.test(entry.result)) continue;
     const color = /^\u2705/u.test(entry.result) ? "HIJAU"
       : /^\u26A0\uFE0F/u.test(entry.result) ? "KUNING" : "MERAH";
-    allResultsMap.set(id, { id, verdict: { color } });
+    allResultsMap.set(id, { id, verdict: { color }, jawaban_unit: jawabanUnitMap[id] ?? "" });
   }
   for (const r of results) allResultsMap.set(r.id, r);
 
   const allResultsForScoring = Array.from(allResultsMap.values());
   if (allResultsForScoring.length === 0) return null;
 
-  const nilaiLkeAi = calculateNilaiLkeAi(allResultsForScoring, target);
+  const nilaiLkeAi = calculateNilaiLkeAi(allResultsForScoring, target, scoringDetailMap);
   send("log", {
     level: "info",
     message: `Penilaian AI: nilai akhir ${nilaiLkeAi.nilai_akhir ?? "\u2014"} (${target}) \u2014 dari ${allResultsForScoring.length} item tercek`,
@@ -380,11 +391,18 @@ export async function POST(req) {
     async start(controller) {
       await connect();
       if (!submissionId) throw new Error("submissionId wajib diisi");
-      if (!sheetUrl) throw new Error("URL Google Sheet wajib diisi");
 
       const send = createSSESender(controller);
 
       try {
+        // ── App mode: delegate ke app-check ──
+        const submissionMeta = await LkeSubmission.findById(submissionId).select("source target").lean();
+        if (submissionMeta?.source === "app") {
+          await handleAppModeCheck({ submissionId, submission: submissionMeta, dataLimit: parseInt(limit) || 0, send });
+          return;
+        }
+
+        if (!sheetUrl) throw new Error("URL Google Sheet wajib diisi");
         const penilaianId = extractSheetId(sheetUrl);
         const penilaianName = sheetName?.trim() || "Jawaban";
         const standarId = process.env.ZI_STANDARISASI_SHEET_ID;
@@ -392,6 +410,12 @@ export async function POST(req) {
         const dataLimit = parseInt(limit) || 0;
 
         if (!standarId) throw new Error("ZI_STANDARISASI_SHEET_ID belum dikonfigurasi di .env");
+
+        const kriteriaList = await LkeKriteria.find({ aktif: true }).lean();
+        const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k));
+        const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)));
+        const scoringDetailMap = buildScoringDetailMap(primaryKriteria);
+        const masterTotalData = primaryKriteria.length;
 
         // ── Init Google ──
         send("log", { level: "info", message: "Menginisialisasi koneksi Google..." });
@@ -409,9 +433,10 @@ export async function POST(req) {
         send("log", { level: "info", message: `${Object.keys(standarMap).length} standar dokumen ditemukan` });
 
         // ── Extract & classify rows ──
-        const { dataStart, allDataRows, allValid } = extractDataRows(penilaianRows);
+        const { dataStart, allDataRows, allValid } = extractDataRows(penilaianRows, primaryIds);
+        const jawabanUnitMap = buildJawabanUnitMap(allDataRows);
         send("log", { level: "info", message: `Baris data mulai dari baris ke-${dataStart + 1} (ID: ${String(penilaianRows[dataStart]?.[0] || "?").trim()})` });
-        send("log", { level: "info", message: `Total data: ${allDataRows.length} baris (${allValid.length} punya link Drive, ${allDataRows.length - allValid.length} tanpa link)` });
+        send("log", { level: "info", message: `Total data utama: ${masterTotalData} indikator (${allValid.length} punya link Drive di sheet)` });
 
         // ── Baca Visa review ──
         send("log", { level: "info", message: "Membaca sheet 'Visa review'..." });
@@ -444,10 +469,10 @@ export async function POST(req) {
         });
 
         // ── Progress tracking ──
-        const totalData = allDataRows.length;
-        const baseChecked = allDataRows.filter(({ row }) => {
-          const id = String(row[COL.ID - 1]).trim();
-          return visaMap[id] && AI_PATTERN.test(visaMap[id].result);
+        const totalData = masterTotalData;
+        const baseChecked = Array.from(primaryIds).filter((id) => {
+          const entry = visaMap[String(id)];
+          return entry && AI_PATTERN.test(entry.result);
         }).length;
         let uncheckedProcessed = 0;
 
@@ -524,7 +549,7 @@ export async function POST(req) {
 
           let processed;
           try {
-            processed = await processItem(item, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek });
+            processed = await processItem(item, { auth, standarMap, kriteriaMap, visaMap, fileListCache, send, tglCek, scoringDetailMap });
           } catch (err) {
             if (err instanceof AiCostError) {
               send("log", { level: "error", message: `Kredit AI habis: ${err.message}` });
@@ -598,7 +623,7 @@ export async function POST(req) {
 
         // ── Nilai LKE AI ──
         const nilaiLkeAi = await computeAndWriteNilaiLke({
-          submissionId, visaMap, results, sheets, penilaianId, send,
+          submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap,
         });
 
         // ── Final MongoDB update ──

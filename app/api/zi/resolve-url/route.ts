@@ -17,7 +17,7 @@ function colToLetter(col: number): string {
   return letter;
 }
 
-const LINK_COL = 14; // COL.LINK
+const LINK_COL = 14; // Tautan Bukti Dukung Baru
 
 export async function POST(req: Request) {
   try {

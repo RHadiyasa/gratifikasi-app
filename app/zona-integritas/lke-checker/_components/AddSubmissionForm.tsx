@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Input, Textarea } from '@heroui/input'
 import { Button } from '@heroui/button'
 import { Select, SelectItem } from '@heroui/select'
-import { CheckCircle2, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Sheet, PencilLine } from 'lucide-react'
 import { useZiStore } from '@/store/ziStore'
 import { ESELON1_LIST } from '@/types/zi'
 
@@ -13,8 +14,10 @@ interface Props {
 }
 
 export default function AddSubmissionForm({ onSuccess }: Props) {
+  const router      = useRouter()
   const addSubmission = useZiStore((s) => s.addSubmission)
 
+  const [mode, setMode] = useState<'sheet' | 'app'>('sheet')
   const [form, setForm] = useState({
     link:     '',
     target:   'WBK' as 'WBK' | 'WBBM',
@@ -32,19 +35,30 @@ export default function AddSubmissionForm({ onSuccess }: Props) {
     setForm((f) => ({ ...f, [k]: v }))
   }
 
+  const isDisabled = !form.eselon1 || !form.eselon2 || (mode === 'sheet' && !form.link)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.link || !form.eselon1 || !form.eselon2) return
+    if (isDisabled) return
     setLoading(true)
     setWarn(null)
     setParseErr(null)
     setSuccess(false)
 
     try {
-      const result = await addSubmission(form)
+      const payload = { ...form, source: mode, link: mode === 'app' ? null : form.link }
+      const result  = await addSubmission(payload)
       if (result.abbrev_warning) setWarn('Nama unit terlihat disingkat — pastikan nama sudah lengkap.')
       if (result.parse_error) setParseErr(`Gagal parse nilai LKE: ${result.parse_error}`)
       setSuccess(true)
+
+      if (mode === 'app' && result.submission?._id) {
+        setTimeout(() => {
+          router.push(`/zona-integritas/lke-checker/${result.submission._id}/input`)
+        }, 800)
+        return
+      }
+
       setForm({ link: '', target: 'WBK', eselon1: '', eselon2: '', pic_unit: '', catatan: '' })
       setTimeout(() => {
         setSuccess(false)
@@ -59,14 +73,48 @@ export default function AddSubmissionForm({ onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        label="Link Google Sheet LKE"
-        placeholder="https://docs.google.com/spreadsheets/d/…"
-        value={form.link}
-        onValueChange={(v) => set('link', v)}
-        isRequired
-        size="sm"
-      />
+      {/* Mode toggle */}
+      <div className="flex rounded-lg border border-default-200 overflow-hidden text-sm">
+        <button
+          type="button"
+          onClick={() => setMode('sheet')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 transition-colors ${
+            mode === 'sheet'
+              ? 'bg-primary text-white font-medium'
+              : 'text-default-500 hover:bg-default-100'
+          }`}
+        >
+          <Sheet size={13} />
+          Via Google Sheets
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('app')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 transition-colors ${
+            mode === 'app'
+              ? 'bg-primary text-white font-medium'
+              : 'text-default-500 hover:bg-default-100'
+          }`}
+        >
+          <PencilLine size={13} />
+          Input di Aplikasi
+        </button>
+      </div>
+
+      {mode === 'sheet' ? (
+        <Input
+          label="Link Google Sheet LKE"
+          placeholder="https://docs.google.com/spreadsheets/d/…"
+          value={form.link}
+          onValueChange={(v) => set('link', v)}
+          isRequired
+          size="sm"
+        />
+      ) : (
+        <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 px-3 py-2.5 text-xs text-primary-700 dark:text-primary-300">
+          Jawaban akan diisi melalui form di dalam aplikasi. Setelah submit, Anda akan diarahkan ke halaman pengisian.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Select
@@ -123,7 +171,7 @@ export default function AddSubmissionForm({ onSuccess }: Props) {
       {success && (
         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
           <CheckCircle2 size={15} />
-          <span>Unit berhasil ditambahkan!</span>
+          <span>{mode === 'app' ? 'Unit ditambahkan — mengalihkan ke halaman input...' : 'Unit berhasil ditambahkan!'}</span>
         </div>
       )}
       {warn && (
@@ -140,10 +188,10 @@ export default function AddSubmissionForm({ onSuccess }: Props) {
         type="submit"
         color="primary"
         isLoading={loading}
-        isDisabled={!form.link || !form.eselon1 || !form.eselon2}
+        isDisabled={isDisabled}
         fullWidth
       >
-        Tambah & Parse LKE
+        {mode === 'sheet' ? 'Tambah & Parse LKE' : 'Tambah Unit'}
       </Button>
     </form>
   )

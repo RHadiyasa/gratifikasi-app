@@ -361,16 +361,18 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
                     <span className="truncate">{unit.pic_unit || '—'}</span>
                   )}
                 </div>
-                <a
-                  href={unit.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-primary hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ExternalLink size={11} className="shrink-0" />
-                  <span>Buka Google Sheet</span>
-                </a>
+                {unit.link && (
+                  <a
+                    href={unit.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink size={11} className="shrink-0" />
+                    <span>Buka Google Sheet</span>
+                  </a>
+                )}
               </div>
 
               {/* ── Catatan ── */}

@@ -3,8 +3,9 @@ export const maxDuration = 300;
 import { google } from "googleapis";
 import { connect } from "@/config/dbconfig";
 import LkeSubmission from "@/modules/models/LkeSubmission";
+import LkeKriteria from "@/modules/models/LkeKriteria";
 
-import { COL, STANDAR, KOMPONEN_LABEL, ID_DETAIL_MAP, AI_PATTERN } from "@/lib/zi/constants";
+import { COL, STANDAR, KOMPONEN_LABEL, AI_PATTERN } from "@/lib/zi/constants";
 import { getGoogleAuth } from "@/lib/zi/google-auth";
 import {
   extractSheetId, extractFolderId, computeFingerprint, detectDataStart,
@@ -21,8 +22,9 @@ import {
   confidenceRouting, shouldSampleForQC,
   calculateFinalVerdict,
 } from "@/lib/zi/ai-checker";
-import { getAnswerWeight, calculateNilaiLkeAi } from "@/lib/zi/scoring";
+import { buildScoringDetailMap, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
+import { handleSingleAppModeCheck } from "@/lib/zi/app-check";
 
 // Cache in-memory untuk mengurangi Google Sheets API reads per menit.
 // Standarisasi: jarang berubah → TTL 5 menit.
@@ -64,9 +66,9 @@ function buildStandarMap(standarRows) {
   return { standarMap, kriteriaMap };
 }
 
-function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek) {
-  const detail  = ID_DETAIL_MAP[parseInt(id)];
-  const weight  = getAnswerWeight(verdict.color, detail?.answer_type);
+function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek, scoringDetailMap, jawabanUnit = "") {
+  const detail  = scoringDetailMap[parseInt(id)];
+  const weight  = getScoringWeight({ verdict, jawaban_unit: jawabanUnit }, detail);
   const nilaiAi = detail ? Math.round(weight * detail.bobot * 100) / 100 : 0;
   return [
     id, bukti, linkDrive, fingerprint,
@@ -78,6 +80,16 @@ function buildVisaRowData(id, bukti, linkDrive, fingerprint, verdict, reviuLines
     detail?.bobot ?? "",
     nilaiAi,
   ];
+}
+
+function buildJawabanUnitMap(penilaianRows, dataStart, primaryIds) {
+  const map = {};
+  for (const row of penilaianRows.slice(dataStart)) {
+    const id = String(row[COL.ID - 1] || "").trim();
+    if (!/^\d+$/.test(id) || !primaryIds.has(Number(id))) continue;
+    map[id] = String(row[COL.JAWABAN_UNIT - 1] || "").trim();
+  }
+  return map;
 }
 
 function isReadableMime(mimeType) {
@@ -100,16 +112,34 @@ export async function POST(req) {
       try {
         await connect();
 
-        if (!submissionId || !rowId || !sheetUrl) {
-          throw new Error("submissionId, rowId, dan sheetUrl wajib diisi");
+        if (!submissionId || !rowId) {
+          throw new Error("submissionId dan rowId wajib diisi");
         }
 
+        // ── App mode: delegate ke app-check ──
+        const submissionDoc = await LkeSubmission.findById(submissionId).select("source target total_data").lean();
+        if (submissionDoc?.source === "app") {
+          await handleSingleAppModeCheck({ submissionId, questionId: rowId, send });
+          return;
+        }
+
+        if (!sheetUrl) throw new Error("sheetUrl wajib diisi");
         const penilaianId   = extractSheetId(sheetUrl);
         const penilaianName = sheetName?.trim() || "Jawaban";
         const standarId     = process.env.ZI_STANDARISASI_SHEET_ID;
         const standarName   = process.env.ZI_STANDARISASI_SHEET_NAME || "Standarisasi";
 
         if (!standarId) throw new Error("ZI_STANDARISASI_SHEET_ID belum dikonfigurasi di .env");
+
+        const kriteriaList = await LkeKriteria.find({ aktif: true }).lean();
+        const kriteriaDoc = kriteriaList.find((k) => Number(k.question_id) === Number(rowId));
+        if (!kriteriaDoc) throw new Error(`ID ${rowId} tidak ditemukan di master kriteria`);
+        if (isDetailKriteria(kriteriaDoc)) {
+          throw new Error(`ID ${rowId} adalah detil indikator. Pemeriksaan dilakukan melalui parent ID ${kriteriaDoc.parent_question_id}.`);
+        }
+        const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k));
+        const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)));
+        const scoringDetailMap = buildScoringDetailMap(primaryKriteria);
 
         // ── Init Google ──
         send("log", { level: "info", message: "Menginisialisasi koneksi Google..." });
@@ -121,6 +151,7 @@ export async function POST(req) {
         send("log", { level: "info", message: `Membaca sheet "${penilaianName}"...` });
         const penilaianRows = await readSheetCached(auth, penilaianId, penilaianName, JAWABAN_TTL);
         const dataStart     = detectDataStart(penilaianRows);
+        const jawabanUnitMap = buildJawabanUnitMap(penilaianRows, dataStart, primaryIds);
 
         const targetEntry = penilaianRows
           .slice(dataStart)
@@ -134,6 +165,7 @@ export async function POST(req) {
         const { row } = targetEntry;
         const bukti     = String(row[COL.BUKTI - 1] || "").trim();
         const linkDrive = String(row[COL.LINK  - 1] || "").trim();
+        const jawabanUnit = String(row[COL.JAWABAN_UNIT - 1] || "").trim();
 
         if (!linkDrive.includes("drive.google")) {
           throw new Error(`ID ${rowId}: tidak memiliki link Google Drive`);
@@ -185,7 +217,7 @@ export async function POST(req) {
           detail:    files.length > 0 ? `${files.length} file ditemukan` : "Folder kosong",
         };
 
-        const detailItem = ID_DETAIL_MAP[parseInt(rowId)];
+        const detailItem = scoringDetailMap[parseInt(rowId)];
         const bobot = detailItem?.bobot ?? 0;
 
         // ── Layer 0: Smart Heuristic ──
@@ -342,7 +374,7 @@ export async function POST(req) {
         }
 
         const tglCek = new Date().toLocaleString("id-ID");
-        const vrData = buildVisaRowData(rowId, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek);
+        const vrData = buildVisaRowData(rowId, bukti, linkDrive, fingerprint, verdict, reviuLines, tglCek, scoringDetailMap, jawabanUnit);
 
         // ── Tulis ke Visa review ──
         send("log", { level: "info", message: "Menyimpan hasil ke sheet 'Visa review'..." });
@@ -374,10 +406,11 @@ export async function POST(req) {
                 color: /^✅/u.test(e.result) ? "HIJAU"
                        : /^⚠️/u.test(e.result) ? "KUNING" : "MERAH",
               },
+              jawaban_unit: jawabanUnitMap[id] ?? "",
             }));
           const submission = await LkeSubmission.findById(submissionId).select("target total_data checked_count").lean();
           const target = submission?.target || "WBK";
-          const nilaiLkeAi = calculateNilaiLkeAi(resultsForScoring, target);
+          const nilaiLkeAi = calculateNilaiLkeAi(resultsForScoring, target, scoringDetailMap);
           await writeRingkasanAi(sheets, penilaianId, nilaiLkeAi, target);
           send("log", { level: "success", message: "Ringkasan AI diperbarui ✓" });
 

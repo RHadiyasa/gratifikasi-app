@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { connect } from '@/config/dbconfig'
 import LkeSubmission from '@/modules/models/LkeSubmission'
+import LkeKriteria from '@/modules/models/LkeKriteria'
 
 function detectAbbrev(text: string): boolean {
   const words = text.split(/\s+/)
   return words.some((w) => (w.length > 1 && w === w.toUpperCase() && /^[A-Z]+$/.test(w)) || /\.\w/.test(w))
+}
+
+const PRIMARY_KRITERIA_QUERY = {
+  aktif: true,
+  $or: [{ answer_type: { $ne: 'jumlah' } }, { parent_question_id: null }],
 }
 
 // GET /api/zi/submissions
@@ -53,9 +59,10 @@ export async function POST(req: Request) {
   try {
     await connect()
     const body = await req.json()
-    const { link, target, eselon1, eselon2, pic_unit, catatan } = body
+    const { link, target, eselon1, eselon2, pic_unit, catatan, source } = body
+    const mode: 'sheet' | 'app' = source === 'app' ? 'app' : 'sheet'
 
-    if (!link?.includes('docs.google.com/spreadsheets')) {
+    if (mode === 'sheet' && !link?.includes('docs.google.com/spreadsheets')) {
       return NextResponse.json({ error: 'Link harus berupa URL Google Sheets' }, { status: 400 })
     }
     if (!['WBK', 'WBBM'].includes(target)) {
@@ -67,7 +74,18 @@ export async function POST(req: Request) {
 
     const abbrev_warning = detectAbbrev(eselon2)
 
-    const submission = await LkeSubmission.create({ link, target, eselon1, eselon2, pic_unit, catatan: catatan || '' })
+    const totalData = mode === 'app'
+      ? await LkeKriteria.countDocuments(PRIMARY_KRITERIA_QUERY)
+      : 0
+
+    const submission = await LkeSubmission.create({
+      link:    mode === 'sheet' ? link : null,
+      source:  mode,
+      target, eselon1, eselon2, pic_unit,
+      catatan: catatan || '',
+      total_data: mode === 'app' ? totalData : 0,
+      unchecked_count: mode === 'app' ? totalData : 0,
+    })
 
     const created = await LkeSubmission.findById(submission._id).lean()
     return NextResponse.json({ submission: created, abbrev_warning }, { status: 201 })
