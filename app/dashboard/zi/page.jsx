@@ -18,6 +18,7 @@ import { useZiStore } from "@/store/ziStore";
 import { useAuthStore } from "@/store/authStore";
 import { TARGET_THRESHOLD } from "@/types/zi";
 import { cn } from "@/lib/utils";
+import { hasPermission } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -202,6 +203,8 @@ export default function DashboardZI() {
     fetchSubmissions, syncSubmission,
   } = useZiStore();
   const role = useAuthStore((s) => s.role);
+  const canManageKriteria = hasPermission(role, "zi:kriteria:manage");
+  const canSync = hasPermission(role, "zi:sync");
 
   const [drawerUnit, setDrawerUnit] = useState(null);
   const { resolvedTheme } = useTheme();
@@ -254,7 +257,7 @@ export default function DashboardZI() {
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
-            {(role === "admin" || role === "developer") && (
+            {canManageKriteria && (
               <NextLink
                 href="/dashboard/zi/kriteria"
                 className={cn(
@@ -546,11 +549,15 @@ export default function DashboardZI() {
                           className="text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <SyncBtn
-                            id={sub._id}
-                            syncing={syncingIds.includes(sub._id)}
-                            onSync={syncSubmission}
-                          />
+                          {canSync ? (
+                            <SyncBtn
+                              id={sub._id}
+                              syncing={syncingIds.includes(sub._id)}
+                              onSync={syncSubmission}
+                            />
+                          ) : (
+                            <span className="text-default-300">—</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -745,21 +752,23 @@ export default function DashboardZI() {
                 <Separator />
 
                 {/* Sync button */}
-                <button
-                  disabled={syncingIds.includes(drawerUnit._id)}
-                  onClick={() => syncSubmission(drawerUnit._id)}
-                  className={cn(
-                    "w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
-                    "border border-default-200 bg-default-100 hover:bg-default-200 text-foreground",
-                    "disabled:opacity-40 disabled:cursor-not-allowed",
-                  )}
-                >
-                  <RefreshCw
-                    size={14}
-                    className={syncingIds.includes(drawerUnit._id) ? "animate-spin" : ""}
-                  />
-                  {syncingIds.includes(drawerUnit._id) ? "Menyinkronkan…" : "Sync Data LKE"}
-                </button>
+                {canSync && (
+                  <button
+                    disabled={syncingIds.includes(drawerUnit._id)}
+                    onClick={() => syncSubmission(drawerUnit._id)}
+                    className={cn(
+                      "w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                      "border border-default-200 bg-default-100 hover:bg-default-200 text-foreground",
+                      "disabled:opacity-40 disabled:cursor-not-allowed",
+                    )}
+                  >
+                    <RefreshCw
+                      size={14}
+                      className={syncingIds.includes(drawerUnit._id) ? "animate-spin" : ""}
+                    />
+                    {syncingIds.includes(drawerUnit._id) ? "Menyinkronkan…" : "Sync Data LKE"}
+                  </button>
+                )}
               </div>
             </motion.div>
           </>

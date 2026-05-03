@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
 import { Button } from "@heroui/button";
 import Link from "next/link";
+import { VisaCredit } from "@/components/visa-brand";
 import {
   ShieldAlert,
   Scale,
@@ -188,7 +190,7 @@ const fadeUp = {
 
 export default function ELearningPage() {
   const { isLoggedIn, role } = useAuthStore();
-  const canTrack = isLoggedIn && (role === "developer" || role === "admin" || role === "upg");
+  const canTrack = isLoggedIn && hasPermission(role, "elearning:track");
   const [activeTab, setActiveTab] = useState<"steps" | "issues">("steps");
 
   return (
@@ -199,6 +201,15 @@ export default function ELearningPage() {
         {/* Background layers */}
         <div className="absolute inset-0 -z-20 bg-gradient-to-b from-[hsl(var(--heroui-primary)/0.08)] via-transparent to-transparent" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,hsl(var(--heroui-primary)/0.15),transparent)]" />
+
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="mb-5"
+        >
+          <VisaCredit size="md" className="mx-auto" />
+        </motion.div>
 
         {/* Badge */}
         <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

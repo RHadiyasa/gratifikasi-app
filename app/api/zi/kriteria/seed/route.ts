@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { connect } from '@/config/dbconfig'
 import LkeKriteria from '@/modules/models/LkeKriteria'
 import { ID_DETAIL_MAP } from '@/lib/zi/constants'
+import { hasPermission } from '@/lib/permissions'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -147,8 +148,8 @@ const SUB_KOMPONEN_MAP: Record<number, { sub: string; urutan: number }> = {
 // POST /api/zi/kriteria/seed — developer only, jalankan sekali
 export async function POST() {
   const role = await getRole()
-  if (role !== 'developer') {
-    return NextResponse.json({ error: 'Hanya developer yang dapat menjalankan seed' }, { status: 403 })
+  if (!hasPermission(role, 'zi:kriteria:manage')) {
+    return NextResponse.json({ error: 'Hanya pengelola master kriteria yang dapat menjalankan seed' }, { status: 403 })
   }
   try {
     await connect()

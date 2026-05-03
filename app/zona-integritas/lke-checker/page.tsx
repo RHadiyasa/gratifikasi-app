@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useZiStore } from "@/store/ziStore";
+import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
 import { ESELON1_LIST, TARGET_THRESHOLD } from "@/types/zi";
 import type { LkeSubmission } from "@/types/zi";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -50,6 +52,11 @@ export default function LkeCheckerPage() {
     clearCompare,
     setFilters,
   } = useZiStore();
+  const role = useAuthStore((s) => s.role);
+  const canManageZi = hasPermission(role, "zi:manage");
+  const canDeleteZi = hasPermission(role, "zi:delete");
+  const canSyncZi = hasPermission(role, "zi:sync");
+  const canRunAi = hasPermission(role, "zi:ai-checker");
 
   const router = useRouter();
   const [tab, setTab] = useState("daftar");
@@ -353,20 +360,24 @@ export default function LkeCheckerPage() {
                                   <BarChart2 size={13} />
                                 </Button>
                               </Tooltip>
-                              <SyncButton
-                                id={sub._id}
-                                syncing={isSyncing}
-                                onSync={syncSubmission}
-                              />
-                              <Button
-                                size="sm"
-                                variant="flat"
-                                color="danger"
-                                isIconOnly
-                                onPress={() => handleDelete(sub._id)}
-                              >
-                                <Trash2 size={13} />
-                              </Button>
+                              {canSyncZi && (
+                                <SyncButton
+                                  id={sub._id}
+                                  syncing={isSyncing}
+                                  onSync={syncSubmission}
+                                />
+                              )}
+                              {canDeleteZi && (
+                                <Button
+                                  size="sm"
+                                  variant="flat"
+                                  color="danger"
+                                  isIconOnly
+                                  onPress={() => handleDelete(sub._id)}
+                                >
+                                  <Trash2 size={13} />
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -380,32 +391,36 @@ export default function LkeCheckerPage() {
         </Tab>
 
         {/* ── TAB: INPUT ── */}
-        <Tab
-          key="input"
-          title={
-            <span className="flex items-center gap-1.5">
-              <FilePlus2 size={15} /> Input LKE
-            </span>
-          }
-        >
-          <div className="pt-4 max-w-2xl">
-            <AddSubmissionForm onSuccess={() => setTab("daftar")} />
-          </div>
-        </Tab>
+        {canManageZi && (
+          <Tab
+            key="input"
+            title={
+              <span className="flex items-center gap-1.5">
+                <FilePlus2 size={15} /> Input LKE
+              </span>
+            }
+          >
+            <div className="pt-4 max-w-2xl">
+              <AddSubmissionForm onSuccess={() => setTab("daftar")} />
+            </div>
+          </Tab>
+        )}
 
         {/* ── TAB: AI CHECKER ── */}
-        <Tab
-          key="ai-checker"
-          title={
-            <span className="flex items-center gap-1.5">
-              <Bot size={15} /> AI Checker
-            </span>
-          }
-        >
-          <div className="pt-4">
-            <AiCheckerTab />
-          </div>
-        </Tab>
+        {canRunAi && (
+          <Tab
+            key="ai-checker"
+            title={
+              <span className="flex items-center gap-1.5">
+                <Bot size={15} /> AI Checker
+              </span>
+            }
+          >
+            <div className="pt-4">
+              <AiCheckerTab />
+            </div>
+          </Tab>
+        )}
       </Tabs>
 
       {/* Unit Drawer */}

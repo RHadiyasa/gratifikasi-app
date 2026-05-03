@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { hasPermission } from "@/lib/permissions";
+import { getDashboardHref, hasPermission, ROLE_LABELS } from "@/lib/permissions";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, LayoutGrid, ArrowRight, Users } from "lucide-react";
@@ -14,10 +14,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!role) return;
 
-    if (role === "zi") {
-      router.replace("/dashboard/zi");
-    } else if (role === "upg") {
-      router.replace("/dashboard/upg");
+    const home = getDashboardHref(role);
+    if (home !== "/dashboard") {
+      router.replace(home);
     }
   }, [role, router]);
 
@@ -91,7 +90,7 @@ export default function DashboardPage() {
                   <ShieldCheck size={16} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold">UPG</p>
+                  <p className="text-sm font-semibold">Gratifikasi</p>
                   <p className="text-xs text-default-400">
                     Unit Pengendalian Gratifikasi
                   </p>
@@ -152,7 +151,7 @@ export default function DashboardPage() {
           </div>
 
           <p className="text-[11px] text-default-300 text-center mt-6">
-            Anda masuk sebagai {isDeveloper ? "Developer" : "Master Admin"}
+            Anda masuk sebagai {ROLE_LABELS[role] ?? role}
           </p>
         </div>
       </motion.div>

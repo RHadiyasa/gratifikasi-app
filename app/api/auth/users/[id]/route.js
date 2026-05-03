@@ -3,6 +3,7 @@ import UpgAdmin from "@/modules/models/UpgAdminModel";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { ASSIGNABLE_ROLES } from "@/lib/permissions";
 
 function getCallerRole(req) {
   try {
@@ -47,6 +48,13 @@ export async function PATCH(req, { params }) {
       return NextResponse.json(
         { error: "Tidak dapat menjadikan user lain sebagai developer" },
         { status: 403 },
+      );
+    }
+
+    if (body.role && body.role !== "developer" && !ASSIGNABLE_ROLES.includes(body.role)) {
+      return NextResponse.json(
+        { error: `Role "${body.role}" tidak valid` },
+        { status: 400 },
       );
     }
 

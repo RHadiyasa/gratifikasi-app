@@ -1,4 +1,294 @@
-﻿# Major Update Plan: Sheet Sync, LkeJawaban, and Criteria Single Source of Truth
+# VISA Update Summary
+
+Last updated: 2026-05-03
+
+Dokumen ini sekarang memuat dua hal:
+
+1. Ringkasan perubahan yang sudah diimplementasikan pada update role, akses LKE, dan duplicate Google Sheet.
+2. Rencana implementasi besar sebelumnya untuk sync sheet, `LkeJawaban`, dan `LkeKriteria` sebagai single source of truth.
+
+## Summary Perubahan Yang Sudah Diimplementasikan
+
+### 1. Update Role dan Label
+
+Role aplikasi telah diperbarui menjadi:
+
+- `developer` -> **Super Admin**
+- `admin` -> **Full Akses**
+- `admin_gratifikasi` -> **Admin Gratifikasi**
+- `admin_elearning` -> **Admin E-Learning**
+- `admin_zi` -> **Admin Zona Integritas**
+- `tpi_kesdm` -> **TPI KESDM**
+- `tpi_unit` -> **TPI Unit**
+- `unit_zi` -> **Unit ZI**
+
+Role lama `zi` dan `upg` masih dipertahankan sementara untuk kompatibilitas akun lama.
+
+Implementasi utama ada di:
+
+- `lib/permissions.ts`
+- `modules/models/UpgAdminModel.js`
+- `app/api/auth/me/route.js`
+- `app/api/auth/register/route.js`
+- `app/api/auth/users/[id]/route.js`
+- `store/authStore.ts`
+
+### 2. Sentralisasi Permission
+
+Semua aturan akses sekarang dipusatkan di `lib/permissions.ts`, termasuk:
+
+- label role
+- deskripsi role
+- daftar role yang boleh dibuat
+- helper dashboard redirect
+- helper scope akses Zona Integritas
+- helper field-level edit untuk jawaban LKE
+
+Permission utama yang dipakai:
+
+- `dashboard:admin`
+- `dashboard:gratifikasi`
+- `dashboard:elearning`
+- `dashboard:zi`
+- `report:list`
+- `elearning:track`
+- `elearning:participants`
+- `zi:access`
+- `zi:manage`
+- `zi:delete`
+- `zi:sync`
+- `zi:ai-checker`
+- `zi:kriteria:manage`
+- `zi:review-all-lke`
+- `zi:own-unit-only`
+- `zi:fill-unit`
+- `zi:review-tpi-unit`
+- `zi:review-tpi-kesdm`
+
+### 3. Mapping Akses Role Baru
+
+#### Super Admin
+
+- akses penuh seluruh modul
+- kelola akun
+- kelola semua submission LKE
+- akses semua review
+
+#### Full Akses
+
+- akses penuh fitur gratifikasi
+- akses penuh e-learning
+- akses penuh zona integritas
+- dapat membuat role operasional
+
+#### Admin Gratifikasi
+
+- hanya akses modul gratifikasi
+
+#### Admin E-Learning
+
+- hanya akses modul e-learning
+
+#### Admin Zona Integritas
+
+- akses penuh modul zona integritas
+- dapat input, sync, delete, AI checker, dan kelola master kriteria
+
+#### TPI KESDM
+
+- hanya akses fitur zona integritas
+- dapat melihat semua LKE
+- dapat mengisi `jawaban_tpi_itjen` dan `catatan_tpi_itjen`
+- tidak dapat mengubah review TPI Unit
+
+#### TPI Unit
+
+- hanya akses fitur zona integritas
+- dapat melihat semua LKE
+- dapat mengisi `jawaban_tpi_unit` dan `catatan_tpi_unit`
+- tidak dapat mengubah review TPI KESDM
+
+#### Unit ZI
+
+- hanya akses fitur zona integritas
+- hanya dapat melihat submission LKE unit terkait
+- dapat mengisi data unit: `jawaban_unit`, `narasi`, `bukti`, `link_drive`
+- tidak dapat mengubah review TPI Unit
+- tidak dapat mengubah review TPI KESDM
+
+### 4. Scope Akses Submission LKE
+
+Scope akses submission sekarang mengikuti helper `canAccessZiSubmission(...)`.
+
+Aturannya:
+
+- role reviewer penuh dapat melihat semua LKE
+- `unit_zi` hanya dapat melihat LKE dengan `submission.eselon2` yang cocok dengan `user.unitKerja`
+- pencocokan unit menggunakan normalisasi teks agar lebih aman terhadap beda spasi/huruf besar kecil
+
+Implementasi utama ada di:
+
+- `lib/permissions.ts`
+- `app/api/zi/submissions/route.ts`
+- `app/api/zi/submissions/[id]/route.ts`
+- `app/api/zi/submissions/[id]/sync-sheet/route.ts`
+- `app/api/zi/submissions/[id]/sync/route.ts`
+- `app/api/zi/compare/route.ts`
+
+### 5. Pembatasan Edit Per Field di Halaman Input LKE
+
+API dan UI sekarang sama-sama membatasi field yang boleh diedit sesuai role.
+
+Field unit:
+
+- `jawaban_unit`
+- `narasi`
+- `bukti`
+- `link_drive`
+
+Field TPI Unit:
+
+- `jawaban_tpi_unit`
+- `catatan_tpi_unit`
+
+Field TPI KESDM:
+
+- `jawaban_tpi_itjen`
+- `catatan_tpi_itjen`
+
+Field supervisi AI:
+
+- `ai_result.supervisi`
+
+Implementasi utama ada di:
+
+- `app/api/zi/submissions/[id]/jawaban/route.ts`
+- `app/api/zi/submissions/[id]/jawaban/[qid]/route.ts`
+- `app/zona-integritas/lke-checker/[id]/input/page.tsx`
+
+### 6. Middleware dan Redirect Berdasarkan Role
+
+Proteksi route sekarang memakai permission helper, bukan pengecekan role hardcoded yang tersebar.
+
+Route penting yang diperbarui:
+
+- `/dashboard`
+- `/dashboard/accounts`
+- `/dashboard/upg`
+- `/dashboard/zi`
+- `/dashboard/zi/kriteria`
+- `/dashboard/report-list`
+- `/register`
+- `/e-learning/tracker`
+- `/zona-integritas/lke-checker`
+
+Implementasi utama ada di:
+
+- `middleware.js`
+- `app/dashboard/page.jsx`
+
+### 7. Update UI Role dan Menu
+
+Beberapa halaman sudah disesuaikan agar memakai label role baru dan menu sesuai permission:
+
+- halaman login menampilkan label role baru
+- dashboard redirect mengikuti role
+- halaman register memakai daftar role baru
+- dashboard accounts memakai warna/statistik role baru
+- menu dan tombol ZI disembunyikan jika role tidak punya izin
+- tombol sync/delete/input/AI checker disesuaikan dengan permission
+
+Implementasi utama ada di:
+
+- `app/login/page.jsx`
+- `app/register/page.jsx`
+- `app/dashboard/page.jsx`
+- `app/dashboard/accounts/page.jsx`
+- `app/dashboard/zi/page.jsx`
+- `app/dashboard/zi/kriteria/page.tsx`
+- `app/zona-integritas/lke-checker/page.tsx`
+- `app/zona-integritas/lke-checker/[id]/page.tsx`
+- `app/zona-integritas/lke-checker/_components/UnitDrawer.tsx`
+- `app/zona-integritas/lke-checker/[id]/input/page.tsx`
+
+### 8. Duplicate Check untuk Google Sheet LKE
+
+Submission LKE dari Google Sheet sekarang tidak boleh duplikat.
+
+Alur yang sudah diimplementasikan:
+
+- saat create submission, link Google Sheet di-parse menjadi `spreadsheet_id`
+- sistem cek duplikasi berdasarkan `spreadsheet_id`
+- jika data lama belum punya `spreadsheet_id`, sistem fallback scan ke `link` lama dan tetap mencoba ekstrak ID spreadsheet
+- jika duplikat ditemukan, API mengembalikan error `409`
+
+Implementasi utama ada di:
+
+- `modules/models/LkeSubmission.ts`
+- `app/api/zi/submissions/route.ts`
+
+### 9. Filter Akses di API Zona Integritas
+
+Endpoint Zona Integritas yang sekarang sudah memakai akses berbasis role/scope:
+
+- list submission
+- detail submission
+- compare submission
+- sync sheet
+- sync nilai/ringkasan
+- get/save jawaban per submission
+- patch jawaban per question
+- kelola master kriteria
+
+Ini membuat pembatasan akses tidak hanya bergantung pada tampilan frontend, tetapi juga aman di level API.
+
+### 10. Status Visa Saat Ini
+
+Fitur Visa yang sudah tersedia saat ini:
+
+- hasil AI/Visa tetap dibaca dan ditampilkan
+- blok "Review Visa" tampil di halaman input LKE
+- data `ai_result` tetap terhubung dengan proses check/sync yang sudah ada
+
+Implementasi yang **belum** dikerjakan pada update ini:
+
+- tombol `Tanya Visa`
+- bubble chat/thread antara TPI Itjen dan Visa
+- workflow konfirmasi auditor apakah review TPI tetap dipakai atau perlu direvisi
+
+## Catatan Kesesuaian Dengan Plan LKE-Check
+
+Bagian yang sudah mendekati kebutuhan plan:
+
+- master kriteria tetap menjadi fondasi evaluasi
+- narasi, bukti, dan `link_drive` sudah diposisikan sebagai data utama yang bisa diisi dan direview
+- hasil Visa/AI sudah tampil berdampingan dengan review TPI
+- reviewer berbeda sekarang benar-benar dipisah hak editnya
+
+Bagian yang masih perlu tahap lanjutan:
+
+1. Logika otomatis yang memberi nilai minimal jika narasi kosong/tidak lengkap.
+2. Evaluasi eksplisit apakah narasi menjawab `kriteria_panrb`.
+3. Validasi data dukung terhadap list standar dokumen, lalu fallback ke link Google Drive jika list tidak ada.
+4. Fitur `Tanya Visa` sebagai diskusi auditor berbasis konteks review TPI, narasi unit, dan master kriteria.
+
+## Verifikasi
+
+Verifikasi terakhir untuk update ini:
+
+- `npm run build` berhasil
+- type error pada route submission duplikasi spreadsheet sudah diperbaiki
+- masih ada warning lint/prettier lama di beberapa file, tetapi build produksi lolos
+
+## File Baru
+
+- `lib/auth.ts`
+
+## Ringkasan Singkat
+
+Update ini menyelesaikan fondasi akses role baru untuk seluruh modul, memperketat pembatasan reviewer LKE sampai level field, dan mencegah satu Google Sheet LKE terdaftar lebih dari sekali. Fondasi Visa existing tetap dipertahankan, tetapi fitur komunikasi auditor `Tanya Visa` masih menjadi pekerjaan lanjutan.
+
+# Major Update Plan: Sheet Sync, LkeJawaban, and Criteria Single Source of Truth
 
 ## Context
 

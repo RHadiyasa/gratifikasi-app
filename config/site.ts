@@ -1,6 +1,6 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Pencegahan Korupsi",
-  description: "Sistem Pencegahan Korupsi Kementerian ESDM - Inspektorat Jenderal.",
+  name: "Visa Assistant",
+  description: "Asisten digital pencegahan korupsi, gratifikasi, e-learning, dan Zona Integritas Kementerian ESDM.",
 };
