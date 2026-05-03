@@ -93,7 +93,7 @@ export async function parseRingkasanAI(sheetUrl: string): Promise<NilaiLKE | nul
     if (nilaiAkhir === null) return null
 
     const target    = String(rows.find((r) => String(r[0]).trim() === 'Target')?.[1] ?? 'WBK')
-    const threshold = target === 'WBBM' ? 75 : 60
+    const threshold = target === 'WBBM' ? 85 : 75
 
     const mp        = toK('Manajemen Perubahan')
     const tt        = toK('Penataan Tatalaksana')

@@ -146,6 +146,6 @@ export const ESELON1_LIST = [
 export type Eselon1 = typeof ESELON1_LIST[number]
 
 export const TARGET_THRESHOLD: Record<'WBK' | 'WBBM', number> = {
-  WBK:  60,
-  WBBM: 75,
+  WBK:  75,
+  WBBM: 85,
 }

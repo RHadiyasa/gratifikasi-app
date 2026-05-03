@@ -126,12 +126,12 @@ export default function ZonaIntegritasPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-500/5 p-5 space-y-1">
           <p className="text-xs font-bold uppercase tracking-wide text-blue-500">Target WBK</p>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">≥ 60</p>
+          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">≥ 75</p>
           <p className="text-xs text-default-500">Nilai minimum LKE untuk meraih predikat Wilayah Bebas dari Korupsi</p>
         </div>
         <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-500/5 p-5 space-y-1">
           <p className="text-xs font-bold uppercase tracking-wide text-violet-500">Target WBBM</p>
-          <p className="text-3xl font-bold text-violet-600 dark:text-violet-400">≥ 75</p>
+          <p className="text-3xl font-bold text-violet-600 dark:text-violet-400">≥ 85</p>
           <p className="text-xs text-default-500">Nilai minimum LKE untuk meraih predikat Wilayah Birokrasi Bersih dan Melayani</p>
         </div>
       </div>

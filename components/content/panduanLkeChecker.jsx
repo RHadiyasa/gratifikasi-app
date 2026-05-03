@@ -55,7 +55,7 @@ const formFields = [
   {
     tag: "2",
     title: "Target (WBK / WBBM)",
-    desc: "Pilih target unit Anda: WBK (Wilayah Bebas dari Korupsi) atau WBBM (Wilayah Birokrasi Bersih dan Melayani). WBK butuh skor minimal 60, WBBM butuh 75.",
+    desc: "Pilih target unit Anda: WBK (Wilayah Bebas dari Korupsi) atau WBBM (Wilayah Birokrasi Bersih dan Melayani). WBK butuh skor minimal 75, WBBM butuh 85.",
   },
   {
     tag: "3",

@@ -190,8 +190,8 @@ const SOURCE_TONE: Record<RecapSource, string> = {
 }
 
 const TARGET_THRESHOLD: Record<TargetValue, number> = {
-  WBK:  60,
-  WBBM: 75,
+  WBK:  75,
+  WBBM: 85,
 }
 
 const RECAP_PASSING_PERCENT = 60

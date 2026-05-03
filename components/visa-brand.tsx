@@ -11,6 +11,12 @@ type VisaCreditProps = {
   size?: "sm" | "md";
 };
 
+const LOGO_VERSION = "20260503";
+
+// Light theme uses the light logo; dark theme uses the dark logo.
+const LIGHT_MODE_LOGO = `/visa-light-mark.png?v=${LOGO_VERSION}`;
+const DARK_MODE_LOGO = `/visa-dark-mark.png?v=${LOGO_VERSION}`;
+
 const creditSize = {
   sm: {
     mark: "h-7 w-7",
@@ -41,13 +47,13 @@ export function VisaBrandMark({
         aria-hidden="true"
         alt=""
         className={clsx("block h-full w-full object-contain dark:hidden", imageClassName)}
-        src="/visa-dark-mark.png"
+        src={LIGHT_MODE_LOGO}
       />
       <img
         aria-hidden="true"
         alt=""
         className={clsx("hidden h-full w-full object-contain dark:block", imageClassName)}
-        src="/visa-light-mark.png"
+        src={DARK_MODE_LOGO}
       />
     </span>
   );

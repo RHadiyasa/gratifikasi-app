@@ -105,7 +105,7 @@ function TotalRow({ label, nilai, max, threshold }: { label: string; nilai: numb
 
 export function NilaiLKETable({ nilai, target }: Props) {
   const { pengungkit, hasil, nilai_akhir } = nilai
-  const threshold = target === 'WBK' ? 60 : 75
+  const threshold = target === 'WBK' ? 75 : 85
   const c = nilaiColorByThreshold(nilai_akhir, threshold)
 
   return (
