@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/visa-dark-mark.png", type: "image/png", sizes: "256x256" },
+      { url: "/favicon.ico?v=20260503", sizes: "32x32" },
+      { url: "/visa-dark-mark.png?v=20260503", type: "image/png", sizes: "256x256" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/visa-dark-mark.png",
+    shortcut: "/favicon.ico?v=20260503",
+    apple: "/visa-dark-mark.png?v=20260503",
   },
 };
 

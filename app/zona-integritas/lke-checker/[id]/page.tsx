@@ -684,7 +684,7 @@ export default function UnitDetailPage() {
       </div>
     );
 
-  const threshold = unit.target === "WBBM" ? 75 : 60;
+  const threshold = unit.target === "WBBM" ? 85 : 75;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">

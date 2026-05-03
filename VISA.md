@@ -788,3 +788,141 @@ LkeKriteria is the single source of truth for criteria metadata
 existing source='app' workflow still works
 existing source='sheet' workflow still works
 ```
+
+## Update Tambahan - Finalisasi UI, Assignment LKE, dan Brand VISA
+
+Last updated: 2026-05-03
+
+Bagian ini merangkum update lanjutan setelah fondasi role, akses LKE, dan sync sheet selesai.
+
+### 1. Account Menu di Navbar
+
+- Tombol logout lama di pojok kanan diganti menjadi informasi akun login.
+- Format tampilan akun: `Nama Akun - Role`.
+- Saat diklik, muncul dropdown berisi ringkasan akun, pilihan `Profile`, dan pilihan `Logout`.
+- Halaman `Profile Akun` ditambahkan untuk memperbarui informasi akun selain password.
+- Tampilan desktop dan mobile sudah disesuaikan agar konsisten dengan style navbar.
+
+### 2. Assignment LKE ke Unit ZI
+
+- Role `developer`, `admin`, dan `admin_zi` dapat mengassign LKE yang sudah ada ke akun dengan role `unit_zi`.
+- Drawer/detail LKE menampilkan status assignment Unit ZI.
+- Tampilan area assign di drawer LKE dirapikan agar lebih modern, ringkas, dan tidak terlihat penuh/tumpang tindih.
+- Akses Unit ZI tetap dibatasi hanya ke LKE unit terkait sesuai `unitKerja`.
+
+### 3. Action Link Google Drive untuk Reviewer
+
+- Pada halaman input LKE, bagian input link Google Drive dari Unit sekarang dilengkapi tombol aksi di bawah field.
+- Tombol ini dapat dipakai oleh `TPI Unit` dan `TPI KESDM` untuk membuka atau mengecek data dukung dari link Google Drive yang diisi Unit.
+- Tujuannya agar reviewer tidak perlu copy-paste link secara manual saat melakukan pemeriksaan.
+
+### 4. Modernisasi Navbar dan Dropdown Akun
+
+- Dropdown akun dibuat lebih minimalis dan senada dengan navbar.
+- Icon ditambahkan pada item `Profile` dan `Logout`.
+- Layout dropdown disederhanakan agar tidak terlihat seperti elemen bertumpuk.
+- Spacing, radius, border, shadow, dan alignment disesuaikan untuk light/dark mode.
+
+### 5. Finalisasi Tab Browser dan Brand VISA
+
+- Judul tab browser sekarang mengikuti halaman aktif, tidak lagi selalu `Pencegahan Korupsi`.
+- Contoh format tab: `Home - Visa Assistant`, `Gratifikasi - Visa Assistant`, `Zona Integritas - Visa Assistant`.
+- Nama aplikasi global diperbarui menjadi `Visa Assistant`.
+- Logo navbar diganti menggunakan logo VISA yang adaptif untuk light dan dark mode.
+- Favicon diganti menggunakan logo `visa-dark`.
+- Logo dan credit VISA ditampilkan di halaman:
+  - `/`
+  - `/gratifikasi`
+  - `/e-learning`
+  - `/zona-integritas`
+  - footer global
+- Credit yang dipakai:
+
+```txt
+Powered by Visa Assistant
+Develop by Rafi Hadiyasa
+```
+
+### 6. Optimasi Asset Logo
+
+- Logo utama `visa-dark.png` dan `visa-light.png` tetap tersedia sebagai aset sumber.
+- Ditambahkan versi ringan untuk kebutuhan UI kecil:
+  - `public/visa-dark-mark.png`
+  - `public/visa-light-mark.png`
+- Versi mark dipakai di navbar, badge credit, dan elemen kecil agar halaman tidak memuat file logo besar untuk icon kecil.
+
+### 7. Verifikasi Final
+
+- `npm run build` berhasil.
+- Sebelum build ulang, cache `.next` sempat dibersihkan karena manifest route lama tidak sinkron.
+- Masih ada warning lint/prettier lama di banyak file, tetapi build produksi berhasil dan tidak ada error dari update finalisasi ini.
+
+## Ringkasan Update 3 Hari Terakhir - 1 sampai 3 Mei 2026
+
+Dalam tiga hari terakhir, fokus update bergerak dari fondasi data LKE, pembatasan role, workflow review Zona Integritas, sampai polish UI/brand VISA. Secara umum, aplikasi sekarang lebih siap dipakai multi-role karena akses sudah lebih terkunci di level permission, API, dan tampilan.
+
+### 1. Fondasi LKE dan Sync Google Sheet
+
+- Proses LKE berbasis Google Sheet diperkuat dengan sinkronisasi ke `LkeJawaban`.
+- Mapping resmi sheet ke field aplikasi sudah ditetapkan: jawaban unit, narasi, bukti, link drive, review TPI Unit, dan review TPI KESDM.
+- Sync sheet dibuat aman dengan mode default `missing_only`, sehingga data manual tidak otomatis tertimpa.
+- Mode `overwrite` disiapkan sebagai tindakan eksplisit dengan konfirmasi.
+- Checker dan scoring diarahkan memakai `LkeKriteria` sebagai sumber utama metadata kriteria, bobot, answer type, formula, dan detail indicator.
+- Detail indicator tidak lagi dihitung sebagai item utama checker, sehingga total LKE tetap mengikuti parent criteria.
+- Submission LKE dari Google Sheet dicegah duplikat berdasarkan `spreadsheet_id`.
+
+### 2. Update Role, Permission, dan Scope Akses
+
+- Role baru sudah dipetakan: Super Admin, Full Akses, Admin Gratifikasi, Admin E-Learning, Admin Zona Integritas, TPI KESDM, TPI Unit, dan Unit ZI.
+- Permission dipusatkan di `lib/permissions.ts` agar akses tidak tersebar hardcoded di banyak halaman.
+- Akses modul dipisah per role: gratifikasi, e-learning, dan zona integritas.
+- Unit ZI hanya dapat melihat LKE unit terkait.
+- TPI KESDM dan TPI Unit dapat mengakses semua LKE, tetapi hak edit review mereka dipisah.
+- API Zona Integritas ikut memakai scope dan permission, sehingga pembatasan tidak hanya bergantung pada UI frontend.
+
+### 3. Workflow Input dan Review LKE
+
+- Halaman input LKE membatasi field yang dapat diedit sesuai role.
+- Unit ZI hanya dapat mengisi data unit seperti jawaban, narasi, bukti, dan link drive.
+- TPI Unit hanya dapat mengisi review TPI Unit.
+- TPI KESDM hanya dapat mengisi review TPI KESDM.
+- Tombol aksi di bawah input link Google Drive ditambahkan agar TPI Unit dan TPI KESDM bisa langsung membuka data dukung unit.
+- Area review Visa tetap dipertahankan sebagai dasar pengembangan lanjutan fitur `Tanya Visa`.
+
+### 4. Assignment LKE ke Unit ZI
+
+- Role `developer`, `admin`, dan `admin_zi` dapat mengassign LKE yang sudah ada ke akun `unit_zi`.
+- Drawer/detail LKE menampilkan informasi status assignment.
+- UI area assign LKE dibuat lebih rapi, compact, dan tidak tumpang tindih.
+- Assignment tetap mengikuti pembatasan akses Unit ZI berdasarkan unit kerja.
+
+### 5. UI Akun, Navbar, dan Profile
+
+- Tombol logout di navbar diganti menjadi informasi akun login.
+- Dropdown akun menampilkan ringkasan nama, role, unit kerja, menu `Profile`, dan `Logout`.
+- Halaman `Profile Akun` ditambahkan untuk update informasi akun selain password.
+- Layout dropdown akun dibuat lebih modern, minimalis, dan konsisten dengan navbar.
+- Icon ditambahkan pada aksi profile/logout agar lebih santai dan mudah dipahami.
+
+### 6. Finalisasi Brand VISA
+
+- Nama aplikasi global diperbarui menjadi `Visa Assistant`.
+- Judul tab browser sekarang mengikuti halaman aktif, bukan selalu `Pencegahan Korupsi`.
+- Navbar memakai logo VISA adaptif untuk light dan dark mode.
+- Favicon diganti memakai logo VISA dark.
+- Credit brand ditampilkan di home, `/gratifikasi`, `/e-learning`, `/zona-integritas`, dan footer global.
+- Copy brand yang dipertegas:
+
+```txt
+Powered by Visa Assistant
+Develop by Rafi Hadiyasa
+```
+
+- Aset logo ringan `visa-dark-mark.png` dan `visa-light-mark.png` ditambahkan agar logo kecil di UI tidak memuat file besar.
+
+### 7. Verifikasi dan Catatan Teknis
+
+- `npm run build` berhasil setelah update final.
+- Cache `.next` sempat dibersihkan karena manifest route lama tidak sinkron.
+- Warning prettier/import-order lama masih ada di banyak file, tetapi tidak menghambat build produksi.
+- Fitur komunikasi auditor `Tanya Visa` dan bubble chat dengan Visa masih menjadi pekerjaan lanjutan.

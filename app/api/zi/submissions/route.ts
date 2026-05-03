@@ -5,6 +5,7 @@ import LkeKriteria from "@/modules/models/LkeKriteria";
 import UpgAdmin from "@/modules/models/UpgAdminModel";
 import { getSessionUser } from "@/lib/auth";
 import { canAccessZiSubmission, hasPermission } from "@/lib/permissions";
+import { TARGET_THRESHOLD } from "@/types/zi";
 
 function detectAbbrev(text: string): boolean {
   const words = text.split(/\s+/);
@@ -135,10 +136,14 @@ export async function GET(req: Request) {
     const sedang = enrichedVisible.filter((s) => s.status === "Sedang Dicek").length;
     const belum = enrichedVisible.filter((s) => s.status === "Belum Dicek").length;
     const wbk_tercapai = enrichedVisible.filter(
-      (s) => s.target === "WBK" && s.nilai_lke_ai?.target_tercapai,
+      (s) =>
+        s.target === "WBK" &&
+        (s.nilai_lke_ai?.nilai_akhir ?? 0) >= TARGET_THRESHOLD.WBK,
     ).length;
     const wbbm_tercapai = enrichedVisible.filter(
-      (s) => s.target === "WBBM" && s.nilai_lke_ai?.target_tercapai,
+      (s) =>
+        s.target === "WBBM" &&
+        (s.nilai_lke_ai?.nilai_akhir ?? 0) >= TARGET_THRESHOLD.WBBM,
     ).length;
     const withNilai = enrichedVisible.filter(
       (s) => s.nilai_lke_ai?.nilai_akhir != null,

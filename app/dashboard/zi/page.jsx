@@ -328,11 +328,11 @@ export default function DashboardZI() {
               <div className="text-right space-y-2">
                 <div className="flex items-center gap-2 text-xs text-default-500">
                   <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  WBK ≥ 60
+                  WBK ≥ 75
                 </div>
                 <div className="flex items-center gap-2 text-xs text-default-500">
                   <span className="h-2 w-2 rounded-full bg-violet-500" />
-                  WBBM ≥ 75
+                  WBBM ≥ 85
                 </div>
               </div>
             </CardContent>

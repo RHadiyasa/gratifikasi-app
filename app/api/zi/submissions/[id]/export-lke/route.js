@@ -498,7 +498,7 @@ function writeJawabanSheet(ws, kriteriaList, jawabanById, subItemsByParent, allS
 }
 
 function statusPct(ratio, target) {
-  const threshold = target === "WBBM" ? 0.75 : 0.6;
+  const threshold = target === "WBBM" ? 0.85 : 0.75;
   return ratio >= threshold ? "OK" : "Tidak Lulus";
 }
 
