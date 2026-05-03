@@ -9,6 +9,7 @@ import {
   ClipboardCheck, BadgeCheck, Search, Loader2,
   TrendingUp, Users, Clock, Lock, Zap, Eye,
 } from "lucide-react";
+import { VisaCredit } from "@/components/visa-brand";
 
 // ── Charts (dynamic — SSR disabled, seluruh komponen diimport bersama) ───
 const TrendChart    = dynamic(() => import("@/components/HomeCharts").then((m) => m.TrendChart),    { ssr: false });
@@ -195,6 +196,15 @@ export default function HomePage() {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
           Dilindungi Hukum
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="mb-5"
+        >
+          <VisaCredit size="md" className="mx-auto" />
         </motion.div>
 
         {/* Badge */}

@@ -1,6 +1,7 @@
 import { Award, CheckCircle2, BarChart3, Search, FileSpreadsheet, ArrowRight } from 'lucide-react'
 import { Button } from '@heroui/button'
 import NextLink from 'next/link'
+import { VisaCredit } from '@/components/visa-brand'
 
 const STEPS = [
   {
@@ -39,6 +40,7 @@ export default function ZonaIntegritasPage() {
 
       {/* Hero */}
       <div className="text-center space-y-4">
+        <VisaCredit size="md" className="mx-auto" />
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-500/10 mb-2">
           <Award size={32} className="text-violet-600 dark:text-violet-400" />
         </div>

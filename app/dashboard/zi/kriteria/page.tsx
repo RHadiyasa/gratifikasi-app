@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { LkeKriteria, FormulaToken, FormulaOp } from "@/types/zi";
 import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
 
 const KOMPONEN_OPTIONS = [
   { key: "", label: "Semua Komponen" },
@@ -276,6 +277,7 @@ function FormulaBuilder({
 
 export default function KriteriaPage() {
   const role = useAuthStore((s) => s.role);
+  const canManageKriteria = hasPermission(role, "zi:kriteria:manage");
 
   const [list, setList] = useState<LkeKriteria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -625,7 +627,7 @@ export default function KriteriaPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {role === "developer" && (
+          {canManageKriteria && (
             <>
               <button
                 onClick={handleSeed}

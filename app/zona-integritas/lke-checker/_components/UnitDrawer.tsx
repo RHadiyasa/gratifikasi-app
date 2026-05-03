@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@heroui/button'
 import { Input } from '@heroui/input'
-import { X, ExternalLink, RefreshCw, Clock, User, Bot, Pencil, Check, X as XIcon } from 'lucide-react'
+import { Select, SelectItem } from '@heroui/select'
+import { X, ExternalLink, RefreshCw, Clock, User, Bot, Pencil, Check, X as XIcon, UserCheck, Building2, ChevronRight } from 'lucide-react'
 import type { LkeSubmission } from '@/types/zi'
 import { StatusBadge } from '@/components/StatusBadge'
 import { TargetBadge } from '@/components/TargetBadge'
@@ -12,12 +13,21 @@ import { ZiProgressBar } from '@/components/ZiProgressBar'
 import { TARGET_THRESHOLD } from '@/types/zi'
 import { useAuthStore } from '@/store/authStore'
 import { useZiStore } from '@/store/ziStore'
+import { hasPermission } from '@/lib/permissions'
 
 interface Props {
   unit:       LkeSubmission | null
   onClose:    () => void
   onSync:     (id: string) => void
   syncingIds: string[]
+}
+
+interface UnitZiAccount {
+  _id: string
+  name: string
+  unitKerja?: string | null
+  email?: string | null
+  role?: string | null
 }
 
 function fmtDate(s: string | null) {
@@ -231,13 +241,44 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
   const { role } = useAuthStore()
   const { updateSubmission } = useZiStore()
   const [savingField, setSavingField] = useState<string | null>(null)
+  const [unitZiUsers, setUnitZiUsers] = useState<UnitZiAccount[]>([])
+  const [loadingUnitZiUsers, setLoadingUnitZiUsers] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [assignedUserId, setAssignedUserId] = useState('')
+  const isDev = role === 'developer'
+  const canSync = hasPermission(role, 'zi:sync')
+  const canAssignUnitZi = hasPermission(role, 'zi:assign-unit')
 
-  if (!unit) return null
+  useEffect(() => {
+    setAssignedUserId(unit?.assigned_unit_zi_id ?? '')
+  }, [unit?._id, unit?.assigned_unit_zi_id])
 
-  const isSyncing = syncingIds.includes(unit._id)
-  const threshold = TARGET_THRESHOLD[unit.target]
-  const hasAi     = unit.nilai_lke_ai?.nilai_akhir != null
-  const isDev     = role === 'developer'
+  useEffect(() => {
+    if (!canAssignUnitZi || !unit) return
+
+    let active = true
+
+    async function loadUnitZiUsers() {
+      try {
+        setLoadingUnitZiUsers(true)
+        const res = await fetch('/api/auth/unit-zi-users')
+        const data = await res.json()
+        if (!active) return
+        if (!res.ok) throw new Error(data.error || 'Gagal memuat akun Unit ZI')
+        setUnitZiUsers(data.users ?? [])
+      } catch (err) {
+        if (!active) return
+        console.error('[UnitDrawer] unit zi users', err)
+      } finally {
+        if (active) setLoadingUnitZiUsers(false)
+      }
+    }
+
+    loadUnitZiUsers()
+    return () => {
+      active = false
+    }
+  }, [canAssignUnitZi, unit?._id])
 
   async function handleSave(field: 'eselon2' | 'pic_unit', value: string) {
     setSavingField(field)
@@ -247,6 +288,31 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
       setSavingField(null)
     }
   }
+
+  async function handleAssignUnitZi() {
+    if (!unit) return
+    setAssigning(true)
+    try {
+      await updateSubmission(unit._id, {
+        assigned_unit_zi_id: assignedUserId || null,
+      })
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  if (!unit) return null
+
+  const isSyncing = syncingIds.includes(unit._id)
+  const threshold = TARGET_THRESHOLD[unit.target]
+  const hasAi     = unit.nilai_lke_ai?.nilai_akhir != null
+  const selectedUnitZi = unitZiUsers.find((account) => account._id === assignedUserId) ?? null
+  const currentAssignedLabel = unit.assigned_unit_zi_name || 'Belum di-assign'
+  const hasAssignmentChanged = assignedUserId !== (unit.assigned_unit_zi_id ?? '')
+  const assignmentOptions: UnitZiAccount[] = [
+    { _id: '__unassigned', name: 'Belum di-assign', unitKerja: '' },
+    ...unitZiUsers,
+  ]
 
   return (
     <AnimatePresence>
@@ -329,17 +395,19 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
                     <p className="text-[10px] text-red-500 mt-0.5 truncate">{unit.sync_error}</p>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="flat"
-                  color="primary"
-                  isLoading={isSyncing}
-                  startContent={!isSyncing && <RefreshCw size={12} />}
-                  onPress={() => onSync(unit._id)}
-                  className="shrink-0"
-                >
-                  {isSyncing ? 'Sinkron…' : 'Sync'}
-                </Button>
+                {canSync && (
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="primary"
+                    isLoading={isSyncing}
+                    startContent={!isSyncing && <RefreshCw size={12} />}
+                    onPress={() => onSync(unit._id)}
+                    className="shrink-0"
+                  >
+                    {isSyncing ? 'Sinkron…' : 'Sync'}
+                  </Button>
+                )}
               </div>
 
               {/* ── Komponen Breakdown ── */}
@@ -376,6 +444,101 @@ export default function UnitDrawer({ unit, onClose, onSync, syncingIds }: Props)
               </div>
 
               {/* ── Catatan ── */}
+              {canAssignUnitZi && (
+                <div className="space-y-4 rounded-2xl border border-default-200 bg-default-50/80 px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-default-400">
+                        Assign Unit ZI
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-default-500">
+                        Tentukan akun Unit ZI yang akan menangani LKE ini.
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                      {unit.assigned_unit_zi_id ? 'Assigned' : 'Open'}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-default-200 bg-background px-3 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <UserCheck size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-default-400">
+                          Penanggung Jawab Saat Ini
+                        </p>
+                        <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                          {currentAssignedLabel}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-default-500">
+                          {unit.assigned_unit_zi_id
+                            ? 'LKE ini sudah terhubung ke akun Unit ZI dan bisa dipindahkan kapan saja.'
+                            : 'Belum ada akun Unit ZI yang ditugaskan untuk menangani LKE ini.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Select
+                      size="sm"
+                      variant="bordered"
+                      label="Akun Unit ZI"
+                      labelPlacement="outside"
+                      placeholder={loadingUnitZiUsers ? 'Memuat akun Unit ZI...' : 'Pilih akun Unit ZI'}
+                      items={assignmentOptions}
+                      selectedKeys={assignedUserId ? [assignedUserId] : []}
+                      isDisabled={loadingUnitZiUsers || assigning}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0] as string | undefined
+                        setAssignedUserId(value === '__unassigned' ? '' : (value ?? ''))
+                      }}
+                      classNames={{
+                        trigger: 'min-h-12 rounded-xl border-default-200 bg-background shadow-none',
+                        value: 'text-sm',
+                        popoverContent: 'rounded-xl',
+                      }}
+                    >
+                      {(account) => (
+                        <SelectItem
+                          key={account._id}
+                          textValue={`${account.name} ${account.unitKerja ?? ''}`}
+                        >
+                          {account.name}
+                        </SelectItem>
+                      )}
+                    </Select>
+
+                    <div className="rounded-xl bg-default-100/80 px-3 py-2.5 text-xs text-default-500">
+                      <div className="flex items-start gap-2">
+                        <Building2 size={14} className="mt-0.5 shrink-0 text-default-400" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-default-700">
+                            {selectedUnitZi?.name || 'Belum ada akun yang dipilih'}
+                          </p>
+                          <p className="mt-0.5 leading-5">
+                            {selectedUnitZi?.unitKerja || 'Pilih akun untuk melihat unit kerja yang akan terhubung.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      color="primary"
+                      fullWidth
+                      isDisabled={loadingUnitZiUsers || assigning || !hasAssignmentChanged}
+                      isLoading={assigning}
+                      endContent={!assigning ? <ChevronRight size={16} /> : undefined}
+                      onPress={handleAssignUnitZi}
+                    >
+                      {assignedUserId ? 'Simpan Penugasan Unit ZI' : 'Simpan Status Belum Di-assign'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {unit.catatan && (
                 <div className="rounded-xl bg-default-100 px-3 py-2.5">
                   <p className="text-[10px] font-semibold text-default-400 uppercase tracking-wide mb-1">Catatan</p>

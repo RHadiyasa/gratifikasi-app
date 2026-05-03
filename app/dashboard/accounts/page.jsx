@@ -16,20 +16,25 @@ import {
   Loader2, Lock, Eye, EyeOff, ArrowLeft,
 } from "lucide-react";
 import NextLink from "next/link";
-import { ROLE_LABELS } from "@/lib/permissions";
+import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/permissions";
 
 const ROLE_COLOR_MAP = {
   developer: "warning",
   admin: "primary",
+  admin_gratifikasi: "success",
+  admin_elearning: "primary",
+  admin_zi: "secondary",
+  tpi_kesdm: "warning",
+  tpi_unit: "secondary",
+  unit_zi: "default",
   zi: "secondary",
   upg: "success",
 };
 
-const EDITABLE_ROLES = [
-  { key: "admin", label: "Master Admin" },
-  { key: "zi", label: "Tim Zona Integritas" },
-  { key: "upg", label: "Tim UPG" },
-];
+const EDITABLE_ROLES = ASSIGNABLE_ROLES.map((key) => ({
+  key,
+  label: ROLE_LABELS[key],
+}));
 
 export default function AccountsPage() {
   const [users, setUsers] = useState([]);
@@ -197,7 +202,7 @@ export default function AccountsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {["admin", "zi", "upg"].map((r) => {
+        {["developer", ...ASSIGNABLE_ROLES].map((r) => {
           const count = users.filter((u) => u.role === r).length;
           return (
             <div
@@ -424,7 +429,7 @@ export default function AccountsPage() {
               <ModalBody>
                 <p className="text-sm">
                   Apakah Anda yakin ingin menghapus akun{" "}
-                  <strong>{deleteTarget?.name}</strong> ({deleteTarget?.role})?
+                  <strong>{deleteTarget?.name}</strong> ({ROLE_LABELS[deleteTarget?.role] || deleteTarget?.role})?
                   Tindakan ini tidak dapat dibatalkan.
                 </p>
               </ModalBody>

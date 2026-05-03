@@ -12,6 +12,7 @@ import {
   Scale,
   Users,
 } from "lucide-react";
+import { VisaCredit } from "@/components/visa-brand";
 
 const features = [
   {
@@ -91,6 +92,15 @@ export default function LandingPage() {
         {/* Subtle radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,hsl(var(--heroui-primary)/0.07),transparent)] pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-default-200 to-transparent" />
+
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="mb-5"
+        >
+          <VisaCredit size="md" className="mx-auto" />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: -12 }}

@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  getDashboardHref,
+  hasPermission,
+  isPrivilegedRole,
+} from "@/lib/permissions";
 
 function decodeJwtPayload(token) {
   try {
@@ -9,106 +14,100 @@ function decodeJwtPayload(token) {
   }
 }
 
-/** Roles with admin-level dashboard access */
-function isPrivileged(role) {
-  return role === "developer" || role === "admin";
+function redirectToRoleHome(request, role) {
+  return NextResponse.redirect(new URL(getDashboardHref(role), request.url));
 }
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
-
-  const publicRoutes = ["/login"];
-
   const payload = token ? decodeJwtPayload(token) : null;
+  const role = payload?.role ?? null;
 
-  // 🔓 PUBLIC ROUTE
-  if (publicRoutes.includes(pathname)) {
-    if (payload) {
-      const role = payload.role;
-
-      const dest = isPrivileged(role)
-        ? "/dashboard"
-        : role === "zi"
-          ? "/dashboard/zi"
-          : "/dashboard/upg";
-
-      return NextResponse.redirect(new URL(dest, request.url));
-    }
-
+  if (pathname === "/login") {
+    if (payload) return redirectToRoleHome(request, role);
     return NextResponse.next();
   }
 
-  // 🔒 PROTECTED ROUTE
   if (!payload) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const role = payload.role;
-
-  // /dashboard
   if (pathname === "/dashboard" || pathname === "/dashboard/") {
-    if (isPrivileged(role)) return NextResponse.next();
-
-    const dest =
-      role === "zi" ? "/dashboard/zi" : "/dashboard/upg";
-
-    return NextResponse.redirect(new URL(dest, request.url));
+    if (!hasPermission(role, "dashboard:admin")) {
+      return redirectToRoleHome(request, role);
+    }
+    return NextResponse.next();
   }
 
-  // /dashboard/accounts — developer only
   if (pathname.startsWith("/dashboard/accounts")) {
     if (role !== "developer") {
-      const dest = isPrivileged(role)
-        ? "/dashboard"
-        : role === "zi"
-          ? "/dashboard/zi"
-          : "/dashboard/upg";
-
-      return NextResponse.redirect(new URL(dest, request.url));
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
   }
 
-  // access control
   if (pathname.startsWith("/dashboard/upg")) {
-    if (role === "zi") {
-      return NextResponse.redirect(new URL("/dashboard/zi", request.url));
+    if (!hasPermission(role, "dashboard:gratifikasi")) {
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/dashboard/zi/kriteria")) {
+    if (!hasPermission(role, "zi:kriteria:manage")) {
+      return redirectToRoleHome(request, role);
+    }
+    return NextResponse.next();
   }
 
   if (pathname.startsWith("/dashboard/zi")) {
-    if (role === "upg") {
-      return NextResponse.redirect(new URL("/dashboard/upg", request.url));
+    if (!hasPermission(role, "dashboard:zi")) {
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
   }
 
   if (pathname.startsWith("/dashboard/report-list")) {
-    if (role === "zi") {
-      return NextResponse.redirect(new URL("/dashboard/zi", request.url));
+    if (!hasPermission(role, "report:list")) {
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
   }
 
   if (pathname.startsWith("/register")) {
-    if (!isPrivileged(role)) {
-      const dest =
-        role === "zi" ? "/dashboard/zi" : "/dashboard/upg";
-
-      return NextResponse.redirect(new URL(dest, request.url));
+    if (!hasPermission(role, "register:access")) {
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
   }
 
-  // Tracker e-learning hanya untuk admin/developer dan upg
   if (pathname.startsWith("/e-learning/tracker")) {
-    if (role === "zi") {
-      return NextResponse.redirect(new URL("/e-learning/participants", request.url));
+    if (!hasPermission(role, "elearning:track")) {
+      if (hasPermission(role, "elearning:participants")) {
+        return NextResponse.redirect(
+          new URL("/e-learning/participants", request.url),
+        );
+      }
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
   }
 
-  // LKE Checker hanya untuk admin/developer dan zi
   if (pathname.startsWith("/zona-integritas/lke-checker")) {
-    if (role === "upg") {
-      return NextResponse.redirect(new URL("/zona-integritas/monitoring", request.url));
+    if (!hasPermission(role, "zi:access")) {
+      if (isPrivilegedRole(role) || hasPermission(role, "zi:monitoring")) {
+        return NextResponse.redirect(
+          new URL("/zona-integritas/monitoring", request.url),
+        );
+      }
+      return redirectToRoleHome(request, role);
     }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/profile")) {
+    return NextResponse.next();
   }
 
   return NextResponse.next();
@@ -120,6 +119,8 @@ export const config = {
     "/dashboard/:path*",
     "/register",
     "/login",
+    "/profile",
+    "/profile/:path*",
     "/e-learning/tracker",
     "/e-learning/tracker/:path*",
     "/zona-integritas/lke-checker",

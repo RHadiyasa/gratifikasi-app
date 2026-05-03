@@ -18,6 +18,7 @@ import {
   getPresignedUrlFromBackend,
   getPresignedUrlFromBackendForDownload,
 } from "@/service/aws/predesignUrl.service";
+import { hasPermission } from "@/lib/permissions";
 import * as XLSX from "xlsx"; 
 import { saveAs } from "file-saver";
 
@@ -43,7 +44,7 @@ export default function ParticipantList() {
       try {
         const response = await axios.get("/api/auth/me");
         const role = response.data.role;
-        setIsPrivileged(response.data.success && (role === "developer" || role === "admin" || role === "upg"));
+        setIsPrivileged(response.data.success && hasPermission(role, "elearning:participants"));
       } catch (e) {
         setIsPrivileged(false);
       }

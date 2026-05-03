@@ -46,6 +46,7 @@ export async function POST(req) {
         id: admin._id,
         nip: admin.nip,
         name: admin.name,
+        unitKerja: admin.unitKerja,
         role: admin.role,
       },
     });

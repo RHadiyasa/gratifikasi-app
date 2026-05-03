@@ -16,8 +16,23 @@ function getCallerRole(req) {
 }
 
 const CREATABLE_BY = {
-  developer: ["admin", "zi", "upg"],
-  admin: ["zi", "upg"],
+  developer: [
+    "admin",
+    "admin_gratifikasi",
+    "admin_elearning",
+    "admin_zi",
+    "tpi_kesdm",
+    "tpi_unit",
+    "unit_zi",
+  ],
+  admin: [
+    "admin_gratifikasi",
+    "admin_elearning",
+    "admin_zi",
+    "tpi_kesdm",
+    "tpi_unit",
+    "unit_zi",
+  ],
 };
 
 export async function POST(req) {

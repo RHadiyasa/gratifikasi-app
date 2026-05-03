@@ -15,8 +15,19 @@ const UpgSchema = new mongoose.Schema(
     password: { type: String, required: [true, "Please provide a password"] },
     role: {
       type: String,
-      enum: ["developer", "admin", "zi", "upg"],
-      default: "upg",
+      enum: [
+        "developer",
+        "admin",
+        "admin_gratifikasi",
+        "admin_elearning",
+        "admin_zi",
+        "tpi_kesdm",
+        "tpi_unit",
+        "unit_zi",
+        "zi",
+        "upg",
+      ],
+      default: "admin_gratifikasi",
       required: true,
     },
     isBlocked: {

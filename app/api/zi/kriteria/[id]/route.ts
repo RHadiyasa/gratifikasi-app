@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
 import { connect } from '@/config/dbconfig'
 import LkeKriteria from '@/modules/models/LkeKriteria'
+import { hasPermission } from '@/lib/permissions'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -16,7 +17,7 @@ async function getRole(): Promise<string | null> {
 // PATCH /api/zi/kriteria/[id]
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const role = await getRole()
-  if (!role || !['developer', 'admin'].includes(role)) {
+  if (!hasPermission(role, 'zi:kriteria:manage')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
   try {
@@ -39,7 +40,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 // DELETE /api/zi/kriteria/[id] — soft delete
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const role = await getRole()
-  if (!role || !['developer', 'admin'].includes(role)) {
+  if (!hasPermission(role, 'zi:kriteria:manage')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
   try {

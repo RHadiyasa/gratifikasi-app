@@ -9,6 +9,7 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
 import ClientWrapper from "@/components/clientWrapper";
+import { VisaCredit } from "@/components/visa-brand";
 
 export const metadata: Metadata = {
   title: {
@@ -16,7 +17,14 @@ export const metadata: Metadata = {
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/visa-dark-mark.png", type: "image/png", sizes: "256x256" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/visa-dark-mark.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -32,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning lang="en">
+    <html suppressHydrationWarning lang="id">
       <head />
       <body
         suppressHydrationWarning
@@ -52,14 +60,11 @@ export default function RootLayout({
               <footer className="w-full flex items-center justify-center py-5">
                 <Link
                   isExternal
-                  className="flex items-center gap-1 text-current"
+                  className="text-current"
                   href="https://itjen.esdm.go.id/id/profil/tugas-fungsi/inspektorat-v"
                   title="Inspektorat Jenderal Home Page"
                 >
-                  <span className="text-default-600 text-sm">
-                    Powered by Rafi Hadiyasa -{" "}
-                  </span>
-                  <p className="text-primary text-sm">Inspektorat V</p>
+                  <VisaCredit size="sm" />
                 </Link>
               </footer>
             </div>

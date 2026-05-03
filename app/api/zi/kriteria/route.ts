@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
 import { connect } from '@/config/dbconfig'
 import LkeKriteria from '@/modules/models/LkeKriteria'
+import { hasPermission } from '@/lib/permissions'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
 // POST /api/zi/kriteria
 export async function POST(req: Request) {
   const role = await getRole()
-  if (!role || !['developer', 'admin'].includes(role)) {
+  if (!hasPermission(role, 'zi:kriteria:manage')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
   try {

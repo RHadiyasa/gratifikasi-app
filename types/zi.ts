@@ -98,11 +98,14 @@ export interface LkeJawaban {
 export interface LkeSubmission {
   _id:              string
   link:             string | null
+  spreadsheet_id?:  string | null
   source:           'sheet' | 'app'
   target:           'WBK' | 'WBBM'
   eselon1:          string
   eselon2:          string
   pic_unit:         string
+  assigned_unit_zi_id?: string | null
+  assigned_unit_zi_name?: string | null
   catatan:          string
   status:           'Belum Dicek' | 'Sedang Dicek' | 'Selesai' | 'Perlu Revisi'
   total_data:       number

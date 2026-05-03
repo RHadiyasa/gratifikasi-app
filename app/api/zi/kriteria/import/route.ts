@@ -7,6 +7,7 @@ import { cookies } from 'next/headers'
 import path from 'path'
 import fs from 'fs'
 import * as XLSX from 'xlsx'
+import { hasPermission } from '@/lib/permissions'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -44,8 +45,8 @@ function normalizeAnswerType(raw: string): string {
 // POST /api/zi/kriteria/import — developer only
 export async function POST() {
   const role = await getRole()
-  if (role !== 'developer') {
-    return NextResponse.json({ error: 'Hanya developer yang dapat menjalankan import' }, { status: 403 })
+  if (!hasPermission(role, 'zi:kriteria:manage')) {
+    return NextResponse.json({ error: 'Hanya pengelola master kriteria yang dapat menjalankan import' }, { status: 403 })
   }
 
   try {

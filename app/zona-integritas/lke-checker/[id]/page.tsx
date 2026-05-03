@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/table";
 import { NilaiLKETable } from "@/components/NilaiLKETable";
 import type { LkeSubmission } from "@/types/zi";
+import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -226,6 +228,8 @@ function RowLogPanel({
 export default function UnitDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const role = useAuthStore((s) => s.role);
+  const canSync = hasPermission(role, "zi:sync");
 
   const [unit, setUnit] = useState<LkeSubmission | null>(null);
   const [unitError, setUnitError] = useState<string | null>(null);
@@ -745,7 +749,7 @@ export default function UnitDetailPage() {
             <PencilLine size={13} />
             Input Jawaban
           </Button>
-          {unit.source !== 'app' && (
+          {canSync && unit.source !== 'app' && (
             <Button
               variant="outline"
               size="sm"
@@ -757,7 +761,7 @@ export default function UnitDetailPage() {
               Sync ke Google Sheet
             </Button>
           )}
-          {unit.source !== 'app' && (
+          {canSync && unit.source !== 'app' && (
             <Button
               variant="outline"
               size="sm"

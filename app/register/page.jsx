@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     name: "", nip: "", jabatan: "", unitKerja: "",
-    email: "", noTelp: "", password: "", confirmPassword: "", role: creatableRoles[0] ?? "upg",
+    email: "", noTelp: "", password: "", confirmPassword: "", role: creatableRoles[0] ?? "admin_gratifikasi",
   });
 
   const set = (key) => (e) => {
@@ -133,7 +133,7 @@ export default function RegisterPage() {
             </div>
             <h1 className="text-xl font-black mb-1">Buat Akun Pengguna</h1>
             <p className="text-xs text-default-400 leading-relaxed">
-              Master Admin · Inspektorat V Kementerian ESDM
+              Manajemen Akses · Inspektorat V Kementerian ESDM
             </p>
           </div>
 
@@ -268,7 +268,7 @@ export default function RegisterPage() {
 
             {/* Row 5 — Role */}
             <Field label="Role">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {roleOptions.map((r) => (
                   <button
                     key={r.key}

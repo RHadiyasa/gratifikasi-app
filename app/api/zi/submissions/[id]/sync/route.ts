@@ -6,27 +6,33 @@ import LkeSyncLog from '@/modules/models/LkeSyncLog'
 import { parseRingkasanAI, syncFromVisaReview, readVisaReviewStats } from '@/lib/zi/sheetParser'
 import { buildScoringDetailMap, isDetailKriteria } from '@/lib/zi/scoring'
 import { TARGET_THRESHOLD } from '@/types/zi'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
+import { getSessionUser } from '@/lib/auth'
+import { canAccessZiSubmission, hasPermission } from '@/lib/permissions'
 
 async function getUserId(): Promise<string> {
-  try {
-    const token = (await cookies()).get('token')?.value
-    if (!token) return 'anonymous'
-    const payload: any = jwt.verify(token, process.env.TOKEN_SECRET!)
-    return payload.id ?? 'anonymous'
-  } catch {
-    return 'anonymous'
-  }
+  const user = await getSessionUser()
+  return user?.id ?? 'anonymous'
 }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const user = await getSessionUser({ includeProfile: true })
+    if (!user || !hasPermission(user.role, 'zi:sync')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
     await connect()
     const { id } = await params
 
-    const submission = await LkeSubmission.findById(id)
+    const submission = (await LkeSubmission.findById(id)
+      .lean()) as {
+      eselon2?: string | null;
+      assigned_unit_zi_id?: string | null;
+    } & any | null
     if (!submission) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
+    if (!canAccessZiSubmission(user.role, user.unitKerja, submission, user.id)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
     const nilai_sebelum = submission.nilai_lke_ai?.nilai_akhir ?? null
 

@@ -6,6 +6,7 @@ import { Input, Button } from "@heroui/react";
 import { loginService } from "@/modules/auth/auth.service";
 import { toast } from "react-toastify";
 import { useAuthStore } from "@/store/authStore";
+import { ROLE_LABELS } from "@/lib/permissions";
 import {
   ShieldCheck, Lock, Eye, EyeOff, Loader2,
   FileText, BadgeCheck, Users, Scale, Search, ArrowRight,
@@ -215,9 +216,13 @@ export default function LoginPage() {
         setError(res.message || "NIP atau password salah.");
         return;
       }
-      const roleLabel = { developer: "Developer", admin: "Master Admin", zi: "Tim Zona Integritas", upg: "Tim UPG" };
-      toast.success(`Login sebagai ${roleLabel[res.role] ?? res.role}`, { autoClose: 2000 });
-      login(res.role);
+      toast.success(`Login sebagai ${ROLE_LABELS[res.role] ?? res.role}`, { autoClose: 2000 });
+      login({
+        role: res.role,
+        id: res.admin?.id ?? null,
+        name: res.admin?.name ?? null,
+        unitKerja: res.admin?.unitKerja ?? null,
+      });
       setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
     } catch {
       setError("Terjadi kesalahan server. Coba beberapa saat lagi.");

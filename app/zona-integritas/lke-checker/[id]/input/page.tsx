@@ -3,9 +3,11 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import axios from 'axios'
+import { useAuthStore } from '@/store/authStore'
+import { hasPermission } from '@/lib/permissions'
 import {
   ArrowLeft, Save, CheckCircle2, AlertTriangle, XCircle,
-  Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw,
+  Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, ExternalLink,
 } from 'lucide-react'
 import type { LkeJawaban, LkeKriteria, FormulaToken } from '@/types/zi'
 
@@ -481,6 +483,7 @@ function PersenDetailBlock({
   noteField,
   computedPersen,
   onChange,
+  disabled,
 }: {
   title:          string
   tone:           DetailTone
@@ -490,6 +493,7 @@ function PersenDetailBlock({
   noteField:      DetailNoteField
   computedPersen: number | null
   onChange:       (qid: number, field: keyof LocalJawaban, value: string) => void
+  disabled?:      boolean
 }) {
   if (jumlahSubItems.length === 0) return null
 
@@ -533,6 +537,7 @@ function PersenDetailBlock({
                     min="0"
                     value={jlv[valueField]}
                     onChange={(e) => onChange(jqid, valueField, e.target.value)}
+                    disabled={disabled}
                     placeholder="0"
                     className={`w-full px-2 py-1.5 text-xs rounded border focus:outline-none ${toneCls.input}`}
                   />
@@ -549,6 +554,7 @@ function PersenDetailBlock({
               <textarea
                 value={jlv[noteField]}
                 onChange={(e) => onChange(jqid, noteField, e.target.value)}
+                disabled={disabled}
                 placeholder="Keterangan detail perhitungan (opsional)"
                 rows={2}
                 className={`w-full min-h-[42px] px-2 py-1.5 text-[10px] leading-relaxed rounded border focus:outline-none text-default-600 resize-y sm:col-start-3 lg:col-start-auto ${toneCls.textarea}`}
@@ -583,6 +589,10 @@ interface JawabanCardProps {
   computedTpiItjenPersen: number | null
   jumlahSubItems?: JumlahSubItem[]
   hasPending?:    boolean
+  canEditUnit:    boolean
+  canEditTpiUnit: boolean
+  canEditTpiItjen:boolean
+  canOpenDriveLink: boolean
 }
 
 function JawabanCard({
@@ -596,6 +606,10 @@ function JawabanCard({
   computedTpiItjenPersen,
   jumlahSubItems,
   hasPending,
+  canEditUnit,
+  canEditTpiUnit,
+  canEditTpiItjen,
+  canOpenDriveLink,
 }: JawabanCardProps) {
   const { kriteria, jawaban } = entry
   const qid       = kriteria.question_id
@@ -605,6 +619,7 @@ function JawabanCard({
   const [tpiItjenOpen, setTpiItjenOpen] = useState(false)
   const relatedIds = [qid, ...(jumlahSubItems?.map((s) => s.entry.kriteria.question_id) ?? [])]
   const reviewStatus = getReviewStatus(localValues, jumlahSubItems)
+  const canSave = canEditUnit || canEditTpiUnit || canEditTpiItjen
 
   const hasTpiUnit  = !!(
     localValues.jawaban_tpi_unit ||
@@ -633,15 +648,17 @@ function JawabanCard({
               Belum disimpan
             </span>
           )}
-          <button
-            type="button"
-            onClick={() => onSave(relatedIds)}
-            disabled={saving}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 disabled:opacity-60 transition-colors"
-          >
-            {saving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
-            Simpan
-          </button>
+          {canSave && (
+            <button
+              type="button"
+              onClick={() => onSave(relatedIds)}
+              disabled={saving}
+              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 disabled:opacity-60 transition-colors"
+            >
+              {saving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+              Simpan
+            </button>
+          )}
           {aiResult?.color && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${AI_COLOR_CLS[aiResult.color]}`}>
               AI: {aiResult.color === 'HIJAU' ? '✓ Sesuai' : aiResult.color === 'KUNING' ? '~ Sebagian' : '✗ Tidak'}
@@ -680,6 +697,7 @@ function JawabanCard({
               noteField="narasi"
               computedPersen={computedPersen}
               onChange={onChange}
+              disabled={!canEditUnit}
             />
           )}
 
@@ -694,6 +712,7 @@ function JawabanCard({
                 value={localValues.jawaban_unit}
                 onChange={(v) => onChange(qid, 'jawaban_unit', v)}
                 computedPersen={computedPersen}
+                disabled={!canEditUnit}
               />
             </div>
             {/* Narasi */}
@@ -705,6 +724,7 @@ function JawabanCard({
                 aria-label={kriteria.answer_type === 'jumlah' ? 'Keterangan tambahan unit' : 'Narasi atau penjelasan unit'}
                 value={localValues.narasi}
                 onChange={(e) => onChange(qid, 'narasi', e.target.value)}
+                disabled={!canEditUnit}
                 placeholder="Uraian singkat kondisi unit..."
                 rows={2}
                 className="w-full px-2 py-1.5 text-xs rounded border border-default-200 bg-content1 focus:outline-none focus:border-primary resize-y"
@@ -717,6 +737,7 @@ function JawabanCard({
                 aria-label="Nama dokumen atau bukti"
                 value={localValues.bukti}
                 onChange={(e) => onChange(qid, 'bukti', e.target.value)}
+                disabled={!canEditUnit}
                 placeholder="Nama file atau dokumen..."
                 rows={2}
                 className="w-full px-2 py-1.5 text-xs rounded border border-default-200 bg-content1 focus:outline-none focus:border-primary resize-y"
@@ -729,9 +750,21 @@ function JawabanCard({
                 aria-label="Link Google Drive"
                 value={localValues.link_drive}
                 onChange={(e) => onChange(qid, 'link_drive', e.target.value)}
+                disabled={!canEditUnit}
                 placeholder="https://drive.google.com/..."
                 className="w-full px-2 py-1.5 text-xs rounded border border-default-200 bg-content1 focus:outline-none focus:border-primary"
               />
+              {canOpenDriveLink && (
+                <button
+                  type="button"
+                  onClick={() => window.open(localValues.link_drive, '_blank', 'noopener,noreferrer')}
+                  disabled={!localValues.link_drive?.trim()}
+                  className="mt-2 inline-flex items-center gap-1 rounded border border-blue-200 px-2 py-1 text-[10px] font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-700/40 dark:text-blue-300 dark:hover:bg-blue-950/20"
+                >
+                  <ExternalLink size={10} />
+                  Buka Link Drive Unit
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -762,25 +795,28 @@ function JawabanCard({
                   noteField="catatan_tpi_unit"
                   computedPersen={computedTpiUnitPersen}
                   onChange={onChange}
+                  disabled={!canEditTpiUnit}
                 />
               )}
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-2">
                   <span className="block text-[10px] text-default-500 mb-1">Jawaban TPI Unit</span>
-                  <AnswerSelect
-                    answerType={kriteria.answer_type}
-                    value={localValues.jawaban_tpi_unit}
-                    onChange={(v) => onChange(qid, 'jawaban_tpi_unit', v)}
-                    computedPersen={computedTpiUnitPersen}
-                  />
+                   <AnswerSelect
+                     answerType={kriteria.answer_type}
+                     value={localValues.jawaban_tpi_unit}
+                     onChange={(v) => onChange(qid, 'jawaban_tpi_unit', v)}
+                     computedPersen={computedTpiUnitPersen}
+                     disabled={!canEditTpiUnit}
+                   />
                 </div>
                 <div className="col-span-10">
                   <span className="block text-[10px] text-default-500 mb-1">Catatan TPI Unit</span>
                   <textarea
                     aria-label="Catatan TPI Unit"
-                    value={localValues.catatan_tpi_unit}
-                    onChange={(e) => onChange(qid, 'catatan_tpi_unit', e.target.value)}
-                    placeholder="Catatan hasil review TPI dari Unit..."
+                     value={localValues.catatan_tpi_unit}
+                     onChange={(e) => onChange(qid, 'catatan_tpi_unit', e.target.value)}
+                     disabled={!canEditTpiUnit}
+                     placeholder="Catatan hasil review TPI dari Unit..."
                     rows={2}
                     className="w-full px-2 py-1.5 text-xs rounded border border-amber-200 dark:border-amber-700/40 bg-content1 focus:outline-none focus:border-amber-400 resize-y"
                   />
@@ -816,6 +852,7 @@ function JawabanCard({
                   noteField="catatan_tpi_itjen"
                   computedPersen={computedTpiItjenPersen}
                   onChange={onChange}
+                  disabled={!canEditTpiItjen}
                 />
               )}
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -826,12 +863,13 @@ function JawabanCard({
                   <div className="grid grid-cols-12 gap-2">
                     <div className="col-span-12 sm:col-span-4">
                       <span className="block text-[10px] text-default-500 mb-1">Jawaban TPI Itjen</span>
-                      <AnswerSelect
-                        answerType={kriteria.answer_type}
-                        value={localValues.jawaban_tpi_itjen}
-                        onChange={(v) => onChange(qid, 'jawaban_tpi_itjen', v)}
-                        computedPersen={computedTpiItjenPersen}
-                      />
+                        <AnswerSelect
+                          answerType={kriteria.answer_type}
+                          value={localValues.jawaban_tpi_itjen}
+                          onChange={(v) => onChange(qid, 'jawaban_tpi_itjen', v)}
+                          computedPersen={computedTpiItjenPersen}
+                          disabled={!canEditTpiItjen}
+                        />
                     </div>
                     <div className="col-span-12 sm:col-span-8">
                       <span className="block text-[10px] text-default-500 mb-1">Catatan TPI Itjen</span>
@@ -839,6 +877,7 @@ function JawabanCard({
                         aria-label="Catatan TPI Itjen"
                         value={localValues.catatan_tpi_itjen}
                         onChange={(e) => onChange(qid, 'catatan_tpi_itjen', e.target.value)}
+                        disabled={!canEditTpiItjen}
                         placeholder="Catatan hasil review TPI Itjen KESDM..."
                         rows={4}
                         className="w-full px-2 py-1.5 text-xs rounded border border-violet-200 dark:border-violet-700/40 bg-content1 focus:outline-none focus:border-violet-400 resize-y"
@@ -1398,6 +1437,16 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
 export default function InputJawabanPage() {
   const { id: submissionId } = useParams<{ id: string }>()
   const router = useRouter()
+  const role = useAuthStore((s) => s.role)
+  const canEditUnit = hasPermission(role, 'zi:fill-unit')
+  const canEditTpiUnit = hasPermission(role, 'zi:review-tpi-unit')
+  const canEditTpiItjen = hasPermission(role, 'zi:review-tpi-kesdm')
+  const canOpenDriveLink =
+    hasPermission(role, 'zi:review-tpi-unit') ||
+    hasPermission(role, 'zi:review-tpi-kesdm') ||
+    hasPermission(role, 'zi:manage')
+  const canEditAnything = canEditUnit || canEditTpiUnit || canEditTpiItjen
+  const canSyncSheet = hasPermission(role, 'zi:sync')
 
   const [grouped, setGrouped]             = useState<GroupedKomponen[]>([])
   const [loading, setLoading]             = useState(true)
@@ -1762,7 +1811,7 @@ export default function InputJawabanPage() {
           )}
           <button
             onClick={handleBatchSave}
-            disabled={batchSaving}
+            disabled={batchSaving || !canEditAnything}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
           >
             {batchSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
@@ -1811,26 +1860,28 @@ export default function InputJawabanPage() {
                 <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-1">{syncError}</p>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleSheetSync('missing_only')}
-                disabled={!!syncingMode}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-300 bg-white text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-950/20 dark:text-blue-200"
-              >
-                {syncingMode === 'missing_only' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                Sync dari Sheet
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSheetSync('overwrite')}
-                disabled={!!syncingMode}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
-              >
-                {syncingMode === 'overwrite' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                Timpa dari Sheet
-              </button>
-            </div>
+            {canSyncSheet && (
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleSheetSync('missing_only')}
+                  disabled={!!syncingMode}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-300 bg-white text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-950/20 dark:text-blue-200"
+                >
+                  {syncingMode === 'missing_only' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                  Sync dari Sheet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSheetSync('overwrite')}
+                  disabled={!!syncingMode}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
+                >
+                  {syncingMode === 'overwrite' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                  Timpa dari Sheet
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1976,6 +2027,10 @@ export default function InputJawabanPage() {
                               computedTpiItjenPersen={computedTpiItjenPersen}
                               jumlahSubItems={jumlahSubItems}
                               hasPending={pendingSave.has(qid) || (jumlahEntriesForThis.length > 0 && jumlahEntriesForThis.some((je) => pendingSave.has(je.kriteria.question_id)))}
+                              canEditUnit={canEditUnit}
+                              canEditTpiUnit={canEditTpiUnit}
+                              canEditTpiItjen={canEditTpiItjen}
+                              canOpenDriveLink={canOpenDriveLink}
                             />
                           )
                         })}
