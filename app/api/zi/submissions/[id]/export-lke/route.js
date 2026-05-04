@@ -79,6 +79,16 @@ const COMPONENT_STRUCTURAL_ROWS = SUMMARY_COMPONENT_ROWS.flatMap((row) => [
   { id: row.reformId, key: row.key, section: "reform", max: row.bobot / 2 },
 ]);
 
+const EXPORT_MINIMUMS = {
+  komponenPengungkitRatio: { WBK: 0.6, WBBM: 0.75 },
+  totalPengungkit: { WBK: 40, WBBM: 48 },
+  birokrasiBersih: { WBK: 18.25, WBBM: 19.5 },
+  ipak: { WBK: 15.75, WBBM: 15.75 },
+  capaianKinerja: { WBK: 2.5, WBBM: 3.75 },
+  pelayananPrima: { WBK: 14, WBBM: 15.75 },
+  nilaiTotal: { WBK: 75, WBBM: 85 },
+};
+
 function r2(value) {
   return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
 }
@@ -353,19 +363,31 @@ function setScorePct(ws, rowNumber, sourceKey, score, maxBobot, writeBlank = fal
   pctCell.numFmt = "0.00%";
 }
 
+function cloneCellStyle(style = {}) {
+  const cloned = { ...style };
+  if (style.font) cloned.font = { ...style.font };
+  if (style.alignment) cloned.alignment = { ...style.alignment };
+  return cloned;
+}
+
+function makePlainFont(font = {}) {
+  const plain = { ...font };
+  delete plain.color;
+  delete plain.underline;
+  return plain;
+}
+
 function setValue(cell, value, options = {}) {
+  cell.style = cloneCellStyle(cell.style);
   cell.value = value;
   if (options.numFmt) cell.numFmt = options.numFmt;
   cell.alignment = { ...(cell.alignment ?? {}), vertical: "top", wrapText: true };
 }
 
-function setHyperlink(cell, url) {
-  if (!url) {
-    cell.value = "";
-    return;
-  }
-  cell.value = { text: url, hyperlink: url };
-  cell.font = { ...(cell.font ?? {}), color: { argb: "FF0563C1" }, underline: true };
+function setPlainUrl(cell, url) {
+  cell.style = cloneCellStyle(cell.style);
+  cell.value = url || "";
+  cell.font = makePlainFont(cell.font);
   cell.alignment = { ...(cell.alignment ?? {}), vertical: "top", wrapText: true };
 }
 
@@ -471,7 +493,7 @@ function writeJawabanSheet(ws, kriteriaList, jawabanById, subItemsByParent, allS
 
     setValue(ws.getCell(`L${rowNumber}`), jawaban.narasi ?? "");
     setValue(ws.getCell(`M${rowNumber}`), jawaban.bukti ?? "");
-    setHyperlink(ws.getCell(`N${rowNumber}`), jawaban.link_drive ?? "");
+    setPlainUrl(ws.getCell(`N${rowNumber}`), jawaban.link_drive ?? "");
 
     if (kriteriaById.has(kriteria.question_id) && !String(ws.getCell(`G${rowNumber}`).value ?? "").trim()) {
       setValue(ws.getCell(`G${rowNumber}`), kriteria.pertanyaan ?? "");
@@ -497,13 +519,17 @@ function writeJawabanSheet(ws, kriteriaList, jawabanById, subItemsByParent, allS
   }
 }
 
-function statusPct(ratio, target) {
-  const threshold = target === "WBBM" ? 0.85 : 0.75;
-  return ratio >= threshold ? "OK" : "Tidak Lulus";
+function getTargetMinimum(target, minimums) {
+  return target === "WBBM" ? minimums.WBBM : minimums.WBK;
 }
 
-function statusValue(value, target, wbkMin, wbbmMin) {
-  const min = target === "WBBM" ? wbbmMin : wbkMin;
+function statusRatio(ratio, target, minimums) {
+  const min = getTargetMinimum(target, minimums);
+  return ratio >= min ? "OK" : "Tidak Lulus";
+}
+
+function statusValue(value, target, minimums) {
+  const min = getTargetMinimum(target, minimums);
   return value >= min ? "OK" : "Tidak Lulus";
 }
 
@@ -533,7 +559,11 @@ function writeSummarySheet(ws, sourceKey, summary, submission) {
     writeSummaryNumber(ws, `J${item.row}`, reform);
     writeSummaryNumber(ws, `K${item.row}`, nilai);
     writeSummaryPercent(ws, `L${item.row}`, ratio);
-    ws.getCell(`M${item.row}`).value = statusPct(ratio, submission.target);
+    ws.getCell(`M${item.row}`).value = statusRatio(
+      ratio,
+      submission.target,
+      EXPORT_MINIMUMS.komponenPengungkitRatio,
+    );
   }
 
   const pengungkit = r2(SUMMARY_COMPONENT_ROWS.reduce(
@@ -542,7 +572,7 @@ function writeSummarySheet(ws, sourceKey, summary, submission) {
   ));
   writeSummaryNumber(ws, "K12", pengungkit);
   writeSummaryPercent(ws, "L12", pengungkit / 60);
-  ws.getCell("M12").value = statusValue(pengungkit, submission.target, 40, 48);
+  ws.getCell("M12").value = statusValue(pengungkit, submission.target, EXPORT_MINIMUMS.totalPengungkit);
 
   const ipak = summary.hasil.ipak ?? 0;
   const ck = summary.hasil.capaian_kinerja ?? 0;
@@ -553,29 +583,29 @@ function writeSummarySheet(ws, sourceKey, summary, submission) {
 
   writeSummaryNumber(ws, "K15", birokrasi);
   writeSummaryPercent(ws, "L15", birokrasi / 22.5);
-  ws.getCell("M15").value = statusValue(birokrasi, submission.target, 18.25, 19.5);
+  ws.getCell("M15").value = statusValue(birokrasi, submission.target, EXPORT_MINIMUMS.birokrasiBersih);
 
   writeSummaryNumber(ws, "K16", ipak);
   writeSummaryPercent(ws, "L16", ipak / 17.5);
-  ws.getCell("M16").value = statusValue(ipak, submission.target, 15.75, 15.75);
+  ws.getCell("M16").value = statusValue(ipak, submission.target, EXPORT_MINIMUMS.ipak);
 
   writeSummaryNumber(ws, "K17", ck);
   writeSummaryPercent(ws, "L17", ck / 5);
-  ws.getCell("M17").value = statusValue(ck, submission.target, 2.5, 3.75);
+  ws.getCell("M17").value = statusValue(ck, submission.target, EXPORT_MINIMUMS.capaianKinerja);
 
   writeSummaryNumber(ws, "K18", prima);
   writeSummaryPercent(ws, "L18", prima / 17.5);
-  ws.getCell("M18").value = statusValue(prima, submission.target, 14, 15.75);
+  ws.getCell("M18").value = statusValue(prima, submission.target, EXPORT_MINIMUMS.pelayananPrima);
 
   writeSummaryNumber(ws, "K19", prima);
   writeSummaryPercent(ws, "L19", prima / 17.5);
-  ws.getCell("M19").value = statusValue(prima, submission.target, 14, 15.75);
+  ws.getCell("M19").value = statusValue(prima, submission.target, EXPORT_MINIMUMS.pelayananPrima);
 
   writeSummaryNumber(ws, "K20", hasil);
   writeSummaryPercent(ws, "L20", hasil / 40);
 
   writeSummaryNumber(ws, "K22", akhir);
-  ws.getCell("M22").value = statusValue(akhir, submission.target, 75, 85);
+  ws.getCell("M22").value = statusValue(akhir, submission.target, EXPORT_MINIMUMS.nilaiTotal);
 }
 
 function writeExportInfoSheet(wb, submission, kriteriaList, rowById) {
