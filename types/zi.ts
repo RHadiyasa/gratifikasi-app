@@ -56,6 +56,7 @@ export interface LkeKriteria {
   formula_tokens:     FormulaToken[] | null
   formula_min:        number
   formula_max:        number
+  formula_zero_division_full_score: boolean
   aktif:              boolean
   createdAt:          string
   updatedAt:          string

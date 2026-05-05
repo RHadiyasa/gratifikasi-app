@@ -39,6 +39,9 @@ const LkeKriteriaSchema = new Schema(
     // Batasan hasil persen (hanya relevan untuk parent persen)
     formula_min:        { type: Number, default: 0 },
     formula_max:        { type: Number, default: 100 },
+    // Untuk parent persen: jika formula mengalami pembagian dengan 0,
+    // gunakan formula_max sebagai nilai penuh.
+    formula_zero_division_full_score: { type: Boolean, default: false },
     aktif:              { type: Boolean, default: true },
   },
   { timestamps: true }
