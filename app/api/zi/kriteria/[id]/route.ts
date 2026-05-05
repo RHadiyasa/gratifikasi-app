@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await connect()
     const { id } = await params
     const body = await req.json()
-    const allowed = ['parent_question_id', 'sub_komponen', 'urutan', 'pertanyaan', 'standar_dokumen', 'kriteria_panrb', 'bobot', 'answer_type', 'is_computed', 'formula_tokens', 'formula_min', 'formula_max', 'aktif']
+    const allowed = ['parent_question_id', 'sub_komponen', 'urutan', 'pertanyaan', 'standar_dokumen', 'kriteria_panrb', 'bobot', 'answer_type', 'is_computed', 'formula_tokens', 'formula_min', 'formula_max', 'formula_zero_division_full_score', 'aktif']
     const update: Record<string, any> = {}
     for (const key of allowed) {
       if (key in body) update[key] = body[key]

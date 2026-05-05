@@ -169,11 +169,12 @@ function getAnswerRatio(answerType, value) {
   return null;
 }
 
-function evalTokens(tokens, values) {
-  if (!tokens?.length) return 0;
+function evalTokensDetailed(tokens, values) {
+  if (!tokens?.length) return { value: 0, hasDivisionByZero: false };
   const prec = { "+": 1, "-": 1, "*": 2, "/": 2 };
   const out = [];
   const ops = [];
+  let hasDivisionByZero = false;
 
   function applyOp(op) {
     const b = out.pop() ?? 0;
@@ -181,7 +182,14 @@ function evalTokens(tokens, values) {
     if (op === "+") out.push(a + b);
     else if (op === "-") out.push(a - b);
     else if (op === "*") out.push(a * b);
-    else if (op === "/") out.push(b === 0 ? 0 : a / b);
+    else if (op === "/") {
+      if (b === 0) {
+        hasDivisionByZero = true;
+        out.push(0);
+      } else {
+        out.push(a / b);
+      }
+    }
   }
 
   for (const token of tokens) {
@@ -200,7 +208,11 @@ function evalTokens(tokens, values) {
     }
   }
   while (ops.length) applyOp(ops.pop());
-  return out[0] ?? 0;
+  return { value: out[0] ?? 0, hasDivisionByZero };
+}
+
+function evalTokens(tokens, values) {
+  return evalTokensDetailed(tokens, values).value;
 }
 
 function computeSubItemValues(subItems, jawabanById, sourceKey) {
@@ -248,10 +260,14 @@ function computePersenValue(kriteria, subItems, jawabanById, sourceKey) {
   }
 
   const values = computeSubItemValues(subItems, jawabanById, sourceKey);
-  const raw = evalTokens(kriteria.formula_tokens, values) * 100;
-  if (!Number.isFinite(raw)) return null;
   const min = kriteria.formula_min ?? 0;
   const max = kriteria.formula_max ?? 100;
+  const result = evalTokensDetailed(kriteria.formula_tokens, values);
+  if (result.hasDivisionByZero && kriteria.formula_zero_division_full_score) {
+    return Math.min(max, Math.max(min, max));
+  }
+  const raw = result.value * 100;
+  if (!Number.isFinite(raw)) return null;
   return Math.min(max, Math.max(min, raw));
 }
 

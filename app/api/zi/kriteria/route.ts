@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       question_id, parent_question_id, komponen, seksi, sub_komponen, urutan,
       pertanyaan, standar_dokumen, kriteria_panrb, bobot, answer_type,
       is_computed, formula_tokens, formula_min, formula_max,
+      formula_zero_division_full_score,
     } = body
 
     if (!komponen || bobot == null || !answer_type) {
@@ -91,6 +92,7 @@ export async function POST(req: Request) {
       formula_tokens: formula_tokens ?? null,
       formula_min:    formula_min ?? 0,
       formula_max:    formula_max ?? 100,
+      formula_zero_division_full_score: formula_zero_division_full_score ?? false,
     })
     return NextResponse.json({ kriteria: doc }, { status: 201 })
   } catch (err: any) {

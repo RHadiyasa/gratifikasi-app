@@ -918,13 +918,19 @@ function JawabanCard({
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+type FormulaEvalResult = {
+  value: number
+  hasDivisionByZero: boolean
+}
+
 // Evaluate an infix formula_tokens expression using the shunting-yard algorithm.
 // Supports full PEMDAS including parentheses.
-function evalTokens(tokens: FormulaToken[], values: Record<number, number>): number {
-  if (!tokens.length) return 0
+function evalTokensDetailed(tokens: FormulaToken[], values: Record<number, number>): FormulaEvalResult {
+  if (!tokens.length) return { value: 0, hasDivisionByZero: false }
   const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 }
   const out: number[] = []
   const ops: string[] = []
+  let hasDivisionByZero = false
 
   function applyOp(op: string) {
     const b = out.pop() ?? 0
@@ -932,7 +938,14 @@ function evalTokens(tokens: FormulaToken[], values: Record<number, number>): num
     if (op === '+') out.push(a + b)
     else if (op === '-') out.push(a - b)
     else if (op === '*') out.push(a * b)
-    else if (op === '/') out.push(b === 0 ? 0 : a / b)
+    else if (op === '/') {
+      if (b === 0) {
+        hasDivisionByZero = true
+        out.push(0)
+      } else {
+        out.push(a / b)
+      }
+    }
   }
 
   for (const t of tokens) {
@@ -950,7 +963,11 @@ function evalTokens(tokens: FormulaToken[], values: Record<number, number>): num
     }
   }
   while (ops.length) applyOp(ops.pop()!)
-  return out[0] ?? 0
+  return { value: out[0] ?? 0, hasDivisionByZero }
+}
+
+function evalTokens(tokens: FormulaToken[], values: Record<number, number>): number {
+  return evalTokensDetailed(tokens, values).value
 }
 
 function formatFormulaTokens(tokens: FormulaToken[] | null) {
@@ -1017,10 +1034,14 @@ function computePersenValue(
   })
   if (!hasSubItemInput) return null
   const values = computeSubItemValues(subItems, localData, valueField)
-  const raw = evalTokens(tokens, values) * 100
-  if (!isFinite(raw)) return null
   const min = parentKriteria.formula_min ?? 0
   const max = parentKriteria.formula_max ?? 100
+  const result = evalTokensDetailed(tokens, values)
+  if (result.hasDivisionByZero && parentKriteria.formula_zero_division_full_score) {
+    return Math.min(max, Math.max(min, max))
+  }
+  const raw = result.value * 100
+  if (!isFinite(raw)) return null
   return Math.min(max, Math.max(min, raw))
 }
 
@@ -1464,6 +1485,8 @@ export default function InputJawabanPage() {
   const [syncInfo, setSyncInfo]           = useState<SheetSyncSummary | null>(null)
   const [syncError, setSyncError]         = useState<string | null>(null)
   const [syncingMode, setSyncingMode]     = useState<'missing_only' | 'overwrite' | null>(null)
+  const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState(false)
+  const [overwriteConfirmText, setOverwriteConfirmText] = useState('')
   const [searchId, setSearchId]           = useState('')
   const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
@@ -1618,6 +1641,9 @@ export default function InputJawabanPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const overwriteConfirmPhrase = `Timpa LKE ${submissionName.trim() || 'Unit Ini'}`
+  const canConfirmOverwrite = overwriteConfirmText.trim() === overwriteConfirmPhrase
+
   function debouncedSave(qid: number, patch: Partial<LocalJawaban>) {
     clearTimeout(debounceTimers.current[qid])
     debounceTimers.current[qid] = setTimeout(async () => {
@@ -1723,14 +1749,7 @@ export default function InputJawabanPage() {
     }
   }
 
-  async function handleSheetSync(mode: 'missing_only' | 'overwrite') {
-    if (mode === 'overwrite') {
-      const ok = confirm(
-        'Sync overwrite akan menimpa data jawaban di aplikasi dengan data dari Google Sheet. Lanjutkan?'
-      )
-      if (!ok) return
-    }
-
+  async function runSheetSync(mode: 'missing_only' | 'overwrite') {
     setSyncingMode(mode)
     setSyncError(null)
     try {
@@ -1746,6 +1765,23 @@ export default function InputJawabanPage() {
     } finally {
       setSyncingMode(null)
     }
+  }
+
+  function handleSheetSync(mode: 'missing_only' | 'overwrite') {
+    if (mode === 'overwrite') {
+      setOverwriteConfirmText('')
+      setOverwriteConfirmOpen(true)
+      return
+    }
+
+    runSheetSync(mode)
+  }
+
+  async function handleConfirmOverwrite() {
+    if (!canConfirmOverwrite || syncingMode) return
+    setOverwriteConfirmOpen(false)
+    setOverwriteConfirmText('')
+    await runSheetSync('overwrite')
   }
 
   function toggleKomponen(komp: string) {
@@ -2054,6 +2090,82 @@ export default function InputJawabanPage() {
           >
             Buka halaman admin kriteria →
           </button>
+        </div>
+      )}
+
+      {overwriteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="overwrite-confirm-title"
+            className="w-full max-w-lg rounded-lg border border-amber-200 bg-content1 shadow-2xl dark:border-amber-800"
+          >
+            <div className="border-b border-amber-100 px-5 py-4 dark:border-amber-900/60">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                  <AlertTriangle size={18} />
+                </div>
+                <div className="min-w-0">
+                  <h2 id="overwrite-confirm-title" className="text-base font-bold text-default-900">
+                    Konfirmasi Timpa LKE
+                  </h2>
+                  <p className="mt-1 text-sm leading-5 text-default-600">
+                    Data jawaban di aplikasi akan diganti mengikuti Google Sheet untuk unit ini.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-5 py-4">
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">
+                Tindakan ini berisiko menimpa jawaban, narasi, bukti, link Drive, dan review yang sudah ada di aplikasi.
+              </div>
+
+              <label className="block">
+                <span className="text-xs font-semibold text-default-700">
+                  Ketik frasa berikut untuk melanjutkan:
+                </span>
+                <code className="mt-1 block rounded border border-default-200 bg-default-50 px-3 py-2 text-sm font-bold text-default-800 break-words dark:border-default-700 dark:bg-content2">
+                  {overwriteConfirmPhrase}
+                </code>
+                <input
+                  value={overwriteConfirmText}
+                  onChange={(e) => setOverwriteConfirmText(e.target.value)}
+                  placeholder={overwriteConfirmPhrase}
+                  className="mt-3 w-full rounded-lg border border-default-200 bg-content1 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none"
+                />
+              </label>
+
+              {overwriteConfirmText && !canConfirmOverwrite && (
+                <p className="text-xs text-rose-600 dark:text-rose-300">
+                  Frasa belum sama persis.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-default-200 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setOverwriteConfirmOpen(false)
+                  setOverwriteConfirmText('')
+                }}
+                className="rounded-lg border border-default-200 px-4 py-2 text-sm hover:bg-default-100"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmOverwrite}
+                disabled={!canConfirmOverwrite || !!syncingMode}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {syncingMode === 'overwrite' && <Loader2 size={14} className="animate-spin" />}
+                Timpa dari Sheet
+              </button>
+            </div>
+          </div>
         </div>
       )}
         </div>

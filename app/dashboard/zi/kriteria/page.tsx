@@ -111,6 +111,7 @@ const defaultForm = {
   aktif: true,
   formula_min: 0,
   formula_max: 100,
+  formula_zero_division_full_score: false,
 };
 
 // Formula Builder Component
@@ -358,6 +359,8 @@ export default function KriteriaPage() {
       aktif: k.aktif,
       formula_min: k.formula_min ?? 0,
       formula_max: k.formula_max ?? 100,
+      formula_zero_division_full_score:
+        k.formula_zero_division_full_score ?? false,
     });
     setSubItems([]);
     setPersenFormula(k.formula_tokens ?? []);
@@ -422,6 +425,8 @@ export default function KriteriaPage() {
               formula_tokens: persenFormula.length ? persenFormula : null,
               formula_min: form.formula_min,
               formula_max: form.formula_max,
+              formula_zero_division_full_score:
+                form.formula_zero_division_full_score,
             }
           : payload;
 
@@ -831,6 +836,12 @@ export default function KriteriaPage() {
                               {children.length} detil indikator
                             </span>
                           )}
+                          {k.answer_type === "persen" &&
+                            k.formula_zero_division_full_score && (
+                              <span className="ml-1 text-[9px] text-emerald-600 dark:text-emerald-400 px-1 py-0.5 rounded">
+                                pembagi 0 = maks
+                              </span>
+                            )}
                         </td>
                         <td className="px-4 py-3 align-top">
                           <span
@@ -1367,6 +1378,23 @@ export default function KriteriaPage() {
                               />
                             </label>
                           </div>
+                          <label className="flex items-start gap-2 rounded border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[10px] text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+                            <input
+                              type="checkbox"
+                              checked={form.formula_zero_division_full_score}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  formula_zero_division_full_score:
+                                    e.target.checked,
+                                }))
+                              }
+                              className="mt-0.5 h-3.5 w-3.5 rounded"
+                            />
+                            <span>
+                              Pembagi 0 menggunakan nilai maksimal formula.
+                            </span>
+                          </label>
                         </div>
                       )}
                     </div>
