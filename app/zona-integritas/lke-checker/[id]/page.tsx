@@ -89,6 +89,14 @@ interface RowJob {
   logs: LogEntry[];
 }
 
+interface MissingReviewAnswer {
+  source: string;
+  questionId: number;
+  rowNumber: number;
+  column: string;
+  pertanyaan: string;
+}
+
 function isDetailKriteria(kriteria: any) {
   return (
     kriteria?.answer_type === "jumlah" &&
@@ -468,6 +476,28 @@ export default function UnitDetailPage() {
     if (!unit) return;
     setExporting(true);
     try {
+      const checkRes = await fetch(`/api/zi/submissions/${unit._id}/export-lke?check=1`);
+      if (!checkRes.ok) throw new Error(await checkRes.text());
+
+      const checkData = await checkRes.json();
+      const missing = (checkData?.missingReviewAnswers ?? []) as MissingReviewAnswer[];
+      if (missing.length > 0) {
+        const previewLimit = 30;
+        const preview = missing
+          .slice(0, previewLimit)
+          .map((item) =>
+            `- ${item.source} ID ${item.questionId} row ${item.rowNumber} kolom ${item.column}: ${item.pertanyaan || "-"}`,
+          )
+          .join("\n");
+        const rest = missing.length > previewLimit
+          ? `\n...dan ${missing.length - previewLimit} sel kosong lainnya.`
+          : "";
+        const confirmed = window.confirm(
+          `Nilai TPI Unit/TPI Itjen masih kosong (${missing.length} sel).\n\n${preview}${rest}\n\nExport tetap diperbolehkan. Lanjut export?`,
+        );
+        if (!confirmed) return;
+      }
+
       const res = await fetch(`/api/zi/submissions/${unit._id}/export-lke`);
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();

@@ -53,6 +53,7 @@ const KOMPONEN_LABEL = {
 
 const KOMPONEN_ORDER = ["mp", "tt", "sdm", "ak", "pw", "pp"];
 const HASIL_KEYS = ["ipak", "capaian_kinerja", "prima"];
+const REVIEW_SOURCE_KEYS = ["tpiUnit", "tpiItjen"];
 const REFORM_ID_MIN = 123;
 const REFORM_ID_MAX = 194;
 
@@ -68,7 +69,8 @@ const SUMMARY_COMPONENT_ROWS = [
 const STRUCTURAL_SCORE_ROWS = [
   { id: 3, kind: "pemenuhanTotal", max: 30 },
   { id: 122, kind: "reformTotal", max: 30 },
-  { id: 2, kind: "pengungkitTotal", max: 60 },
+  { id: 195, kind: "pengungkitTotal", max: 60 },
+  { id: 198, kind: "birokrasiBersihTotal", max: 22.5 },
   { id: 201, kind: "primaTotal", max: 17.5 },
   { id: 203, kind: "hasilTotal", max: 40 },
   { id: 204, kind: "finalTotal", max: 100 },
@@ -169,6 +171,10 @@ function getAnswerRatio(answerType, value) {
   return null;
 }
 
+function getSourceAnswerValue(jawaban, sourceKey) {
+  return jawaban?.[SOURCE_CONFIG[sourceKey].answerField] ?? "";
+}
+
 function evalTokensDetailed(tokens, values) {
   if (!tokens?.length) return { value: 0, hasDivisionByZero: false };
   const prec = { "+": 1, "-": 1, "*": 2, "/": 2 };
@@ -216,7 +222,6 @@ function evalTokens(tokens, values) {
 }
 
 function computeSubItemValues(subItems, jawabanById, sourceKey) {
-  const field = SOURCE_CONFIG[sourceKey].answerField;
   const byUrutan = {};
   for (const item of subItems) byUrutan[item.urutan] = item;
 
@@ -240,20 +245,18 @@ function computeSubItemValues(subItems, jawabanById, sourceKey) {
     if (item.is_computed && item.formula_tokens?.length) {
       values[item.urutan] = evalTokens(item.formula_tokens, values);
     } else {
-      values[item.urutan] = parseNumeric(jawabanById.get(item.question_id)?.[field]) ?? 0;
+      values[item.urutan] = parseNumeric(getSourceAnswerValue(jawabanById.get(item.question_id), sourceKey)) ?? 0;
     }
   }
   return values;
 }
 
 function hasSubItemInput(subItems, jawabanById, sourceKey) {
-  const field = SOURCE_CONFIG[sourceKey].answerField;
-  return subItems.some((item) => String(jawabanById.get(item.question_id)?.[field] ?? "").trim() !== "");
+  return subItems.some((item) => String(getSourceAnswerValue(jawabanById.get(item.question_id), sourceKey) ?? "").trim() !== "");
 }
 
 function computePersenValue(kriteria, subItems, jawabanById, sourceKey) {
-  const field = SOURCE_CONFIG[sourceKey].answerField;
-  const direct = jawabanById.get(kriteria.question_id)?.[field];
+  const direct = getSourceAnswerValue(jawabanById.get(kriteria.question_id), sourceKey);
   if (!kriteria.formula_tokens?.length || !subItems.length || !hasSubItemInput(subItems, jawabanById, sourceKey)) {
     const ratio = getAnswerRatio("persen", direct);
     return ratio === null ? null : ratio * 100;
@@ -273,7 +276,6 @@ function computePersenValue(kriteria, subItems, jawabanById, sourceKey) {
 
 function getDisplayAnswer(kriteria, jawabanById, subItemsByParent, sourceKey) {
   const jawaban = jawabanById.get(kriteria.question_id);
-  const field = SOURCE_CONFIG[sourceKey].answerField;
   if (kriteria.answer_type === "persen") {
     const persen = computePersenValue(kriteria, subItemsByParent.get(kriteria.question_id) ?? [], jawabanById, sourceKey);
     return persen === null ? "" : { value: persen / 100, numFmt: "0.00%" };
@@ -285,7 +287,38 @@ function getDisplayAnswer(kriteria, jawabanById, subItemsByParent, sourceKey) {
     return values[kriteria.urutan] ?? "";
   }
 
-  return jawaban?.[field] ?? "";
+  return getSourceAnswerValue(jawaban, sourceKey);
+}
+
+function isBlankDisplayAnswer(display) {
+  if (display && typeof display === "object" && "value" in display) {
+    return String(display.value ?? "").trim() === "";
+  }
+  return String(display ?? "").trim() === "";
+}
+
+function findMissingReviewAnswers(kriteriaList, jawabanById, subItemsByParent, template) {
+  const missing = [];
+
+  for (const kriteria of kriteriaList) {
+    const rowNumber = getTemplateRowNumber(kriteria, template, subItemsByParent);
+    if (!rowNumber) continue;
+
+    for (const sourceKey of REVIEW_SOURCE_KEYS) {
+      const display = getDisplayAnswer(kriteria, jawabanById, subItemsByParent, sourceKey);
+      if (!isBlankDisplayAnswer(display)) continue;
+
+      missing.push({
+        source: SOURCE_CONFIG[sourceKey].label,
+        questionId: Number(kriteria.question_id),
+        rowNumber,
+        column: SOURCE_CONFIG[sourceKey].answerCol,
+        pertanyaan: kriteria.pertanyaan || "",
+      });
+    }
+  }
+
+  return missing.sort((a, b) => a.rowNumber - b.rowNumber || a.source.localeCompare(b.source));
 }
 
 function getQuestionScore(kriteria, jawabanById, subItemsByParent, sourceKey) {
@@ -296,7 +329,7 @@ function getQuestionScore(kriteria, jawabanById, subItemsByParent, sourceKey) {
     const persen = computePersenValue(kriteria, subItemsByParent.get(kriteria.question_id) ?? [], jawabanById, sourceKey);
     ratio = persen === null ? null : Math.max(0, Math.min(100, persen)) / 100;
   } else {
-    const value = jawabanById.get(kriteria.question_id)?.[SOURCE_CONFIG[sourceKey].answerField];
+    const value = getSourceAnswerValue(jawabanById.get(kriteria.question_id), sourceKey);
     ratio = getAnswerRatio(kriteria.answer_type, value);
   }
 
@@ -357,6 +390,7 @@ function getTotal(summary, kind) {
   if (kind === "pemenuhanTotal") return KOMPONEN_ORDER.reduce((sum, key) => sum + summary.pemenuhan[key], 0);
   if (kind === "reformTotal") return KOMPONEN_ORDER.reduce((sum, key) => sum + summary.reform[key], 0);
   if (kind === "pengungkitTotal") return getTotal(summary, "pemenuhanTotal") + getTotal(summary, "reformTotal");
+  if (kind === "birokrasiBersihTotal") return summary.hasil.ipak + summary.hasil.capaian_kinerja;
   if (kind === "primaTotal") return summary.hasil.prima;
   if (kind === "hasilTotal") return summary.hasil.ipak + summary.hasil.capaian_kinerja + summary.hasil.prima;
   if (kind === "finalTotal") return getTotal(summary, "pengungkitTotal") + getTotal(summary, "hasilTotal");
@@ -541,12 +575,12 @@ function getTargetMinimum(target, minimums) {
 
 function statusRatio(ratio, target, minimums) {
   const min = getTargetMinimum(target, minimums);
-  return ratio >= min ? "OK" : "Tidak Lulus";
+  return ratio >= min ? "Lulus" : "Tidak Lulus";
 }
 
 function statusValue(value, target, minimums) {
   const min = getTargetMinimum(target, minimums);
-  return value >= min ? "OK" : "Tidak Lulus";
+  return value >= min ? "Lulus" : "Tidak Lulus";
 }
 
 function writeSummaryNumber(ws, address, value, numFmt = "0.00") {
@@ -624,7 +658,7 @@ function writeSummarySheet(ws, sourceKey, summary, submission) {
   ws.getCell("M22").value = statusValue(akhir, submission.target, EXPORT_MINIMUMS.nilaiTotal);
 }
 
-function writeExportInfoSheet(wb, submission, kriteriaList, rowById) {
+function writeExportInfoSheet(wb, submission, kriteriaList, rowById, missingReviewAnswers) {
   const ws = wb.addWorksheet("Export Info");
   ws.addRow(["Export LKE", submission.eselon2 || ""]);
   ws.addRow(["Target", submission.target || "WBK"]);
@@ -637,10 +671,30 @@ function writeExportInfoSheet(wb, submission, kriteriaList, rowById) {
     .map((k) => k.question_id)
     .sort((a, b) => a - b);
   ws.addRow(["ID master tidak ada di template", missing.length ? missing.join(", ") : "-"]);
-  ws.columns = [{ width: 28 }, { width: 90 }];
+  ws.addRow([]);
+  ws.addRow(["Nilai review kosong", missingReviewAnswers.length ? `${missingReviewAnswers.length} sel` : "-"]);
+  ws.addRow([
+    "Catatan review",
+    "Export tetap dilanjutkan. Nilai TPI Unit dan TPI Itjen tidak memakai fallback ke sumber lain.",
+  ]);
+
+  if (missingReviewAnswers.length) {
+    ws.addRow([]);
+    const header = ws.addRow(["Sumber", "ID Kriteria", "Row Jawaban", "Kolom", "Pertanyaan"]);
+    header.eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+    for (const item of missingReviewAnswers) {
+      ws.addRow([item.source, item.questionId, item.rowNumber, item.column, item.pertanyaan]);
+    }
+  }
+
+  ws.columns = [{ width: 28 }, { width: 34 }, { width: 14 }, { width: 10 }, { width: 90 }];
   ws.eachRow((row) => {
     row.getCell(1).font = { bold: true };
-    row.getCell(2).alignment = { wrapText: true, vertical: "top" };
+    row.eachCell((cell) => {
+      cell.alignment = { wrapText: true, vertical: "top" };
+    });
   });
 }
 
@@ -685,14 +739,23 @@ async function buildWorkbook(submissionId) {
     if (sheet) writeSummarySheet(sheet, sourceKey, allSummaries[sourceKey], submission);
   }
 
-  writeExportInfoSheet(workbook, submission, kriteriaList, template.rowById);
-  return { workbook, submission };
+  const missingReviewAnswers = findMissingReviewAnswers(kriteriaList, jawabanById, subItemsByParent, template);
+  writeExportInfoSheet(workbook, submission, kriteriaList, template.rowById, missingReviewAnswers);
+  return { workbook, submission, missingReviewAnswers };
 }
 
-export async function GET(_req, context) {
+export async function GET(req, context) {
   try {
     const { id } = await context.params;
-    const { workbook, submission } = await buildWorkbook(id);
+    const { searchParams } = new URL(req.url);
+    const { workbook, submission, missingReviewAnswers } = await buildWorkbook(id);
+    if (searchParams.get("check") === "1") {
+      return Response.json({
+        count: missingReviewAnswers.length,
+        missingReviewAnswers,
+      });
+    }
+
     const buffer = await workbook.xlsx.writeBuffer();
     const filename = `export_lke_${safeFileName(submission.eselon2)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 

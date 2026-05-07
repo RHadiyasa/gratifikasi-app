@@ -8,6 +8,7 @@ import { hasPermission } from '@/lib/permissions'
 import {
   ArrowLeft, Save, CheckCircle2, AlertTriangle, XCircle,
   Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, ExternalLink,
+  UploadCloud, GitCompare,
 } from 'lucide-react'
 import type { LkeJawaban, LkeKriteria, FormulaToken } from '@/types/zi'
 
@@ -49,6 +50,40 @@ interface SheetSyncSummary {
   uncheckedCount:     number
 }
 
+interface SheetUpdateSummary {
+  updated:            number
+  updatedCells:       number
+  skipped:            number
+  validRows:          number
+  invalidRows:        number
+  unknownQuestionIds: number[]
+  warnings:           { message: string }[]
+  syncedAt:           string
+  columns:            { jawaban: 'S'; catatan: 'V' }
+}
+
+interface SheetCompareSummary {
+  comparedRows:       number
+  mismatchRows:       number
+  mismatchCells:      number
+  invalidRows:        number
+  unknownQuestionIds: number[]
+  columns:            { unit: 'K'; tpiUnit: 'O'; tpiItjen: 'S' }
+  mismatches: {
+    question_id: number
+    rowNum:      number
+    pertanyaan:  string
+    differences: {
+      source: 'unit' | 'tpiUnit' | 'tpiItjen'
+      label:  string
+      column: 'K' | 'O' | 'S'
+      app:    string
+      sheet:  string
+    }[]
+  }[]
+  checkedAt: string
+}
+
 type LocalJawaban = {
   jawaban_unit:      string
   narasi:            string
@@ -64,6 +99,9 @@ type PersenValueField = 'jawaban_unit' | 'jawaban_tpi_unit' | 'jawaban_tpi_itjen
 type DetailNoteField = 'narasi' | 'catatan_tpi_unit' | 'catatan_tpi_itjen'
 type RecapSource = 'unit' | 'tpiUnit' | 'tpiItjen' | 'final'
 type TargetValue = 'WBK' | 'WBBM'
+type WorkSection = 'pemenuhan' | 'reform' | 'hasil'
+type ReviewRole = 'unit' | 'tpiUnit' | 'tpiItjen'
+type PrioritySort = 'impact' | 'drop' | 'low' | 'weight'
 
 interface RecapRow {
   key:        string
@@ -99,6 +137,7 @@ interface RecapVersion {
   tone:            string
   pengungkitRows:  RecapRow[]
   pengungkitTotal: RecapTotal
+  birokrasiBersih: RecapTotal
   hasilRows:       RecapHasilRow[]
   hasilTotal:      RecapTotal
   nilaiAkhir:      number
@@ -112,6 +151,25 @@ interface RecapBundle {
   tpiUnit:   RecapVersion
   tpiItjen:  RecapVersion
   final:     RecapVersion
+}
+
+interface CompletionStats {
+  unit:     { filled: number; total: number }
+  tpiUnit:  { filled: number; total: number }
+  tpiItjen: { filled: number; total: number }
+}
+
+interface ItjenPriorityItem {
+  qid:          number
+  label:        string
+  area:         string
+  section:      WorkSection
+  bobot:        number
+  tpiUnitScore: number
+  itjenScore:   number
+  drop:         number
+  itjenPercent: number
+  note:         string
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -189,12 +247,39 @@ const SOURCE_TONE: Record<RecapSource, string> = {
   final:    'border-slate-300 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-100 dark:text-slate-950',
 }
 
+const WORK_SECTION_LABEL: Record<WorkSection, string> = {
+  pemenuhan: 'Pemenuhan',
+  reform:    'Reform',
+  hasil:     'Hasil',
+}
+
+const ROLE_TAB_LABEL: Record<ReviewRole, string> = {
+  unit:     'Unit',
+  tpiUnit:  'TPI Unit',
+  tpiItjen: 'TPI Kementerian',
+}
+
+const PRIORITY_SORT_LABEL: Record<PrioritySort, string> = {
+  impact: 'Dampak',
+  drop:   'Turun',
+  low:    'Nilai rendah',
+  weight: 'Bobot',
+}
+
 const TARGET_THRESHOLD: Record<TargetValue, number> = {
   WBK:  75,
   WBBM: 85,
 }
 
-const RECAP_PASSING_PERCENT = 60
+const RECAP_MINIMUMS = {
+  pengungkitAreaPercent: { WBK: 60, WBBM: 75 },
+  totalPengungkit:       { WBK: 40, WBBM: 48 },
+  birokrasiBersih:       { WBK: 18.25, WBBM: 19.5 },
+  ipak:                  { WBK: 15.75, WBBM: 15.75 },
+  capaianKinerja:        { WBK: 2.5, WBBM: 3.75 },
+  pelayananPrima:        { WBK: 14, WBBM: 15.75 },
+  nilaiTotal:            { WBK: 75, WBBM: 85 },
+} as const
 const MAX_PEMENUHAN = 30
 const MAX_REFORM = 30
 const MAX_PENGUNGKIT = 60
@@ -615,8 +700,11 @@ function JawabanCard({
   const qid       = kriteria.question_id
   const aiResult  = jawaban?.ai_result
   const [cardOpen,     setCardOpen]     = useState(true)
-  const [tpiUnitOpen,  setTpiUnitOpen]  = useState(false)
-  const [tpiItjenOpen, setTpiItjenOpen] = useState(false)
+  const [activeRole,   setActiveRole]   = useState<ReviewRole>(
+    canEditTpiItjen ? 'tpiItjen' : canEditTpiUnit ? 'tpiUnit' : 'unit',
+  )
+  const [tpiUnitOpen,  setTpiUnitOpen]  = useState(true)
+  const [tpiItjenOpen, setTpiItjenOpen] = useState(true)
   const relatedIds = [qid, ...(jumlahSubItems?.map((s) => s.entry.kriteria.question_id) ?? [])]
   const reviewStatus = getReviewStatus(localValues, jumlahSubItems)
   const canSave = canEditUnit || canEditTpiUnit || canEditTpiItjen
@@ -631,6 +719,35 @@ function JawabanCard({
     localValues.catatan_tpi_itjen ||
     jumlahSubItems?.some((s) => s.localValues.jawaban_tpi_itjen || s.localValues.catatan_tpi_itjen)
   )
+
+  const unitFilled = !!(
+    localValues.jawaban_unit ||
+    localValues.narasi ||
+    localValues.bukti ||
+    localValues.link_drive ||
+    jumlahSubItems?.some((s) => s.localValues.jawaban_unit || s.localValues.narasi)
+  )
+
+  const roleTabs: { key: ReviewRole; label: string; filled: boolean; tone: string }[] = [
+    {
+      key:    'unit',
+      label:  ROLE_TAB_LABEL.unit,
+      filled: unitFilled,
+      tone:   'data-[active=true]:border-blue-300 data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 dark:data-[active=true]:border-blue-800 dark:data-[active=true]:bg-blue-950/30 dark:data-[active=true]:text-blue-200',
+    },
+    {
+      key:    'tpiUnit',
+      label:  ROLE_TAB_LABEL.tpiUnit,
+      filled: hasTpiUnit,
+      tone:   'data-[active=true]:border-amber-300 data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 dark:data-[active=true]:border-amber-800 dark:data-[active=true]:bg-amber-950/30 dark:data-[active=true]:text-amber-200',
+    },
+    {
+      key:    'tpiItjen',
+      label:  ROLE_TAB_LABEL.tpiItjen,
+      filled: hasTpiItjen,
+      tone:   'data-[active=true]:border-violet-300 data-[active=true]:bg-violet-50 data-[active=true]:text-violet-700 dark:data-[active=true]:border-violet-800 dark:data-[active=true]:bg-violet-950/30 dark:data-[active=true]:text-violet-200',
+    },
+  ]
 
   return (
     <div className={`border rounded-xl overflow-hidden transition-colors ${reviewStatus.card}`}>
@@ -679,10 +796,24 @@ function JawabanCard({
       </div>
 
       {cardOpen && (
-      <div className="divide-y divide-default-100">
+      <div className="space-y-3 px-4 py-3">
+        <div className="flex flex-wrap gap-2 rounded-lg border border-default-200 bg-default-50 p-1 dark:bg-content2/50">
+          {roleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              data-active={activeRole === tab.key}
+              onClick={() => setActiveRole(tab.key)}
+              className={`flex min-w-[8rem] items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-2 text-xs font-semibold text-default-500 transition-colors hover:bg-content1 data-[active=true]:shadow-sm ${tab.tone}`}
+            >
+              {tab.label}
+              <span className={`h-1.5 w-1.5 rounded-full ${tab.filled ? 'bg-emerald-500' : 'bg-default-300'}`} />
+            </button>
+          ))}
+        </div>
 
         {/* ── Seksi 1: Pengisian Unit ── */}
-        <div className="px-4 py-3 space-y-2.5">
+        <div className={activeRole === 'unit' ? 'space-y-2.5' : 'hidden'}>
           <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
             Pengisian Unit
           </p>
@@ -770,10 +901,10 @@ function JawabanCard({
         </div>
 
         {/* ── Seksi 2: Review TPI Unit ── */}
-        <div>
+        <div className={activeRole === 'tpiUnit' ? 'block' : 'hidden'}>
           <button
             onClick={() => setTpiUnitOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors text-left"
+            className="hidden"
           >
             <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
               Review TPI Unit
@@ -827,10 +958,10 @@ function JawabanCard({
         </div>
 
         {/* ── Seksi 3: Review TPI Itjen KESDM ── */}
-        <div>
+        <div className={activeRole === 'tpiItjen' ? 'block' : 'hidden'}>
           <button
             onClick={() => setTpiItjenOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2 hover:bg-violet-50/50 dark:hover:bg-violet-900/10 transition-colors text-left"
+            className="hidden"
           >
             <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
               Review TPI Itjen KESDM
@@ -1053,8 +1184,20 @@ function formatScore(value: number) {
   return r2(value).toFixed(2)
 }
 
-function getStatusByPercent(persen: number): 'OK' | 'Tidak Lulus' {
-  return persen >= RECAP_PASSING_PERCENT ? 'OK' : 'Tidak Lulus'
+function getMinForTarget(minimum: Record<TargetValue, number>, target: TargetValue) {
+  return minimum[target]
+}
+
+function getStatusByPercent(persen: number, target: TargetValue, minimum = RECAP_MINIMUMS.pengungkitAreaPercent): 'OK' | 'Tidak Lulus' {
+  return persen >= getMinForTarget(minimum, target) ? 'OK' : 'Tidak Lulus'
+}
+
+function getStatusByValue(value: number, target: TargetValue, minimum: Record<TargetValue, number>): 'OK' | 'Tidak Lulus' {
+  return value >= getMinForTarget(minimum, target) ? 'OK' : 'Tidak Lulus'
+}
+
+function mergeStatus(...statuses: ('OK' | 'Tidak Lulus')[]): 'OK' | 'Tidak Lulus' {
+  return statuses.every((status) => status === 'OK') ? 'OK' : 'Tidak Lulus'
 }
 
 function parseNumericAnswer(value?: string | null) {
@@ -1226,7 +1369,7 @@ function buildRecapVersion(
       reform:    r2(acc.reform),
       nilai,
       persen,
-      status:    getStatusByPercent(persen),
+      status:    getStatusByPercent(persen, target),
     }
   })
 
@@ -1234,13 +1377,18 @@ function buildRecapVersion(
     const nilai = r2(hasilAccum[key] ?? 0)
     const bobot = RECAP_MAX_BOBOT[key]
     const persen = bobot > 0 ? r2((nilai / bobot) * 100) : 0
+    const minimum = key === 'ipak'
+      ? RECAP_MINIMUMS.ipak
+      : key === 'capaian_kinerja'
+        ? RECAP_MINIMUMS.capaianKinerja
+        : RECAP_MINIMUMS.pelayananPrima
     return {
       key,
       label:  KOMPONEN_LABEL[key] ?? key,
       bobot,
       nilai,
       persen,
-      status: getStatusByPercent(persen),
+      status: getStatusByValue(nilai, target, minimum),
     }
   })
 
@@ -1252,6 +1400,12 @@ function buildRecapVersion(
   const hasilPersen = r2((hasilNilai / MAX_HASIL) * 100)
   const nilaiAkhir = r2(pengungkitNilai + hasilNilai)
   const threshold = TARGET_THRESHOLD[target]
+  const ipakNilai = hasilRows.find((row) => row.key === 'ipak')?.nilai ?? 0
+  const capaianNilai = hasilRows.find((row) => row.key === 'capaian_kinerja')?.nilai ?? 0
+  const primaStatus = hasilRows.find((row) => row.key === 'prima')?.status ?? 'Tidak Lulus'
+  const birokrasiNilai = r2(ipakNilai + capaianNilai)
+  const birokrasiPersen = r2((birokrasiNilai / 22.5) * 100)
+  const birokrasiStatus = getStatusByValue(birokrasiNilai, target, RECAP_MINIMUMS.birokrasiBersih)
 
   return {
     source,
@@ -1261,15 +1415,20 @@ function buildRecapVersion(
     pengungkitTotal: {
       nilai:      pengungkitNilai,
       persen:     pengungkitPersen,
-      status:     getStatusByPercent(pengungkitPersen),
+      status:     getStatusByValue(pengungkitNilai, target, RECAP_MINIMUMS.totalPengungkit),
       pemenuhan:  pemenuhanNilai,
       reform:     reformNilai,
+    },
+    birokrasiBersih: {
+      nilai:  birokrasiNilai,
+      persen: birokrasiPersen,
+      status: birokrasiStatus,
     },
     hasilRows,
     hasilTotal: {
       nilai:  hasilNilai,
       persen: hasilPersen,
-      status: getStatusByPercent(hasilPersen),
+      status: mergeStatus(birokrasiStatus, primaStatus),
     },
     nilaiAkhir,
     targetTercapai: nilaiAkhir >= threshold,
@@ -1290,6 +1449,102 @@ function buildRecapBundle(
     tpiItjen: buildRecapVersion('tpiItjen', grouped, localData, subItemsMap, target),
     final:    buildRecapVersion('final', grouped, localData, subItemsMap, target),
   }
+}
+
+function getRoleCompletionStats(
+  grouped: GroupedKomponen[],
+  localData: Record<number, LocalJawaban>,
+  subItemsMap: Record<number, LkeKriteria[]>,
+): CompletionStats {
+  const stats: CompletionStats = {
+    unit:     { filled: 0, total: 0 },
+    tpiUnit:  { filled: 0, total: 0 },
+    tpiItjen: { filled: 0, total: 0 },
+  }
+
+  for (const entry of flattenMainEntries(grouped)) {
+    const qid = entry.kriteria.question_id
+    const local = localData[qid] ?? defaultLocal()
+    const subItems = subItemsMap[qid] ?? []
+    const hasUnit =
+      hasText(local.jawaban_unit) ||
+      hasText(local.narasi) ||
+      hasText(local.bukti) ||
+      hasText(local.link_drive) ||
+      subItems.some((item) => {
+        const child = localData[item.question_id]
+        return hasText(child?.jawaban_unit) || hasText(child?.narasi)
+      })
+    const hasTpiUnit =
+      hasText(local.jawaban_tpi_unit) ||
+      hasText(local.catatan_tpi_unit) ||
+      subItems.some((item) => {
+        const child = localData[item.question_id]
+        return hasText(child?.jawaban_tpi_unit) || hasText(child?.catatan_tpi_unit)
+      })
+    const hasTpiItjen =
+      hasText(local.jawaban_tpi_itjen) ||
+      hasText(local.catatan_tpi_itjen) ||
+      subItems.some((item) => {
+        const child = localData[item.question_id]
+        return hasText(child?.jawaban_tpi_itjen) || hasText(child?.catatan_tpi_itjen)
+      })
+
+    stats.unit.total += 1
+    stats.tpiUnit.total += 1
+    stats.tpiItjen.total += 1
+    if (hasUnit) stats.unit.filled += 1
+    if (hasTpiUnit) stats.tpiUnit.filled += 1
+    if (hasTpiItjen) stats.tpiItjen.filled += 1
+  }
+
+  return stats
+}
+
+function buildItjenPriorities(
+  grouped: GroupedKomponen[],
+  localData: Record<number, LocalJawaban>,
+  subItemsMap: Record<number, LkeKriteria[]>,
+  sortMode: PrioritySort,
+): ItjenPriorityItem[] {
+  const items: ItjenPriorityItem[] = []
+
+  for (const entry of flattenMainEntries(grouped)) {
+    const kriteria = entry.kriteria
+    const qid = kriteria.question_id
+    const subItems = subItemsMap[qid] ?? []
+    const hasTpiUnit = getFieldHasValue(qid, 'jawaban_tpi_unit', localData, subItems)
+    const hasTpiItjen = getFieldHasValue(qid, 'jawaban_tpi_itjen', localData, subItems)
+    if (!hasTpiUnit || !hasTpiItjen) continue
+
+    const tpiUnitScore = r2(getEntryScore(kriteria, 'tpiUnit', localData, subItems))
+    const itjenScore = r2(getEntryScore(kriteria, 'tpiItjen', localData, subItems))
+    const drop = r2(tpiUnitScore - itjenScore)
+    if (drop <= 0) continue
+
+    const bobot = Number(kriteria.bobot) || 0
+    items.push({
+      qid,
+      label:        kriteria.pertanyaan || `ID ${qid}`,
+      area:         KOMPONEN_LABEL[kriteria.komponen] ?? kriteria.komponen,
+      section:      getEffectiveSeksi(kriteria),
+      bobot,
+      tpiUnitScore,
+      itjenScore,
+      drop,
+      itjenPercent: bobot > 0 ? r2((itjenScore / bobot) * 100) : 0,
+      note:         localData[qid]?.catatan_tpi_itjen ?? '',
+    })
+  }
+
+  const sorted = [...items]
+  sorted.sort((a, b) => {
+    if (sortMode === 'low') return a.itjenPercent - b.itjenPercent || b.drop - a.drop || b.bobot - a.bobot
+    if (sortMode === 'weight') return b.bobot - a.bobot || b.drop - a.drop || a.itjenPercent - b.itjenPercent
+    if (sortMode === 'drop') return b.drop - a.drop || b.bobot - a.bobot || a.itjenPercent - b.itjenPercent
+    return b.drop - a.drop || b.bobot - a.bobot || a.itjenPercent - b.itjenPercent
+  })
+  return sorted
 }
 
 function RecapMiniCard({ version }: { version: RecapVersion }) {
@@ -1317,14 +1572,31 @@ function RecapStatusBadge({ status }: { status: 'OK' | 'Tidak Lulus' }) {
         ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200'
         : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200'
     }`}>
-      {status}
+      {status === 'OK' ? 'Lulus' : 'Tidak'}
     </span>
   )
 }
 
-function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
+function RecapSidebar({
+  bundle,
+  completion,
+  priorities,
+  prioritySort,
+  onPrioritySortChange,
+}: {
+  bundle: RecapBundle
+  completion: CompletionStats
+  priorities: ItjenPriorityItem[]
+  prioritySort: PrioritySort
+  onPrioritySortChange: (sort: PrioritySort) => void
+}) {
   const final = bundle.final
   const versions = [bundle.unit, bundle.tpiUnit, bundle.tpiItjen]
+  const completionRows = [
+    { key: 'unit', label: ROLE_TAB_LABEL.unit, value: completion.unit },
+    { key: 'tpiUnit', label: ROLE_TAB_LABEL.tpiUnit, value: completion.tpiUnit },
+    { key: 'tpiItjen', label: ROLE_TAB_LABEL.tpiItjen, value: completion.tpiItjen },
+  ] as const
 
   return (
     <aside className="xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto rounded-2xl border border-default-200 bg-content1 shadow-sm">
@@ -1366,6 +1638,95 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
         </div>
 
         <section className="space-y-2">
+          <h3 className="text-xs font-black uppercase tracking-wide text-default-700">Kelengkapan</h3>
+          <div className="space-y-2 rounded-xl border border-default-200 p-3">
+            {completionRows.map((row) => {
+              const pct = row.value.total > 0 ? Math.round((row.value.filled / row.value.total) * 100) : 0
+              return (
+                <div key={row.key}>
+                  <div className="mb-1 flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-default-600">{row.label}</span>
+                    <span className="font-bold tabular-nums text-default-700">{row.value.filled}/{row.value.total}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-default-100">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-black uppercase tracking-wide text-default-700">Prioritas Itjen</h3>
+            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+              TPI Unit vs Itjen
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {(Object.keys(PRIORITY_SORT_LABEL) as PrioritySort[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onPrioritySortChange(key)}
+                className={`rounded-full border px-2 py-1 text-[10px] font-semibold transition-colors ${
+                  prioritySort === key
+                    ? 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-200'
+                    : 'border-default-200 text-default-500 hover:bg-default-50'
+                }`}
+              >
+                {PRIORITY_SORT_LABEL[key]}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {priorities.length === 0 ? (
+              <div className="rounded-xl border border-default-200 px-3 py-3 text-xs text-default-500">
+                Belum ada penurunan nilai TPI Unit ke TPI Kementerian.
+              </div>
+            ) : (
+              priorities.slice(0, 6).map((item) => (
+                <div key={item.qid} className="rounded-xl border border-default-200 bg-content1 px-3 py-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-default-400">
+                        {WORK_SECTION_LABEL[item.section]} - {item.area}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-relaxed text-default-700">
+                        {item.qid}. {item.label}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+                      -{formatScore(item.drop)}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-[10px]">
+                    <div>
+                      <p className="text-default-400">TPI Unit</p>
+                      <p className="font-bold tabular-nums">{formatScore(item.tpiUnitScore)}</p>
+                    </div>
+                    <div>
+                      <p className="text-default-400">Itjen</p>
+                      <p className="font-bold tabular-nums">{formatScore(item.itjenScore)}</p>
+                    </div>
+                    <div>
+                      <p className="text-default-400">Bobot</p>
+                      <p className="font-bold tabular-nums">{formatScore(item.bobot)}</p>
+                    </div>
+                  </div>
+                  {item.note && (
+                    <p className="mt-2 line-clamp-2 rounded-lg bg-violet-50 px-2 py-1.5 text-[10px] leading-relaxed text-violet-700 dark:bg-violet-950/30 dark:text-violet-200">
+                      {item.note}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-black uppercase tracking-wide text-default-700">A. Pengungkit</h3>
             <RecapStatusBadge status={final.pengungkitTotal.status} />
@@ -1378,6 +1739,7 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
                   <th className="px-2 py-2 text-right">Bobot</th>
                   <th className="px-2 py-2 text-right">Nilai</th>
                   <th className="px-2 py-2 text-right">%</th>
+                  <th className="px-2 py-2 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-default-100">
@@ -1392,6 +1754,7 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
                     <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
                     <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
+                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -1406,6 +1769,7 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_PENGUNGKIT)}</td>
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.pengungkitTotal.nilai)}</td>
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.pengungkitTotal.persen)}%</td>
+                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.pengungkitTotal.status} /></td>
                 </tr>
               </tfoot>
             </table>
@@ -1425,15 +1789,24 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
                   <th className="px-2 py-2 text-right">Bobot</th>
                   <th className="px-2 py-2 text-right">Nilai</th>
                   <th className="px-2 py-2 text-right">%</th>
+                  <th className="px-2 py-2 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-default-100">
+                <tr className={final.birokrasiBersih.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
+                  <td className="px-2 py-2 font-black text-default-800">Birokrasi yang Bersih dan Akuntabel</td>
+                  <td className="px-2 py-2 text-right tabular-nums">22.50</td>
+                  <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(final.birokrasiBersih.nilai)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{formatScore(final.birokrasiBersih.persen)}%</td>
+                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.birokrasiBersih.status} /></td>
+                </tr>
                 {final.hasilRows.map((row) => (
                   <tr key={row.key} className={row.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
                     <td className="px-2 py-2 font-semibold text-default-700">{row.label}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
                     <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
+                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -1443,6 +1816,7 @@ function RecapSidebar({ bundle }: { bundle: RecapBundle }) {
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_HASIL)}</td>
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.hasilTotal.nilai)}</td>
                   <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.hasilTotal.persen)}%</td>
+                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.hasilTotal.status} /></td>
                 </tr>
               </tfoot>
             </table>
@@ -1468,6 +1842,8 @@ export default function InputJawabanPage() {
     hasPermission(role, 'zi:manage')
   const canEditAnything = canEditUnit || canEditTpiUnit || canEditTpiItjen
   const canSyncSheet = hasPermission(role, 'zi:sync')
+  const canUpdateItjenSheet = canEditTpiItjen
+  const canCompareSheet = canSyncSheet || canEditTpiUnit || canEditTpiItjen
 
   const [grouped, setGrouped]             = useState<GroupedKomponen[]>([])
   const [loading, setLoading]             = useState(true)
@@ -1484,10 +1860,19 @@ export default function InputJawabanPage() {
   const [lastSyncedAt, setLastSyncedAt]   = useState<string | null>(null)
   const [syncInfo, setSyncInfo]           = useState<SheetSyncSummary | null>(null)
   const [syncError, setSyncError]         = useState<string | null>(null)
+  const [sheetUpdateInfo, setSheetUpdateInfo] = useState<SheetUpdateSummary | null>(null)
+  const [sheetUpdateError, setSheetUpdateError] = useState<string | null>(null)
+  const [updatingSheet, setUpdatingSheet] = useState(false)
+  const [sheetCompareInfo, setSheetCompareInfo] = useState<SheetCompareSummary | null>(null)
+  const [sheetCompareError, setSheetCompareError] = useState<string | null>(null)
+  const [comparingSheet, setComparingSheet] = useState(false)
+  const [sheetCompareOpen, setSheetCompareOpen] = useState(false)
   const [syncingMode, setSyncingMode]     = useState<'missing_only' | 'overwrite' | null>(null)
   const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState(false)
   const [overwriteConfirmText, setOverwriteConfirmText] = useState('')
   const [searchId, setSearchId]           = useState('')
+  const [activeSection, setActiveSection] = useState<WorkSection>('pemenuhan')
+  const [prioritySort, setPrioritySort]   = useState<PrioritySort>('impact')
   const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
   // persenQid → sorted LkeKriteria[] for sub-items
@@ -1767,6 +2152,46 @@ export default function InputJawabanPage() {
     }
   }
 
+  async function runItjenSheetUpdate() {
+    if (updatingSheet || syncingMode) return
+    const confirmed = window.confirm('Update Sheet hanya akan menulis kolom S dan V untuk Review TPI Itjen. Lanjutkan?')
+    if (!confirmed) return
+
+    setUpdatingSheet(true)
+    setSheetUpdateError(null)
+    try {
+      const jawaban = Object.entries(localData).map(([qid, vals]) => ({
+        question_id: parseInt(qid),
+        jawaban_tpi_itjen: vals.jawaban_tpi_itjen,
+        catatan_tpi_itjen: vals.catatan_tpi_itjen,
+      }))
+      await axios.put(`/api/zi/submissions/${submissionId}/jawaban`, { jawaban })
+      const res = await axios.post(`/api/zi/submissions/${submissionId}/update-sheet`, {})
+      const update = res.data.update as SheetUpdateSummary
+      setSheetUpdateInfo(update)
+    } catch (err: any) {
+      setSheetUpdateError(err?.response?.data?.error ?? 'Gagal update Google Sheet.')
+    } finally {
+      setUpdatingSheet(false)
+    }
+  }
+
+  async function runSheetCompare() {
+    if (comparingSheet || syncingMode || updatingSheet) return
+    setComparingSheet(true)
+    setSheetCompareError(null)
+    try {
+      const res = await axios.get(`/api/zi/submissions/${submissionId}/compare-sheet`)
+      const compare = res.data.compare as SheetCompareSummary
+      setSheetCompareInfo(compare)
+      setSheetCompareOpen(true)
+    } catch (err: any) {
+      setSheetCompareError(err?.response?.data?.error ?? 'Gagal membandingkan data dengan Google Sheet.')
+    } finally {
+      setComparingSheet(false)
+    }
+  }
+
   function handleSheetSync(mode: 'missing_only' | 'overwrite') {
     if (mode === 'overwrite') {
       setOverwriteConfirmText('')
@@ -1793,13 +2218,39 @@ export default function InputJawabanPage() {
     })
   }
 
-  const totalFilled = grouped.reduce((acc, g) => acc + g.filled, 0)
-  const totalItems  = grouped.reduce((acc, g) => acc + g.total, 0)
   const normalizedSearchId = searchId.trim()
   const recapBundle = useMemo(
     () => buildRecapBundle(grouped, localData, persenSubItemsMap.current, submissionTarget),
     [grouped, localData, submissionTarget],
   )
+  const completionStats = useMemo(
+    () => getRoleCompletionStats(grouped, localData, persenSubItemsMap.current),
+    [grouped, localData],
+  )
+  const priorityItems = useMemo(
+    () => buildItjenPriorities(grouped, localData, persenSubItemsMap.current, prioritySort),
+    [grouped, localData, prioritySort],
+  )
+  const visibleGroups = useMemo(
+    () => grouped.filter((g) => g.seksiGroups.some((sg) => sg.seksi === activeSection)),
+    [grouped, activeSection],
+  )
+  const sectionStats = useMemo(() => {
+    const stats = {
+      pemenuhan: { filled: 0, total: 0 },
+      reform:    { filled: 0, total: 0 },
+      hasil:     { filled: 0, total: 0 },
+    } satisfies Record<WorkSection, { filled: number; total: number }>
+    for (const group of grouped) {
+      const seksi = group.seksiGroups[0]?.seksi
+      if (!seksi) continue
+      stats[seksi].filled += group.filled
+      stats[seksi].total += group.total
+    }
+    return stats
+  }, [grouped])
+  const activeFilled = visibleGroups.reduce((acc, g) => acc + g.filled, 0)
+  const activeTotal = visibleGroups.reduce((acc, g) => acc + g.total, 0)
 
   if (loading) {
     return (
@@ -1895,27 +2346,73 @@ export default function InputJawabanPage() {
               {syncError && (
                 <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-1">{syncError}</p>
               )}
+              {sheetUpdateInfo && (
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">
+                  Update Sheet Itjen: {sheetUpdateInfo.updated} baris, {sheetUpdateInfo.updatedCells} sel kolom S/V diperbarui.
+                </p>
+              )}
+              {sheetUpdateError && (
+                <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-1">{sheetUpdateError}</p>
+              )}
+              {sheetCompareInfo && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
+                  Banding Sheet: {sheetCompareInfo.mismatchRows} baris berbeda dari {sheetCompareInfo.comparedRows} baris.
+                </p>
+              )}
+              {sheetCompareError && (
+                <p className="text-[11px] text-rose-600 dark:text-rose-300 mt-1">{sheetCompareError}</p>
+              )}
             </div>
-            {canSyncSheet && (
+            {(canSyncSheet || canUpdateItjenSheet || canCompareSheet) && (
               <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleSheetSync('missing_only')}
-                  disabled={!!syncingMode}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-300 bg-white text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-950/20 dark:text-blue-200"
-                >
-                  {syncingMode === 'missing_only' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                  Sync dari Sheet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSheetSync('overwrite')}
-                  disabled={!!syncingMode}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
-                >
-                  {syncingMode === 'overwrite' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                  Timpa dari Sheet
-                </button>
+                {canSyncSheet && (
+                  <button
+                    type="button"
+                    onClick={() => handleSheetSync('missing_only')}
+                    disabled={!!syncingMode || updatingSheet}
+                    title="Menyesuaikan field non-kosong dari Sheet tanpa menghapus isian aplikasi saat sel Sheet kosong"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-300 bg-white text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-950/20 dark:text-blue-200"
+                  >
+                    {syncingMode === 'missing_only' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                    Sync dari Sheet
+                  </button>
+                )}
+                {canUpdateItjenSheet && (
+                  <button
+                    type="button"
+                    onClick={runItjenSheetUpdate}
+                    disabled={!!syncingMode || updatingSheet}
+                    title="Menulis balik hanya Review TPI Itjen ke Google Sheet pada kolom S dan V"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-200"
+                  >
+                    {updatingSheet ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+                    Update Sheet
+                  </button>
+                )}
+                {canCompareSheet && (
+                  <button
+                    type="button"
+                    onClick={runSheetCompare}
+                    disabled={!!syncingMode || updatingSheet || comparingSheet}
+                    title="Membandingkan nilai aplikasi dengan Google Sheet pada kolom K, O, dan S"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:bg-slate-950/20 dark:text-slate-200"
+                  >
+                    {comparingSheet ? <Loader2 size={13} className="animate-spin" /> : <GitCompare size={13} />}
+                    Banding Sheet
+                  </button>
+                )}
+                {canSyncSheet && (
+                  <button
+                    type="button"
+                    onClick={() => handleSheetSync('overwrite')}
+                    disabled={!!syncingMode || updatingSheet}
+                    title="Menimpa seluruh data aplikasi dengan Sheet, termasuk mengosongkan field jika sel Sheet kosong"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200"
+                  >
+                    {syncingMode === 'overwrite' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                    Timpa dari Sheet
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1950,19 +2447,74 @@ export default function InputJawabanPage() {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-4">
+      <div className="rounded-xl border border-default-200 bg-content1 p-3 shadow-sm">
+        <div className="grid gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(12rem,1fr)]">
+          <div className="rounded-lg border border-default-200 p-2">
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-default-800">A. Pengungkit</p>
+                <p className="text-[11px] text-default-400">Pilih tahap penilaian pengungkit.</p>
+              </div>
+              <RecapStatusBadge status={recapBundle.final.pengungkitTotal.status} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['pemenuhan', 'reform'] as WorkSection[]).map((section) => {
+                const stat = sectionStats[section]
+                const isActive = activeSection === section
+                return (
+                  <button
+                    key={section}
+                    type="button"
+                    onClick={() => setActiveSection(section)}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                      isActive
+                        ? 'border-primary/40 bg-primary/10 text-primary'
+                        : 'border-default-200 hover:bg-default-50'
+                    }`}
+                  >
+                    <span className="block text-sm font-bold">{WORK_SECTION_LABEL[section]}</span>
+                    <span className="mt-1 block text-[11px] text-default-500">{stat.filled}/{stat.total} terisi</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveSection('hasil')}
+            className={`rounded-lg border p-3 text-left transition-colors ${
+              activeSection === 'hasil'
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-default-200 bg-content1 hover:bg-default-50'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-default-800">B. Hasil</p>
+                <p className="mt-1 text-sm font-bold">{WORK_SECTION_LABEL.hasil}</p>
+                <p className="mt-1 text-[11px] text-default-500">
+                  {sectionStats.hasil.filled}/{sectionStats.hasil.total} terisi
+                </p>
+              </div>
+              <RecapStatusBadge status={recapBundle.final.hasilTotal.status} />
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* Progress */}
       <div className="flex items-center gap-3 text-sm text-default-500">
         <div className="flex-1 h-1.5 bg-default-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-primary rounded-full transition-all"
-            style={{ width: totalItems > 0 ? `${Math.round((totalFilled / totalItems) * 100)}%` : '0%' }}
+            style={{ width: activeTotal > 0 ? `${Math.round((activeFilled / activeTotal) * 100)}%` : '0%' }}
           />
         </div>
-        <span className="text-xs">{totalFilled} / {totalItems} terisi</span>
+        <span className="text-xs">{activeFilled} / {activeTotal} terisi</span>
       </div>
 
       {/* Accordion per komponen */}
-      {grouped.map((g) => {
+      {visibleGroups.map((g) => {
         const isOpen = expanded.has(g.key)
         return (
           <div key={g.key} className="rounded-xl border border-default-200 overflow-hidden">
@@ -1972,7 +2524,12 @@ export default function InputJawabanPage() {
               className="w-full flex items-center justify-between px-4 py-3 bg-default-50 hover:bg-default-100 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <span className="font-semibold text-sm">{g.label}</span>
+                <div>
+                  <span className="font-semibold text-sm">{KOMPONEN_LABEL[g.komponen] ?? g.komponen}</span>
+                  <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-default-400">
+                    {activeSection === 'hasil' ? 'B. Hasil' : `A. Pengungkit - ${WORK_SECTION_LABEL[activeSection]}`}
+                  </span>
+                </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                   g.filled === g.total && g.total > 0
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -2093,6 +2650,94 @@ export default function InputJawabanPage() {
         </div>
       )}
 
+      {sheetCompareOpen && sheetCompareInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sheet-compare-title"
+            className="flex max-h-[85vh] w-full max-w-5xl flex-col rounded-lg border border-default-200 bg-content1 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-default-200 px-5 py-4">
+              <div>
+                <h2 id="sheet-compare-title" className="text-base font-bold text-default-900">
+                  Banding Aplikasi vs Google Sheet
+                </h2>
+                <p className="mt-1 text-xs text-default-500">
+                  Kolom dibandingkan: Unit K, TPI Unit O, TPI Itjen S.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSheetCompareOpen(false)}
+                className="rounded-lg border border-default-200 px-3 py-1.5 text-xs hover:bg-default-100"
+              >
+                Tutup
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 border-b border-default-100 px-5 py-3 text-xs">
+              <div className="rounded-lg bg-default-50 px-3 py-2">
+                <p className="text-default-400">Baris dibandingkan</p>
+                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.comparedRows}</p>
+              </div>
+              <div className="rounded-lg bg-default-50 px-3 py-2">
+                <p className="text-default-400">Baris berbeda</p>
+                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.mismatchRows}</p>
+              </div>
+              <div className="rounded-lg bg-default-50 px-3 py-2">
+                <p className="text-default-400">Sel berbeda</p>
+                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.mismatchCells}</p>
+              </div>
+            </div>
+
+            <div className="overflow-auto px-5 py-4">
+              {sheetCompareInfo.mismatches.length === 0 ? (
+                <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                  Semua nilai aplikasi sudah sesuai dengan Google Sheet.
+                </div>
+              ) : (
+                <table className="w-full min-w-[760px] text-left text-xs">
+                  <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
+                    <tr>
+                      <th className="px-3 py-2">ID / Row</th>
+                      <th className="px-3 py-2">Pertanyaan</th>
+                      <th className="px-3 py-2">Kolom</th>
+                      <th className="px-3 py-2">Aplikasi</th>
+                      <th className="px-3 py-2">Google Sheet</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-default-100">
+                    {sheetCompareInfo.mismatches.flatMap((item) =>
+                      item.differences.map((diff, index) => (
+                        <tr key={`${item.question_id}-${diff.source}`} className="align-top">
+                          <td className="px-3 py-2 font-semibold tabular-nums">
+                            {index === 0 ? (
+                              <>
+                                <span>{item.question_id}</span>
+                                <span className="block text-[10px] text-default-400">Row {item.rowNum}</span>
+                              </>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2 text-default-600">
+                            {index === 0 ? item.pertanyaan : null}
+                          </td>
+                          <td className="px-3 py-2 font-semibold">
+                            {diff.label} ({diff.column})
+                          </td>
+                          <td className="px-3 py-2 text-rose-700 dark:text-rose-300">{diff.app || '-'}</td>
+                          <td className="px-3 py-2 text-blue-700 dark:text-blue-300">{diff.sheet || '-'}</td>
+                        </tr>
+                      )),
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {overwriteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
           <div
@@ -2170,7 +2815,13 @@ export default function InputJawabanPage() {
       )}
         </div>
 
-        <RecapSidebar bundle={recapBundle} />
+        <RecapSidebar
+          bundle={recapBundle}
+          completion={completionStats}
+          priorities={priorityItems}
+          prioritySort={prioritySort}
+          onPrioritySortChange={setPrioritySort}
+        />
       </div>
     </div>
   )

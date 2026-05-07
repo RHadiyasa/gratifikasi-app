@@ -8,7 +8,8 @@
       "Bash(node -e \"const d=require\\('./package.json'\\);const all={...d.dependencies,...d.devDependencies};console.log\\(JSON.stringify\\(all,null,2\\)\\)\")",
       "Bash(npm ls:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|json\\)$\")"
     ]
   }
 }
