@@ -1,5 +1,6 @@
 import LkeKriteria from "@/modules/models/LkeKriteria";
 import ZiScoringConfig from "@/modules/models/ZiScoringConfig";
+import type { AnyBulkWriteOperation } from "mongodb";
 
 type KriteriaLike = {
   question_id: number;
@@ -311,7 +312,7 @@ export async function syncMasterFormulaFromPercentPolicies(
   );
   const childrenByParent = buildChildrenByParent(kriteriaList);
   const normalized = normalizePercentPoliciesForStorage(kriteriaList, percentPolicies);
-  const operations = [];
+  const operations: AnyBulkWriteOperation[] = [];
 
   for (const policy of normalized) {
     const qid = Number(policy.question_id);
@@ -340,7 +341,7 @@ export async function syncMasterFormulaFromPercentPolicies(
   }
 
   if (operations.length > 0) {
-    await LkeKriteria.bulkWrite(operations);
+    await LkeKriteria.collection.bulkWrite(operations);
   }
 
   return normalized;
