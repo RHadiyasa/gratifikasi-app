@@ -22,7 +22,8 @@ import {
   confidenceRouting, shouldSampleForQC,
   calculateFinalVerdict,
 } from "@/lib/zi/ai-checker";
-import { buildScoringDetailMap, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
+import { buildScoringDetailMapWithConfig, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
+import { getActiveScoringConfig } from "@/lib/zi/scoring-config";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
 import { handleSingleAppModeCheck } from "@/lib/zi/app-check";
 
@@ -92,6 +93,21 @@ function buildJawabanUnitMap(penilaianRows, dataStart, primaryIds) {
   return map;
 }
 
+function buildMetricsForId(id, kriteriaList, jawabanUnitMap) {
+  const metrics = {};
+  for (const k of kriteriaList) {
+    if (k.answer_type !== "jumlah" || k.parent_question_id !== parseInt(id)) continue;
+    const val = jawabanUnitMap[String(k.question_id)];
+    if (val === undefined || val === null || String(val).trim() === "") continue;
+    const num = Number(val);
+    if (isNaN(num)) continue;
+    metrics[`qid_${k.question_id}`] = num;
+    const key = String(k.sub_komponen || "").trim();
+    if (key) metrics[key] = num;
+  }
+  return Object.keys(metrics).length > 0 ? metrics : undefined;
+}
+
 function isReadableMime(mimeType) {
   return (
     mimeType === "application/vnd.google-apps.document"     ||
@@ -139,7 +155,8 @@ export async function POST(req) {
         }
         const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k));
         const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)));
-        const scoringDetailMap = buildScoringDetailMap(primaryKriteria);
+        const scoringConfig = await getActiveScoringConfig();
+        const scoringDetailMap = buildScoringDetailMapWithConfig(kriteriaList, scoringConfig);
 
         // ── Init Google ──
         send("log", { level: "info", message: "Menginisialisasi koneksi Google..." });
@@ -400,14 +417,18 @@ export async function POST(req) {
           // Bangun data scoring dari visaMap yang sudah diperbarui
           const resultsForScoring = Object.entries(visaMap)
             .filter(([, e]) => AI_PATTERN.test(e.result))
-            .map(([id, e]) => ({
+            .map(([id, e]) => {
+              const metrics = buildMetricsForId(id, kriteriaList, jawabanUnitMap);
+              return {
               id,
               verdict: {
                 color: /^✅/u.test(e.result) ? "HIJAU"
                        : /^⚠️/u.test(e.result) ? "KUNING" : "MERAH",
               },
               jawaban_unit: jawabanUnitMap[id] ?? "",
-            }));
+              ...(metrics && { metrics }),
+            };
+            });
           const submission = await LkeSubmission.findById(submissionId).select("target total_data checked_count").lean();
           const target = submission?.target || "WBK";
           const nilaiLkeAi = calculateNilaiLkeAi(resultsForScoring, target, scoringDetailMap);

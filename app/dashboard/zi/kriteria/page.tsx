@@ -91,6 +91,7 @@ type SubItemDraft = {
   tempId: string;
   _id?: string;
   pertanyaan: string;
+  sub_komponen: string;
   bobot: number;
   is_computed: boolean;
   formula_tokens: FormulaToken[];
@@ -298,6 +299,7 @@ export default function KriteriaPage() {
   const [importing, setImporting] = useState(false);
   const [seedMsg, setSeedMsg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [masterLocked, setMasterLocked] = useState(false);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -306,6 +308,7 @@ export default function KriteriaPage() {
       if (komponen) params.komponen = komponen;
       const { data } = await axios.get("/api/zi/kriteria", { params });
       setList(data.kriteria ?? []);
+      setMasterLocked(Boolean(data.lock_master_kriteria));
     } finally {
       setLoading(false);
     }
@@ -330,6 +333,7 @@ export default function KriteriaPage() {
           tempId: c._id,
           _id: c._id,
           pertanyaan: c.pertanyaan,
+          sub_komponen: c.sub_komponen ?? "",
           bobot: c.bobot,
           is_computed: c.is_computed ?? false,
           formula_tokens: c.formula_tokens ?? [],
@@ -383,6 +387,7 @@ export default function KriteriaPage() {
       {
         tempId: `new-${Date.now()}`,
         pertanyaan: "",
+        sub_komponen: "",
         bobot: 0,
         is_computed: false,
         formula_tokens: [],
@@ -415,11 +420,22 @@ export default function KriteriaPage() {
     setSaving(true);
     try {
       let savedParentQid: number;
-      const payload = { ...form, question_id: Number(form.question_id) };
+      const payload: Record<string, any> = {
+        ...form,
+        question_id: Number(form.question_id),
+      };
+      if (masterLocked && !isNew) {
+        delete payload.bobot;
+        delete payload.answer_type;
+        delete payload.formula_tokens;
+        delete payload.formula_min;
+        delete payload.formula_max;
+        delete payload.formula_zero_division_full_score;
+      }
 
       // Include persen formula on parent payload if applicable
       const parentPayload =
-        form.answer_type === "persen"
+        form.answer_type === "persen" && !masterLocked
           ? {
               ...payload,
               formula_tokens: persenFormula.length ? persenFormula : null,
@@ -441,7 +457,7 @@ export default function KriteriaPage() {
       }
 
       // Upsert / delete sub-items when persen type
-      if (form.answer_type === "persen") {
+      if (form.answer_type === "persen" && !masterLocked) {
         // Hapus sub-items di DB yang tidak ada di form (mencegah orphan / duplikat lama)
         const { data: dbData } = await axios.get("/api/zi/kriteria", {
           params: { parent_question_id: savedParentQid, aktif: true },
@@ -458,15 +474,6 @@ export default function KriteriaPage() {
           }
         }
 
-        const subPayloadBase = {
-          komponen: form.komponen,
-          seksi: form.seksi,
-          sub_komponen: form.sub_komponen,
-          aktif: true,
-          answer_type: "jumlah",
-          parent_question_id: savedParentQid,
-        };
-
         let urutanCounter = 1;
         for (const s of subItems) {
           if (s.toDelete) {
@@ -476,7 +483,12 @@ export default function KriteriaPage() {
 
           const urutan = urutanCounter++;
           const subPayload = {
-            ...subPayloadBase,
+            komponen: form.komponen,
+            seksi: form.seksi,
+            sub_komponen: s.sub_komponen || form.sub_komponen,
+            aktif: true,
+            answer_type: "jumlah",
+            parent_question_id: savedParentQid,
             pertanyaan: s.pertanyaan,
             bobot: s.bobot,
             is_computed: s.is_computed,
@@ -628,7 +640,8 @@ export default function KriteriaPage() {
             Master Kriteria LKE
           </h1>
           <p className="text-sm text-default-500">
-            Kelola pertanyaan, bobot, kriteria PANRB, dan formula perhitungan.
+            Kelola pertanyaan, standar dokumen, dan kriteria PANRB. Bobot serta
+            formula penilaian dikelola dari halaman Pengaturan Penilaian ZI.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1135,7 +1148,16 @@ export default function KriteriaPage() {
                   placeholder="Daftar dokumen yang harus ada..."
                 />
               </label>
-              
+
+              {masterLocked && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/20 dark:text-amber-300">
+                  Bobot, tipe jawaban, detil indikator, dan formula persen
+                  dikunci dari Master Kriteria. Pengaturan angka tersebut
+                  dikelola melalui halaman Pengaturan Penilaian ZI agar scoring
+                  dan master tetap konsisten.
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3 items-end">
                 <label className="block">
                   <span className="text-xs font-medium text-default-600">
@@ -1144,6 +1166,7 @@ export default function KriteriaPage() {
                   <input
                     type="number"
                     step="0.0001"
+                    disabled={masterLocked}
                     value={form.bobot}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -1160,6 +1183,7 @@ export default function KriteriaPage() {
                   </span>
                   <select
                     value={form.answer_type}
+                    disabled={masterLocked}
                     onChange={(e) => {
                       const newType = e.target
                         .value as LkeKriteria["answer_type"];
@@ -1193,6 +1217,7 @@ export default function KriteriaPage() {
 
               {/* Detil Indikator: hanya untuk tipe Persen */}
               {form.answer_type === "persen" &&
+                !masterLocked &&
                 (() => {
                   // Compute available sub-items (letter map) for formula builder
                   const activeSubs = subItems.filter((s) => !s.toDelete);
@@ -1226,7 +1251,8 @@ export default function KriteriaPage() {
                           </div>
                         ) : activeSubs.length === 0 ? (
                           <p className="text-[10px] text-blue-400 italic">
-                            Belum ada detil. Klik &quot;Tambah&quot; untuk menambahkan.
+                            Belum ada detil. Klik &quot;Tambah&quot; untuk
+                            menambahkan.
                           </p>
                         ) : (
                           <div className="space-y-3">
@@ -1278,6 +1304,26 @@ export default function KriteriaPage() {
                                       >
                                         <X size={12} />
                                       </button>
+                                    </div>
+
+                                    {/* Key identifier */}
+                                    <div className="flex items-center gap-2 pl-8">
+                                      <span className="text-[10px] text-blue-500 dark:text-blue-400 whitespace-nowrap">
+                                        Nama Key:
+                                      </span>
+                                      <input
+                                        type="text"
+                                        value={s.sub_komponen}
+                                        onChange={(e) =>
+                                          updateSubItem(
+                                            s.tempId,
+                                            "sub_komponen",
+                                            e.target.value,
+                                          )
+                                        }
+                                        placeholder="mis: jumlah_wajib_lhkpn (unik, tanpa spasi)"
+                                        className="flex-1 px-2 py-1 text-[10px] font-mono rounded border border-blue-200 dark:border-blue-700/40 bg-blue-50 dark:bg-content2 focus:outline-none focus:border-blue-400"
+                                      />
                                     </div>
 
                                     {/* Computed toggle */}

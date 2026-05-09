@@ -1274,18 +1274,9 @@ function getFieldHasValue(
   )
 }
 
-function getRecapValueField(
-  kriteria: LkeKriteria,
-  source: RecapSource,
-  localData: Record<number, LocalJawaban>,
-  subItems: LkeKriteria[],
-): PersenValueField {
-  if (source !== 'final') return SOURCE_VALUE_FIELD[source]
-
-  const qid = kriteria.question_id
-  if (getFieldHasValue(qid, 'jawaban_tpi_itjen', localData, subItems)) return 'jawaban_tpi_itjen'
-  if (getFieldHasValue(qid, 'jawaban_tpi_unit', localData, subItems)) return 'jawaban_tpi_unit'
-  return 'jawaban_unit'
+function getRecapValueField(source: RecapSource): PersenValueField {
+  if (source === 'final') return 'jawaban_tpi_itjen'
+  return SOURCE_VALUE_FIELD[source]
 }
 
 function getEntryScore(
@@ -1294,7 +1285,7 @@ function getEntryScore(
   localData: Record<number, LocalJawaban>,
   subItems: LkeKriteria[],
 ) {
-  const field = getRecapValueField(kriteria, source, localData, subItems)
+  const field = getRecapValueField(source)
   const computedPersen = kriteria.answer_type === 'persen' && subItems.length > 0
     ? computePersenValue(kriteria, subItems, localData, field)
     : null
@@ -1592,6 +1583,8 @@ function RecapSidebar({
 }) {
   const final = bundle.final
   const versions = [bundle.unit, bundle.tpiUnit, bundle.tpiItjen]
+  const [displaySource, setDisplaySource] = useState<'unit' | 'tpiUnit' | 'tpiItjen' | 'final'>('final')
+  const display = bundle[displaySource]
   const completionRows = [
     { key: 'unit', label: ROLE_TAB_LABEL.unit, value: completion.unit },
     { key: 'tpiUnit', label: ROLE_TAB_LABEL.tpiUnit, value: completion.tpiUnit },
@@ -1604,7 +1597,7 @@ function RecapSidebar({
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Rekapitulasi</p>
         <h2 className="mt-1 text-lg font-black text-default-900">Realtime LKE</h2>
         <p className="mt-1 text-xs leading-relaxed text-default-500">
-          Tersedia 3 versi nilai: Unit, TPI Unit, dan TPI Itjen. Rekap final memakai prioritas Itjen, lalu TPI Unit, lalu Unit.
+          Tersedia 3 versi nilai: Unit, TPI Unit, dan TPI Itjen. Rekap final memakai nilai TPI Itjen.
         </p>
       </div>
 
@@ -1726,102 +1719,132 @@ function RecapSidebar({
           </div>
         </section>
 
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wide text-default-700">A. Pengungkit</h3>
-            <RecapStatusBadge status={final.pengungkitTotal.status} />
+        <div className="space-y-3">
+          {/* Selector sumber nilai */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-default-500">Tampilkan nilai dari</p>
+            <div className="flex items-center gap-0.5 rounded-lg border border-default-200 bg-default-50 p-0.5">
+              {([
+                { key: 'unit'     as const, label: 'Unit',      active: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
+                { key: 'tpiUnit'  as const, label: 'TPI Unit',  active: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300' },
+                { key: 'tpiItjen' as const, label: 'TPI Itjen', active: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300' },
+                { key: 'final'    as const, label: 'Final',     active: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200' },
+              ]).map(({ key, label, active }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setDisplaySource(key)}
+                  className={`rounded-md px-2 py-1 text-[10px] font-bold transition-colors ${
+                    displaySource === key
+                      ? active
+                      : 'text-default-400 hover:text-default-600 hover:bg-default-100'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="overflow-hidden rounded-xl border border-default-200">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
-                <tr>
-                  <th className="px-2 py-2">Area</th>
-                  <th className="px-2 py-2 text-right">Bobot</th>
-                  <th className="px-2 py-2 text-right">Nilai</th>
-                  <th className="px-2 py-2 text-right">%</th>
-                  <th className="px-2 py-2 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-default-100">
-                {final.pengungkitRows.map((row) => (
-                  <tr key={row.key} className={row.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
-                    <td className="px-2 py-2 align-top">
-                      <p className="font-semibold text-default-700">{row.label}</p>
-                      <p className="mt-1 text-[10px] text-default-400">
-                        Pemenuhan {formatScore(row.pemenuhan)} | Reform {formatScore(row.reform)}
+
+          {/* A. Pengungkit */}
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wide text-default-700">A. Pengungkit</h3>
+              <RecapStatusBadge status={display.pengungkitTotal.status} />
+            </div>
+            <div className="overflow-hidden rounded-xl border border-default-200">
+              <table className="w-full text-left text-[11px]">
+                <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
+                  <tr>
+                    <th className="px-2 py-2">Area</th>
+                    <th className="px-2 py-2 text-right">Bobot</th>
+                    <th className="px-2 py-2 text-right">Nilai</th>
+                    <th className="px-2 py-2 text-right">%</th>
+                    <th className="px-2 py-2 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-default-100">
+                  {display.pengungkitRows.map((row) => (
+                    <tr key={row.key} className={row.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
+                      <td className="px-2 py-2 align-top">
+                        <p className="font-semibold text-default-700">{row.label}</p>
+                        <p className="mt-1 text-[10px] text-default-400">
+                          Pemenuhan {formatScore(row.pemenuhan)} | Reform {formatScore(row.reform)}
+                        </p>
+                      </td>
+                      <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
+                      <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
+                      <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100 text-default-900 dark:bg-slate-900 dark:text-slate-100">
+                  <tr>
+                    <td className="px-2 py-2">
+                      <p className="font-black">Total Pengungkit</p>
+                      <p className="mt-1 text-[10px] font-medium text-default-500 dark:text-slate-300">
+                        Pemenuhan {formatScore(display.pengungkitTotal.pemenuhan ?? 0)} / {formatScore(MAX_PEMENUHAN)} | Reform {formatScore(display.pengungkitTotal.reform ?? 0)} / {formatScore(MAX_REFORM)}
                       </p>
                     </td>
-                    <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
-                    <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
-                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_PENGUNGKIT)}</td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(display.pengungkitTotal.nilai)}</td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(display.pengungkitTotal.persen)}%</td>
+                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={display.pengungkitTotal.status} /></td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-slate-100 text-default-900 dark:bg-slate-900 dark:text-slate-100">
-                <tr>
-                  <td className="px-2 py-2">
-                    <p className="font-black">Total Pengungkit</p>
-                    <p className="mt-1 text-[10px] font-medium text-default-500 dark:text-slate-300">
-                      Pemenuhan {formatScore(final.pengungkitTotal.pemenuhan ?? 0)} / {formatScore(MAX_PEMENUHAN)} | Reform {formatScore(final.pengungkitTotal.reform ?? 0)} / {formatScore(MAX_REFORM)}
-                    </p>
-                  </td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_PENGUNGKIT)}</td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.pengungkitTotal.nilai)}</td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.pengungkitTotal.persen)}%</td>
-                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.pengungkitTotal.status} /></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </section>
+                </tfoot>
+              </table>
+            </div>
+          </section>
 
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wide text-default-700">B. Hasil</h3>
-            <RecapStatusBadge status={final.hasilTotal.status} />
-          </div>
-          <div className="overflow-hidden rounded-xl border border-default-200">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
-                <tr>
-                  <th className="px-2 py-2">Area</th>
-                  <th className="px-2 py-2 text-right">Bobot</th>
-                  <th className="px-2 py-2 text-right">Nilai</th>
-                  <th className="px-2 py-2 text-right">%</th>
-                  <th className="px-2 py-2 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-default-100">
-                <tr className={final.birokrasiBersih.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
-                  <td className="px-2 py-2 font-black text-default-800">Birokrasi yang Bersih dan Akuntabel</td>
-                  <td className="px-2 py-2 text-right tabular-nums">22.50</td>
-                  <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(final.birokrasiBersih.nilai)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">{formatScore(final.birokrasiBersih.persen)}%</td>
-                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.birokrasiBersih.status} /></td>
-                </tr>
-                {final.hasilRows.map((row) => (
-                  <tr key={row.key} className={row.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
-                    <td className="px-2 py-2 font-semibold text-default-700">{row.label}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
-                    <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
-                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
+          {/* B. Hasil */}
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wide text-default-700">B. Hasil</h3>
+              <RecapStatusBadge status={display.hasilTotal.status} />
+            </div>
+            <div className="overflow-hidden rounded-xl border border-default-200">
+              <table className="w-full text-left text-[11px]">
+                <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
+                  <tr>
+                    <th className="px-2 py-2">Area</th>
+                    <th className="px-2 py-2 text-right">Bobot</th>
+                    <th className="px-2 py-2 text-right">Nilai</th>
+                    <th className="px-2 py-2 text-right">%</th>
+                    <th className="px-2 py-2 text-right">Status</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-slate-100 text-default-900 dark:bg-slate-900 dark:text-slate-100">
-                <tr>
-                  <td className="px-2 py-2 font-black">Total Hasil</td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_HASIL)}</td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.hasilTotal.nilai)}</td>
-                  <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(final.hasilTotal.persen)}%</td>
-                  <td className="px-2 py-2 text-right"><RecapStatusBadge status={final.hasilTotal.status} /></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody className="divide-y divide-default-100">
+                  <tr className={display.birokrasiBersih.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
+                    <td className="px-2 py-2 font-black text-default-800">Birokrasi yang Bersih dan Akuntabel</td>
+                    <td className="px-2 py-2 text-right tabular-nums">22.50</td>
+                    <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(display.birokrasiBersih.nilai)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{formatScore(display.birokrasiBersih.persen)}%</td>
+                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={display.birokrasiBersih.status} /></td>
+                  </tr>
+                  {display.hasilRows.map((row) => (
+                    <tr key={row.key} className={row.status === 'OK' ? 'bg-green-50/30 dark:bg-green-950/10' : 'bg-rose-50/20 dark:bg-rose-950/10'}>
+                      <td className="px-2 py-2 font-semibold text-default-700">{row.label}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.bobot)}</td>
+                      <td className="px-2 py-2 text-right font-semibold tabular-nums">{formatScore(row.nilai)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{formatScore(row.persen)}%</td>
+                      <td className="px-2 py-2 text-right"><RecapStatusBadge status={row.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100 text-default-900 dark:bg-slate-900 dark:text-slate-100">
+                  <tr>
+                    <td className="px-2 py-2 font-black">Total Hasil</td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(MAX_HASIL)}</td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(display.hasilTotal.nilai)}</td>
+                    <td className="px-2 py-2 text-right font-black tabular-nums">{formatScore(display.hasilTotal.persen)}%</td>
+                    <td className="px-2 py-2 text-right"><RecapStatusBadge status={display.hasilTotal.status} /></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+        </div>
       </div>
     </aside>
   )
@@ -2651,87 +2674,172 @@ export default function InputJawabanPage() {
       )}
 
       {sheetCompareOpen && sheetCompareInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="sheet-compare-title"
-            className="flex max-h-[85vh] w-full max-w-5xl flex-col rounded-lg border border-default-200 bg-content1 shadow-2xl"
+            className="flex max-h-[88vh] w-full max-w-4xl flex-col rounded-xl border border-default-200 bg-content1 shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-default-200 px-5 py-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-default-200 px-5 py-4 shrink-0">
               <div>
                 <h2 id="sheet-compare-title" className="text-base font-bold text-default-900">
-                  Banding Aplikasi vs Google Sheet
+                  Banding: Aplikasi vs Google Sheet
                 </h2>
-                <p className="mt-1 text-xs text-default-500">
-                  Kolom dibandingkan: Unit K, TPI Unit O, TPI Itjen S.
+                <p className="mt-0.5 text-xs text-default-500">
+                  Menampilkan perbedaan data antara aplikasi (VISA) dengan Google Sheet LKE
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSheetCompareOpen(false)}
-                className="rounded-lg border border-default-200 px-3 py-1.5 text-xs hover:bg-default-100"
+                className="shrink-0 rounded-lg border border-default-200 px-3 py-1.5 text-xs hover:bg-default-100 transition-colors"
               >
                 Tutup
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 border-b border-default-100 px-5 py-3 text-xs">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 border-b border-default-100 px-5 py-3 shrink-0">
               <div className="rounded-lg bg-default-50 px-3 py-2">
-                <p className="text-default-400">Baris dibandingkan</p>
-                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.comparedRows}</p>
+                <p className="text-[11px] text-default-400">Baris dibandingkan</p>
+                <p className="text-xl font-black tabular-nums">{sheetCompareInfo.comparedRows}</p>
               </div>
-              <div className="rounded-lg bg-default-50 px-3 py-2">
-                <p className="text-default-400">Baris berbeda</p>
-                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.mismatchRows}</p>
+              <div className={`rounded-lg px-3 py-2 ${sheetCompareInfo.mismatchRows > 0 ? 'bg-rose-50 dark:bg-rose-950/20' : 'bg-default-50'}`}>
+                <p className={`text-[11px] ${sheetCompareInfo.mismatchRows > 0 ? 'text-rose-500' : 'text-default-400'}`}>Baris berbeda</p>
+                <p className={`text-xl font-black tabular-nums ${sheetCompareInfo.mismatchRows > 0 ? 'text-rose-600 dark:text-rose-400' : ''}`}>
+                  {sheetCompareInfo.mismatchRows}
+                </p>
               </div>
-              <div className="rounded-lg bg-default-50 px-3 py-2">
-                <p className="text-default-400">Sel berbeda</p>
-                <p className="text-lg font-black tabular-nums">{sheetCompareInfo.mismatchCells}</p>
+              <div className={`rounded-lg px-3 py-2 ${sheetCompareInfo.mismatchCells > 0 ? 'bg-rose-50 dark:bg-rose-950/20' : 'bg-default-50'}`}>
+                <p className={`text-[11px] ${sheetCompareInfo.mismatchCells > 0 ? 'text-rose-500' : 'text-default-400'}`}>Sel berbeda</p>
+                <p className={`text-xl font-black tabular-nums ${sheetCompareInfo.mismatchCells > 0 ? 'text-rose-600 dark:text-rose-400' : ''}`}>
+                  {sheetCompareInfo.mismatchCells}
+                </p>
               </div>
             </div>
 
-            <div className="overflow-auto px-5 py-4">
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-b border-default-100 bg-default-50/60 px-5 py-2.5 shrink-0">
+              <span className="text-[11px] font-semibold text-default-500">Sumber data:</span>
+              <span className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
+                <span className="font-medium">Jawaban Unit</span>
+                <span className="text-default-400">(Kol. K)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" />
+                <span className="font-medium">TPI Unit</span>
+                <span className="text-default-400">(Kol. O)</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-violet-500" />
+                <span className="font-medium">TPI Itjen</span>
+                <span className="text-default-400">(Kol. S)</span>
+              </span>
+              <span className="ml-auto flex items-center gap-3 text-[11px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-5 rounded bg-rose-300 dark:bg-rose-900/60" />
+                  <span className="text-rose-600 dark:text-rose-400 font-medium">Aplikasi (VISA)</span>
+                </span>
+                <span className="text-default-300">vs</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-5 rounded bg-emerald-300 dark:bg-emerald-900/60" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">Google Sheet</span>
+                </span>
+              </span>
+            </div>
+
+            {/* Content: cards per question */}
+            <div className="overflow-auto px-5 py-4 space-y-3">
               {sheetCompareInfo.mismatches.length === 0 ? (
-                <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <div className="rounded-xl border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800/50 px-4 py-4 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
+                  <CheckCircle2 size={16} />
                   Semua nilai aplikasi sudah sesuai dengan Google Sheet.
                 </div>
               ) : (
-                <table className="w-full min-w-[760px] text-left text-xs">
-                  <thead className="bg-default-50 text-[10px] uppercase tracking-wide text-default-500">
-                    <tr>
-                      <th className="px-3 py-2">ID / Row</th>
-                      <th className="px-3 py-2">Pertanyaan</th>
-                      <th className="px-3 py-2">Kolom</th>
-                      <th className="px-3 py-2">Aplikasi</th>
-                      <th className="px-3 py-2">Google Sheet</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-default-100">
-                    {sheetCompareInfo.mismatches.flatMap((item) =>
-                      item.differences.map((diff, index) => (
-                        <tr key={`${item.question_id}-${diff.source}`} className="align-top">
-                          <td className="px-3 py-2 font-semibold tabular-nums">
-                            {index === 0 ? (
-                              <>
-                                <span>{item.question_id}</span>
-                                <span className="block text-[10px] text-default-400">Row {item.rowNum}</span>
-                              </>
-                            ) : null}
-                          </td>
-                          <td className="px-3 py-2 text-default-600">
-                            {index === 0 ? item.pertanyaan : null}
-                          </td>
-                          <td className="px-3 py-2 font-semibold">
-                            {diff.label} ({diff.column})
-                          </td>
-                          <td className="px-3 py-2 text-rose-700 dark:text-rose-300">{diff.app || '-'}</td>
-                          <td className="px-3 py-2 text-blue-700 dark:text-blue-300">{diff.sheet || '-'}</td>
-                        </tr>
-                      )),
-                    )}
-                  </tbody>
-                </table>
+                sheetCompareInfo.mismatches.map((item) => (
+                  <div
+                    key={item.question_id}
+                    className="rounded-xl border border-default-200 overflow-hidden"
+                  >
+                    {/* Question header */}
+                    <div className="flex items-start gap-3 bg-default-100/60 dark:bg-default-50/5 px-4 py-2.5 border-b border-default-200">
+                      <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-default-400">ID</span>
+                        <span className="text-sm font-bold tabular-nums text-default-800">{item.question_id}</span>
+                        <span className="text-[10px] text-default-400">· Baris {item.rowNum}</span>
+                      </div>
+                      <p className="text-xs text-default-600 leading-4 flex-1 min-w-0">{item.pertanyaan}</p>
+                      <span className="shrink-0 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/30 px-2 py-0.5 rounded-full">
+                        {item.differences.length} beda
+                      </span>
+                    </div>
+
+                    {/* Differences per source */}
+                    <div className="divide-y divide-default-100">
+                      {item.differences.map((diff) => {
+                        const sourceConfig = {
+                          unit:    {
+                            bg:    'bg-blue-50/60 dark:bg-blue-950/10',
+                            badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                            dot:   'bg-blue-500',
+                            label: 'Jawaban Unit',
+                          },
+                          tpiUnit: {
+                            bg:    'bg-amber-50/60 dark:bg-amber-950/10',
+                            badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                            dot:   'bg-amber-500',
+                            label: 'TPI Unit',
+                          },
+                          tpiItjen: {
+                            bg:    'bg-violet-50/60 dark:bg-violet-950/10',
+                            badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+                            dot:   'bg-violet-500',
+                            label: 'TPI Itjen',
+                          },
+                        }[diff.source]
+
+                        return (
+                          <div key={diff.source} className={`flex items-start gap-3 px-4 py-3 ${sourceConfig.bg}`}>
+                            {/* Source label */}
+                            <div className="flex items-center gap-1.5 shrink-0 w-[130px] pt-0.5">
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${sourceConfig.dot}`} />
+                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${sourceConfig.badge}`}>
+                                {sourceConfig.label}
+                              </span>
+                            </div>
+
+                            {/* App value */}
+                            <div className="flex-1 min-w-0 rounded-lg border border-rose-200 dark:border-rose-800/40 bg-white dark:bg-rose-950/10 px-3 py-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-rose-500 mb-1">Aplikasi (VISA)</p>
+                              <p className="text-xs text-rose-700 dark:text-rose-300 break-words leading-4">
+                                {diff.app
+                                  ? diff.app
+                                  : <span className="italic text-rose-400 dark:text-rose-600/70">kosong / tidak ada</span>
+                                }
+                              </p>
+                            </div>
+
+                            <span className="shrink-0 text-default-300 text-sm mt-2">→</span>
+
+                            {/* Sheet value */}
+                            <div className="flex-1 min-w-0 rounded-lg border border-emerald-200 dark:border-emerald-800/40 bg-white dark:bg-emerald-950/10 px-3 py-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-500 mb-1">Google Sheet (Kol. {diff.column})</p>
+                              <p className="text-xs text-emerald-700 dark:text-emerald-300 break-words leading-4">
+                                {diff.sheet
+                                  ? diff.sheet
+                                  : <span className="italic text-emerald-400 dark:text-emerald-600/70">kosong / tidak ada</span>
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>

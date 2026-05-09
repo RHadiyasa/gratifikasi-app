@@ -14,6 +14,7 @@ const exactTitles: Record<string, string> = {
   "/dashboard/upg": "Dashboard Gratifikasi",
   "/dashboard/zi": "Dashboard Zona Integritas",
   "/dashboard/zi/kriteria": "Master Kriteria ZI",
+  "/dashboard/zi/scoring": "Pengaturan Penilaian ZI",
   "/docs": "Panduan",
   "/e-learning": "E-Learning",
   "/e-learning/participants": "Peserta E-Learning",

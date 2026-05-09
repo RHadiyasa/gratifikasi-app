@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, Tab } from "@heroui/tabs";
 import { Button } from "@heroui/button";
@@ -20,20 +20,20 @@ import {
   BarChart2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useZiStore } from "@/store/ziStore";
-import { useAuthStore } from "@/store/authStore";
-import { hasPermission } from "@/lib/permissions";
-import { ESELON1_LIST, TARGET_THRESHOLD } from "@/types/zi";
-import type { LkeSubmission } from "@/types/zi";
-import { StatusBadge } from "@/components/StatusBadge";
-import { TargetBadge } from "@/components/TargetBadge";
-import { ZiProgressBar } from "@/components/ZiProgressBar";
-import { SyncButton } from "@/components/SyncButton";
-import { NilaiLKETable } from "@/components/NilaiLKETable";
+
 import CompareView from "./_components/CompareView";
 import AddSubmissionForm from "./_components/AddSubmissionForm";
 import UnitDrawer from "./_components/UnitDrawer";
 import AiCheckerTab from "./_components/AiCheckerTab";
+
+import { useZiStore } from "@/store/ziStore";
+import { useAuthStore } from "@/store/authStore";
+import { hasPermission } from "@/lib/permissions";
+import { ESELON1_LIST, TARGET_THRESHOLD } from "@/types/zi";
+import { StatusBadge } from "@/components/StatusBadge";
+import { TargetBadge } from "@/components/TargetBadge";
+import { ZiProgressBar } from "@/components/ZiProgressBar";
+import { SyncButton } from "@/components/SyncButton";
 
 export default function LkeCheckerPage() {
   const {
@@ -77,14 +77,40 @@ export default function LkeCheckerPage() {
   }, [searchInput]);
 
   // Sort: units with nilai descending, units without nilai at the bottom
-  const filtered = [...submissions].sort((a, b) => {
-    const aVal = a.nilai_lke_ai?.nilai_akhir ?? null;
-    const bVal = b.nilai_lke_ai?.nilai_akhir ?? null;
-    if (aVal === null && bVal === null) return 0;
-    if (aVal === null) return 1;
-    if (bVal === null) return -1;
-    return bVal - aVal;
-  });
+  const filtered = useMemo(
+    () =>
+      [...submissions].sort((a, b) => {
+        const aVal = a.nilai_lke_ai?.nilai_akhir ?? null;
+        const bVal = b.nilai_lke_ai?.nilai_akhir ?? null;
+
+        if (aVal === null && bVal === null) return 0;
+        if (aVal === null) return 1;
+        if (bVal === null) return -1;
+
+        return bVal - aVal;
+      }),
+    [submissions],
+  );
+
+  // Pre-compute rank for units with nilai (avoids O(n²) indexOf calls)
+  const rankMap = useMemo(() => {
+    const map = new Map<string, number>();
+    let rank = 1;
+
+    for (const sub of filtered) {
+      if (sub.nilai_lke_ai?.nilai_akhir != null) {
+        map.set(sub._id, rank++);
+      }
+    }
+
+    return map;
+  }, [filtered]);
+
+  // Locally compute perlu_revisi count from submissions
+  const perluRevisiCount = useMemo(
+    () => submissions.filter((s) => s.status === "Perlu Revisi").length,
+    [submissions],
+  );
 
   function handleDelete(id: string) {
     if (!confirm("Hapus unit ini? Data LKE akan dihapus permanen.")) return;
@@ -93,7 +119,7 @@ export default function LkeCheckerPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">LKE Checker</h1>
           <p className="text-sm text-default-500 mt-0.5">
@@ -101,7 +127,7 @@ export default function LkeCheckerPage() {
           </p>
         </div>
         {summary && (
-          <div className="hidden md:flex items-center gap-4 text-sm text-default-500">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-default-500">
             <span>
               <strong className="text-foreground">{summary.total}</strong> unit
             </span>
@@ -111,15 +137,20 @@ export default function LkeCheckerPage() {
             <span className="text-amber-500">
               <strong>{summary.sedang}</strong> sedang dicek
             </span>
+            {perluRevisiCount > 0 && (
+              <span className="text-red-500">
+                <strong>{perluRevisiCount}</strong> perlu revisi
+              </span>
+            )}
           </div>
         )}
       </div>
 
       <Tabs
-        selectedKey={tab}
-        onSelectionChange={(k) => setTab(String(k))}
-        variant="underlined"
         color="primary"
+        selectedKey={tab}
+        variant="underlined"
+        onSelectionChange={(k) => setTab(String(k))}
       >
         {/* ── TAB: DAFTAR ── */}
         <Tab
@@ -134,20 +165,20 @@ export default function LkeCheckerPage() {
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
               <Input
-                className="max-w-xs"
-                size="sm"
-                placeholder="Cari unit / eselon…"
-                startContent={<Search size={14} className="text-default-400" />}
-                value={searchInput}
-                onValueChange={setSearchInput}
                 isClearable
+                className="max-w-xs"
+                placeholder="Cari unit / eselon…"
+                size="sm"
+                startContent={<Search className="text-default-400" size={14} />}
+                value={searchInput}
                 onClear={() => setSearchInput("")}
+                onValueChange={setSearchInput}
               />
               <Select
                 className="w-44"
-                size="sm"
                 placeholder="Eselon I"
                 selectedKeys={filters.eselon1 ? [filters.eselon1] : []}
+                size="sm"
                 onSelectionChange={(k) =>
                   setFilters({ eselon1: ([...k][0] as string) ?? "" })
                 }
@@ -158,11 +189,12 @@ export default function LkeCheckerPage() {
               </Select>
               <Select
                 className="w-36"
-                size="sm"
                 placeholder="Status"
                 selectedKeys={filters.status ? [filters.status] : []}
+                size="sm"
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string | undefined;
+
                   setFilters({ status: value ?? "" });
                 }}
               >
@@ -178,9 +210,9 @@ export default function LkeCheckerPage() {
               </Select>
               <Select
                 className="w-32"
-                size="sm"
                 placeholder="Target"
                 selectedKeys={filters.target ? [filters.target] : []}
+                size="sm"
                 onSelectionChange={(k) =>
                   setFilters({ target: ([...k][0] as string) ?? "" })
                 }
@@ -190,15 +222,15 @@ export default function LkeCheckerPage() {
                 ))}
               </Select>
               <Button
+                isIconOnly
+                aria-label="Refresh"
                 size="sm"
                 variant="flat"
                 onPress={fetchSubmissions}
-                isIconOnly
-                aria-label="Refresh"
               >
                 <RefreshCw
-                  size={14}
                   className={isLoading ? "animate-spin" : ""}
+                  size={14}
                 />
               </Button>
             </div>
@@ -220,6 +252,19 @@ export default function LkeCheckerPage() {
               </div>
             )}
 
+            {/* Result count */}
+            {!isLoading && filtered.length > 0 && (
+              <p className="text-xs text-default-400">
+                Menampilkan <strong>{filtered.length}</strong> unit
+                {filters.search ||
+                filters.eselon1 ||
+                filters.status ||
+                filters.target
+                  ? " (terfilter)"
+                  : ""}
+              </p>
+            )}
+
             {/* Table */}
             {isLoading ? (
               <div className="space-y-2">
@@ -231,15 +276,23 @@ export default function LkeCheckerPage() {
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-default-400 text-sm">
-                Belum ada data. Tambahkan LKE melalui tab Input.
+              <div className="text-center py-16 text-default-400 text-sm space-y-2">
+                <p>Belum ada data unit kerja.</p>
+                {canManageZi && (
+                  <button
+                    className="text-primary underline text-xs"
+                    onClick={() => setTab("input")}
+                  >
+                    Tambahkan LKE melalui tab Input
+                  </button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-default-200">
                 <table className="w-full text-sm">
                   <thead className="bg-default-50">
                     <tr>
-                      <th className="text-left py-2.5 pl-4 pr-3 font-medium text-default-500 text-xs w-8"></th>
+                      <th className="text-left py-2.5 pl-4 pr-3 font-medium text-default-500 text-xs w-8" />
                       <th className="text-center py-2.5 px-2 font-medium text-default-500 text-xs w-10">
                         #
                       </th>
@@ -269,7 +322,9 @@ export default function LkeCheckerPage() {
                       const isSyncing = syncingIds.includes(sub._id);
                       const threshold = TARGET_THRESHOLD[sub.target];
                       const val = sub.nilai_lke_ai?.nilai_akhir ?? null;
-                      const achieved = val !== null ? val >= threshold : undefined;
+                      const achieved =
+                        val !== null ? val >= threshold : undefined;
+                      const rank = rankMap.get(sub._id);
 
                       return (
                         <tr
@@ -285,24 +340,26 @@ export default function LkeCheckerPage() {
                               content={
                                 inCompare
                                   ? "Hapus dari perbandingan"
-                                  : "Tambah ke perbandingan"
+                                  : compareIds.length >= 4
+                                    ? "Maksimal 4 unit"
+                                    : "Tambah ke perbandingan"
                               }
                             >
                               <button
                                 className={`w-5 h-5 rounded border transition-colors ${inCompare ? "bg-primary border-primary text-white" : "border-default-300 hover:border-primary"}`}
+                                disabled={!inCompare && compareIds.length >= 4}
                                 onClick={() => toggleCompare(sub._id)}
                               >
                                 {inCompare && (
-                                  <CheckCircle2 size={11} className="m-auto" />
+                                  <CheckCircle2 className="m-auto" size={11} />
                                 )}
                               </button>
                             </Tooltip>
                           </td>
                           <td className="py-2.5 px-2 text-center">
-                            {(filtered.indexOf(sub) + 1 <= filtered.length &&
-                              sub.nilai_lke_ai?.nilai_akhir != null) ? (
+                            {rank != null ? (
                               <span className="text-xs font-bold text-default-400">
-                                {filtered.indexOf(sub) + 1}
+                                {rank}
                               </span>
                             ) : (
                               <span className="text-default-300">—</span>
@@ -312,15 +369,26 @@ export default function LkeCheckerPage() {
                             <div className="font-medium truncate max-w-full">
                               {sub.eselon2}
                             </div>
-                            <div className="text-xs text-default-400 truncate max-w-full">
-                              {sub.eselon1}
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-xs text-default-400 truncate">
+                                {sub.eselon1}
+                              </span>
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                  sub.source === "app"
+                                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                    : "bg-default-100 text-default-500"
+                                }`}
+                              >
+                                {sub.source === "app" ? "App" : "Sheet"}
+                              </span>
                             </div>
                           </td>
                           <td className="py-2.5 px-3">
                             <TargetBadge
+                              showStatus={val !== null}
                               target={sub.target}
                               tercapai={achieved}
-                              showStatus={val !== null}
                             />
                           </td>
                           <td className="py-2.5 px-3">
@@ -328,9 +396,9 @@ export default function LkeCheckerPage() {
                           </td>
                           <td className="py-2.5 px-3">
                             <ZiProgressBar
-                              value={sub.progress_percent}
                               label={`${sub.checked_count}/${sub.total_data}`}
                               size="sm"
+                              value={sub.progress_percent}
                             />
                           </td>
                           <td className="py-2.5 px-3 text-right tabular-nums">
@@ -351,11 +419,15 @@ export default function LkeCheckerPage() {
                             <div className="flex items-center gap-1">
                               <Tooltip content="Lihat detail progress">
                                 <Button
+                                  isIconOnly
+                                  color="primary"
                                   size="sm"
                                   variant="flat"
-                                  color="primary"
-                                  isIconOnly
-                                  onPress={() => router.push(`/zona-integritas/lke-checker/${sub._id}`)}
+                                  onPress={() =>
+                                    router.push(
+                                      `/zona-integritas/lke-checker/${sub._id}`,
+                                    )
+                                  }
                                 >
                                   <BarChart2 size={13} />
                                 </Button>
@@ -369,10 +441,10 @@ export default function LkeCheckerPage() {
                               )}
                               {canDeleteZi && (
                                 <Button
+                                  isIconOnly
+                                  color="danger"
                                   size="sm"
                                   variant="flat"
-                                  color="danger"
-                                  isIconOnly
                                   onPress={() => handleDelete(sub._id)}
                                 >
                                   <Trash2 size={13} />
@@ -425,12 +497,11 @@ export default function LkeCheckerPage() {
 
       {/* Unit Drawer */}
       <UnitDrawer
+        syncingIds={syncingIds}
         unit={selectedUnit}
         onClose={() => setSelectedUnit(null)}
         onSync={syncSubmission}
-        syncingIds={syncingIds}
       />
-
 
       {/* Compare Modal */}
       <AnimatePresence>
@@ -443,24 +514,27 @@ export default function LkeCheckerPage() {
       <AnimatePresence>
         {compareIds.length >= 2 && !showCompare && (
           <motion.div
-            initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+            exit={{ y: 80, opacity: 0 }}
+            initial={{ y: 80, opacity: 0 }}
           >
             <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-default-900 dark:bg-default-100 shadow-xl text-default-100 dark:text-default-900 text-sm">
               <GitCompare size={16} />
-              <span>{compareIds.length} unit dipilih</span>
+              <span>
+                {compareIds.length} unit dipilih{" "}
+                <span className="opacity-50 text-xs">(maks 4)</span>
+              </span>
               <Button
-                size="sm"
                 color="primary"
+                size="sm"
                 onPress={() => setShowCompare(true)}
               >
                 Bandingkan
               </Button>
               <button
-                onClick={clearCompare}
                 className="opacity-60 hover:opacity-100 transition-opacity"
+                onClick={clearCompare}
               >
                 <X size={15} />
               </button>

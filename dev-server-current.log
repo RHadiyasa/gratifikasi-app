@@ -1,0 +1,58 @@
+
+> next-app-template@0.0.1 dev
+> set NODE_OPTIONS=--openssl-legacy-provider && next dev -p 3000
+
+   ▲ Next.js 15.3.9
+   - Local:        http://localhost:3000
+   - Network:      http://100.97.129.84:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1861ms
+ ✓ Compiled /middleware in 316ms (109 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 8.8s (4274 modules)
+ GET /login 200 in 9578ms
+ GET /login 200 in 605ms
+ ○ Compiling /api/auth/me ...
+ ✓ Compiled /api/auth/me in 1879ms (4372 modules)
+ GET /api/auth/me 200 in 2467ms
+ GET /api/auth/me 200 in 33ms
+ GET /login 200 in 113ms
+ GET /login 200 in 33ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 902ms (4361 modules)
+ GET /login 200 in 616ms
+ GET /api/auth/me 200 in 34ms
+MongoDB berhasil terkoneksi!
+MongoDB berhasil terkoneksi!
+ GET /login 200 in 139ms
+ POST /api/auth/login 200 in 21448ms
+ GET /login 200 in 147ms
+ POST /api/auth/login 200 in 14474ms
+ GET /api/auth/me 200 in 16ms
+ GET /api/auth/me 200 in 15ms
+MongoDB sudah terkoneksi.
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 947ms (4365 modules)
+ GET /_next/static/chunks/_app-pages-browser_node_modules_heroui_dom-animation_dist_index_mjs.js 404 in 1678ms
+ POST /api/auth/login 404 in 1688ms
+ POST /api/auth/login 200 in 14478ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.5s (4623 modules)
+ GET /dashboard 200 in 3128ms
+ GET /_next/static/css/app/layout.css?v=1778345702465 404 in 85ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 208ms
+ GET /_next/static/chunks/main-app.js?v=1778345702465 404 in 228ms
+ GET /_next/static/chunks/app/error.js 404 in 91ms
+ GET /dashboard 200 in 148ms
+ GET /_next/static/css/app/layout.css?v=1778345708508 404 in 131ms
+ GET /_next/static/chunks/app/error.js 404 in 355ms
+ GET /_next/static/chunks/main-app.js?v=1778345708508 404 in 360ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 360ms
+ GET /dashboard 200 in 88ms
+ GET /_next/static/css/app/layout.css?v=1778345710170 404 in 95ms
+ GET /_next/static/chunks/main-app.js?v=1778345710170 404 in 244ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 248ms
+ GET /_next/static/chunks/app/error.js 404 in 247ms
+[?25h

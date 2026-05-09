@@ -4,7 +4,8 @@ import LkeSubmission from '@/modules/models/LkeSubmission'
 import LkeKriteria from '@/modules/models/LkeKriteria'
 import LkeSyncLog from '@/modules/models/LkeSyncLog'
 import { parseRingkasanAI, syncFromVisaReview, readVisaReviewStats } from '@/lib/zi/sheetParser'
-import { buildScoringDetailMap, isDetailKriteria } from '@/lib/zi/scoring'
+import { buildScoringDetailMapWithConfig, isDetailKriteria } from '@/lib/zi/scoring'
+import { getActiveScoringConfig } from '@/lib/zi/scoring-config'
 import { TARGET_THRESHOLD } from '@/types/zi'
 import { getSessionUser } from '@/lib/auth'
 import { canAccessZiSubmission, hasPermission } from '@/lib/permissions'
@@ -45,7 +46,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       let vrStats   = { checked: 0, total: 0 }
       const kriteriaList = await LkeKriteria.find({ aktif: true }).lean() as any[]
       const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k))
-      const scoringDetailMap = buildScoringDetailMap(primaryKriteria)
+      const scoringConfig = await getActiveScoringConfig()
+      const scoringDetailMap = buildScoringDetailMapWithConfig(primaryKriteria, scoringConfig as any)
       const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)))
 
       // Coba baca Ringkasan AI sheet langsung (1 read)

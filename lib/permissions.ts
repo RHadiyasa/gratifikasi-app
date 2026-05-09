@@ -81,6 +81,7 @@ const PERMISSIONS = {
   "zi:sync": ["developer", "admin", "admin_zi", "zi"],
   "zi:ai-checker": ["developer", "admin", "admin_zi", "zi"],
   "zi:kriteria:manage": ["developer", "admin", "admin_zi"],
+  "zi:scoring:manage": ["developer", "admin", "admin_zi"],
   "zi:assign-unit": ["developer", "admin", "admin_zi"],
   "zi:review-all-lke": ["developer", "admin", "admin_zi", "tpi_kesdm", "tpi_unit", "zi"],
   "zi:own-unit-only": ["unit_zi"],
