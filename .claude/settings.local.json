@@ -9,7 +9,11 @@
       "Bash(npm ls:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm run:*)",
-      "Bash(grep -E \"\\\\.\\(ts|tsx|js|json\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|json\\)$\")",
+      "Bash(npx eslint *)",
+      "Bash(cat .prettierrc)",
+      "Bash(cat prettier.config.js)",
+      "Bash(cat prettier.config.mjs)"
     ]
   }
 }

@@ -221,6 +221,29 @@ function evalTokens(tokens, values) {
   return evalTokensDetailed(tokens, values).value;
 }
 
+function getDecreaseFormulaRefs(tokens = []) {
+  if (
+    tokens.length === 7 &&
+    tokens[0]?.kind === "open_paren" &&
+    tokens[1]?.kind === "operand" &&
+    tokens[2]?.kind === "op" &&
+    tokens[2]?.op === "-" &&
+    tokens[3]?.kind === "operand" &&
+    tokens[4]?.kind === "close_paren" &&
+    tokens[5]?.kind === "op" &&
+    tokens[5]?.op === "/" &&
+    tokens[6]?.kind === "operand" &&
+    Number(tokens[1]?.ref) === Number(tokens[6]?.ref)
+  ) {
+    return {
+      previousRef: Number(tokens[1]?.ref),
+      currentRef: Number(tokens[3]?.ref),
+    };
+  }
+
+  return null;
+}
+
 function computeSubItemValues(subItems, jawabanById, sourceKey) {
   const byUrutan = {};
   for (const item of subItems) byUrutan[item.urutan] = item;
@@ -267,6 +290,11 @@ function computePersenValue(kriteria, subItems, jawabanById, sourceKey) {
   const max = kriteria.formula_max ?? 100;
   const result = evalTokensDetailed(kriteria.formula_tokens, values);
   if (result.hasDivisionByZero && kriteria.formula_zero_division_full_score) {
+    const decreaseRefs = getDecreaseFormulaRefs(kriteria.formula_tokens);
+    if (decreaseRefs) {
+      const current = Number(values[decreaseRefs.currentRef] ?? 0);
+      return current === 0 ? Math.min(max, Math.max(min, max)) : Math.min(max, Math.max(min, 0));
+    }
     return Math.min(max, Math.max(min, max));
   }
   const raw = result.value * 100;

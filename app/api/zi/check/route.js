@@ -25,7 +25,8 @@ import {
 } from "@/lib/zi/ai-checker";
 import { generateExcelReport } from "@/lib/zi/excel-report";
 import { sendEmailReport } from "@/lib/zi/email";
-import { buildScoringDetailMap, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
+import { buildScoringDetailMapWithConfig, getScoringWeight, calculateNilaiLkeAi, isDetailKriteria } from "@/lib/zi/scoring";
+import { getActiveScoringConfig } from "@/lib/zi/scoring-config";
 import { handleAppModeCheck } from "@/lib/zi/app-check";
 
 // ── Helpers ─────────────────────────────────────────────
@@ -347,7 +348,22 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   };
 }
 
-async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap }) {
+function buildMetricsForId(id, kriteriaList, jawabanUnitMap) {
+  const metrics = {};
+  for (const k of kriteriaList) {
+    if (k.answer_type !== "jumlah" || k.parent_question_id !== parseInt(id)) continue;
+    const val = jawabanUnitMap[String(k.question_id)];
+    if (val === undefined || val === null || String(val).trim() === "") continue;
+    const num = Number(val);
+    if (isNaN(num)) continue;
+    metrics[`qid_${k.question_id}`] = num;
+    const key = String(k.sub_komponen || "").trim();
+    if (key) metrics[key] = num;
+  }
+  return Object.keys(metrics).length > 0 ? metrics : undefined;
+}
+
+async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap, kriteriaList }) {
   const submission = await LkeSubmission.findById(submissionId).select("target").lean();
   const target = submission?.target || "WBK";
 
@@ -357,9 +373,13 @@ async function computeAndWriteNilaiLke({ submissionId, visaMap, results, sheets,
     if (!AI_PATTERN.test(entry.result)) continue;
     const color = /^\u2705/u.test(entry.result) ? "HIJAU"
       : /^\u26A0\uFE0F/u.test(entry.result) ? "KUNING" : "MERAH";
-    allResultsMap.set(id, { id, verdict: { color }, jawaban_unit: jawabanUnitMap[id] ?? "" });
+    const metrics = buildMetricsForId(id, kriteriaList, jawabanUnitMap);
+    allResultsMap.set(id, { id, verdict: { color }, jawaban_unit: jawabanUnitMap[id] ?? "", ...(metrics && { metrics }) });
   }
-  for (const r of results) allResultsMap.set(r.id, r);
+  for (const r of results) {
+    const metrics = buildMetricsForId(r.id, kriteriaList, jawabanUnitMap);
+    allResultsMap.set(r.id, metrics ? { ...r, metrics } : r);
+  }
 
   const allResultsForScoring = Array.from(allResultsMap.values());
   if (allResultsForScoring.length === 0) return null;
@@ -414,7 +434,8 @@ export async function POST(req) {
         const kriteriaList = await LkeKriteria.find({ aktif: true }).lean();
         const primaryKriteria = kriteriaList.filter((k) => !isDetailKriteria(k));
         const primaryIds = new Set(primaryKriteria.map((k) => Number(k.question_id)));
-        const scoringDetailMap = buildScoringDetailMap(primaryKriteria);
+        const scoringConfig = await getActiveScoringConfig();
+        const scoringDetailMap = buildScoringDetailMapWithConfig(kriteriaList, scoringConfig);
         const masterTotalData = primaryKriteria.length;
 
         // ── Init Google ──
@@ -623,7 +644,7 @@ export async function POST(req) {
 
         // ── Nilai LKE AI ──
         const nilaiLkeAi = await computeAndWriteNilaiLke({
-          submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap,
+          submissionId, visaMap, results, sheets, penilaianId, send, scoringDetailMap, jawabanUnitMap, kriteriaList,
         });
 
         // ── Final MongoDB update ──

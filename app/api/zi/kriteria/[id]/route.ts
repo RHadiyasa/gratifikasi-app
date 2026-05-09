@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { connect } from '@/config/dbconfig'
 import LkeKriteria from '@/modules/models/LkeKriteria'
 import { hasPermission } from '@/lib/permissions'
+import { isMasterKriteriaLocked } from '@/lib/zi/scoring-config'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -28,6 +29,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const update: Record<string, any> = {}
     for (const key of allowed) {
       if (key in body) update[key] = body[key]
+    }
+    const locked = await isMasterKriteriaLocked()
+    if (locked && ('bobot' in update || 'answer_type' in update)) {
+      return NextResponse.json(
+        { error: 'Bobot master kriteria sedang dikunci oleh pengaturan penilaian aktif.' },
+        { status: 409 },
+      )
     }
     const doc = await LkeKriteria.findByIdAndUpdate(id, update, { new: true }).lean()
     if (!doc) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })

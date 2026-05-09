@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { connect } from '@/config/dbconfig'
 import LkeKriteria from '@/modules/models/LkeKriteria'
 import { hasPermission } from '@/lib/permissions'
+import { isMasterKriteriaLocked } from '@/lib/zi/scoring-config'
 
 async function getRole(): Promise<string | null> {
   try {
@@ -43,7 +44,9 @@ export async function GET(req: Request) {
       grouped[k].push(item)
     }
 
-    return NextResponse.json({ kriteria, grouped })
+    const lock_master_kriteria = await isMasterKriteriaLocked()
+
+    return NextResponse.json({ kriteria, grouped, lock_master_kriteria })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
@@ -67,6 +70,13 @@ export async function POST(req: Request) {
 
     if (!komponen || bobot == null || !answer_type) {
       return NextResponse.json({ error: 'komponen, bobot, answer_type wajib diisi' }, { status: 400 })
+    }
+    const locked = await isMasterKriteriaLocked()
+    if (locked) {
+      return NextResponse.json(
+        { error: 'Master kriteria sedang dikunci oleh pengaturan penilaian. Ubah bobot melalui halaman Pengaturan Penilaian ZI.' },
+        { status: 409 },
+      )
     }
 
     // Auto-assign question_id jika tidak disertakan (sub-item jumlah)
