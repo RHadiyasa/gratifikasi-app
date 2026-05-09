@@ -1229,15 +1229,17 @@ export default function ZiScoringConfigPage() {
 
           {/* Policy editor modal */}
           {editingPolicy && editingPolicyIndex !== null && (
-            <div
-              aria-modal="true"
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-              role="dialog"
-              onClick={() => setEditingPolicyIndex(null)}
-            >
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <button
+                aria-label="Tutup modal"
+                className="absolute inset-0 bg-black/45"
+                type="button"
+                onClick={() => setEditingPolicyIndex(null)}
+              />
               <div
-                className="w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-xl bg-content1 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
+                aria-modal="true"
+                className="relative z-10 w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-xl bg-content1 shadow-2xl"
+                role="dialog"
               >
                 <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-default-200 bg-content1 px-5 py-4">
                   <div className="min-w-0">
