@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   Search,
   Bot,
-  BarChart2,
+  PencilLine,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -417,7 +417,7 @@ export default function LkeCheckerPage() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1">
-                              <Tooltip content="Lihat detail progress">
+                              <Tooltip content="Buka input LKE">
                                 <Button
                                   isIconOnly
                                   color="primary"
@@ -425,11 +425,11 @@ export default function LkeCheckerPage() {
                                   variant="flat"
                                   onPress={() =>
                                     router.push(
-                                      `/zona-integritas/lke-checker/${sub._id}`,
+                                      `/zona-integritas/lke-checker/${sub._id}/input`,
                                     )
                                   }
                                 >
-                                  <BarChart2 size={13} />
+                                  <PencilLine size={13} />
                                 </Button>
                               </Tooltip>
                               {canSyncZi && (

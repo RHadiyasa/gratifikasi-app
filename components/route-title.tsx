@@ -43,7 +43,7 @@ function resolveRouteTitle(pathname: string) {
   }
 
   if (/^\/zona-integritas\/lke-checker\/[^/]+/.test(pathname)) {
-    return "Detail LKE";
+    return "Hasil Penilaian AI";
   }
 
   const segments = pathname
