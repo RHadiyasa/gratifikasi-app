@@ -8,7 +8,8 @@ import { hasPermission } from '@/lib/permissions'
 import {
   ArrowLeft, Save, CheckCircle2, AlertTriangle, XCircle,
   Loader2, ChevronDown, ChevronUp, ChevronRight, RefreshCw, ExternalLink,
-  UploadCloud, GitCompare,
+  UploadCloud, GitCompare, MessageSquareDiff, Sparkles, FileUp, X,
+  Search, Sun, Moon, BarChart3,
 } from 'lucide-react'
 import type { LkeJawaban, LkeKriteria, FormulaToken } from '@/types/zi'
 
@@ -1898,6 +1899,15 @@ export default function InputJawabanPage() {
   const [prioritySort, setPrioritySort]   = useState<PrioritySort>('impact')
   const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
+  const [reviewModalOpen, setReviewModalOpen]   = useState(false)
+  const [reviewQid, setReviewQid]               = useState<number | null>(null)
+  const [reviewTheme, setReviewTheme]           = useState<'dark' | 'light'>('dark')
+  const [reviewSearch, setReviewSearch]         = useState('')
+  const [visaComments, setVisaComments]         = useState<Record<number, string>>({})
+  const [visaLoading, setVisaLoading]           = useState<Set<number>>(new Set())
+  const [addToSheetQidLoading, setAddToSheetQidLoading] = useState<Set<number>>(new Set())
+  const [addToSheetQidResult, setAddToSheetQidResult]   = useState<Record<number, 'ok' | 'error'>>({})
+
   // persenQid → sorted LkeKriteria[] for sub-items
   const persenSubItemsMap = useRef<Record<number, LkeKriteria[]>>({})
   // persenQid → parent LkeKriteria (for formula_tokens)
@@ -2215,6 +2225,37 @@ export default function InputJawabanPage() {
     }
   }
 
+  async function handleTanyaVisa(qid: number) {
+    setVisaLoading((prev) => new Set(prev).add(qid))
+    try {
+      const res = await axios.post(`/api/zi/submissions/${submissionId}/jawaban/${qid}/visa-review`)
+      setVisaComments((prev) => ({ ...prev, [qid]: res.data.komentar }))
+    } catch (err: any) {
+      alert(err?.response?.data?.error ?? 'Gagal menghasilkan komentar visa.')
+    } finally {
+      setVisaLoading((prev) => { const s = new Set(prev); s.delete(qid); return s })
+    }
+  }
+
+  async function handleAddToSheetSingle(qid: number) {
+    const vals = localData[qid] ?? defaultLocal()
+    setAddToSheetQidLoading((prev) => new Set(prev).add(qid))
+    setAddToSheetQidResult((prev) => { const n = { ...prev }; delete n[qid]; return n })
+    try {
+      await axios.patch(`/api/zi/submissions/${submissionId}/jawaban/${qid}`, {
+        jawaban_tpi_itjen: vals.jawaban_tpi_itjen,
+        catatan_tpi_itjen: vals.catatan_tpi_itjen,
+      })
+      await axios.post(`/api/zi/submissions/${submissionId}/update-sheet`, {})
+      setAddToSheetQidResult((prev) => ({ ...prev, [qid]: 'ok' }))
+    } catch (err: any) {
+      setAddToSheetQidResult((prev) => ({ ...prev, [qid]: 'error' }))
+      alert(err?.response?.data?.error ?? 'Gagal menulis ke Google Sheet.')
+    } finally {
+      setAddToSheetQidLoading((prev) => { const s = new Set(prev); s.delete(qid); return s })
+    }
+  }
+
   function handleSheetSync(mode: 'missing_only' | 'overwrite') {
     if (mode === 'overwrite') {
       setOverwriteConfirmText('')
@@ -2254,6 +2295,45 @@ export default function InputJawabanPage() {
     () => buildItjenPriorities(grouped, localData, persenSubItemsMap.current, prioritySort),
     [grouped, localData, prioritySort],
   )
+  // Flat list of all non-detail entries for the review modal
+  const allReviewEntries = useMemo(() => {
+    const list: { entry: GroupedEntry; komponen: string; seksi: string }[] = []
+    for (const g of grouped) {
+      for (const sg of g.seksiGroups) {
+        for (const subEntries of Object.values(sg.subKomponen)) {
+          for (const e of subEntries) {
+            if (!isDetailKriteria(e.kriteria)) {
+              list.push({ entry: e, komponen: g.komponen, seksi: sg.seksi })
+            }
+          }
+        }
+      }
+    }
+    return list.sort((a, b) => a.entry.kriteria.question_id - b.entry.kriteria.question_id)
+  }, [grouped])
+
+  const reviewedItjenCount = useMemo(() => {
+    return allReviewEntries.filter(({ entry }) => {
+      const vals = localData[entry.kriteria.question_id] ?? defaultLocal()
+      return hasText(vals.jawaban_tpi_itjen) && hasText(vals.catatan_tpi_itjen)
+    }).length
+  }, [allReviewEntries, localData])
+
+  const selectedReviewEntry = useMemo(
+    () => reviewQid === null ? null : allReviewEntries.find(({ entry }) => entry.kriteria.question_id === reviewQid) ?? null,
+    [allReviewEntries, reviewQid],
+  )
+
+  const filteredReviewEntries = useMemo(() => {
+    const q = reviewSearch.trim().toLowerCase()
+    if (!q) return allReviewEntries
+    const numQ = parseInt(q)
+    return allReviewEntries.filter(({ entry }) =>
+      (!isNaN(numQ) && String(entry.kriteria.question_id).startsWith(q)) ||
+      entry.kriteria.pertanyaan?.toLowerCase().includes(q)
+    )
+  }, [allReviewEntries, reviewSearch])
+
   const visibleGroups = useMemo(
     () => grouped.filter((g) => g.seksiGroups.some((sg) => sg.seksi === activeSection)),
     [grouped, activeSection],
@@ -2299,7 +2379,8 @@ export default function InputJawabanPage() {
       {/* Header */}
       <div className="flex items-start gap-3">
         <button
-          onClick={() => router.push(`/zona-integritas/lke-checker/${submissionId}`)}
+          onClick={() => router.push('/zona-integritas/lke-checker')}
+          title="Kembali ke daftar LKE"
           className="p-1.5 rounded-lg hover:bg-default-100 text-default-500 mt-0.5 shrink-0"
         >
           <ArrowLeft size={16} />
@@ -2320,6 +2401,13 @@ export default function InputJawabanPage() {
             </span>
           )}
           <button
+            onClick={() => router.push(`/zona-integritas/lke-checker/${submissionId}`)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-default-200 text-default-700 dark:text-default-300 text-sm font-medium hover:bg-default-100 transition-colors"
+          >
+            <BarChart3 size={13} />
+            Hasil Penilaian AI
+          </button>
+          <button
             onClick={handleBatchSave}
             disabled={batchSaving || !canEditAnything}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
@@ -2327,6 +2415,24 @@ export default function InputJawabanPage() {
             {batchSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             Simpan Semua
           </button>
+          {canEditTpiItjen && (
+            <button
+              onClick={() => setReviewModalOpen(true)}
+              className="relative flex items-center gap-1.5 px-4 py-2 rounded-lg border border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/30 dark:text-violet-300 text-sm font-medium hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors"
+            >
+              <MessageSquareDiff size={13} />
+              Review
+              {allReviewEntries.length > 0 && (
+                <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[1.1rem] text-center leading-none ${
+                  reviewedItjenCount === allReviewEntries.length
+                    ? 'bg-green-500 text-white'
+                    : 'bg-violet-500 text-white'
+                }`}>
+                  {reviewedItjenCount}/{allReviewEntries.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -2931,6 +3037,603 @@ export default function InputJawabanPage() {
           onPrioritySortChange={setPrioritySort}
         />
       </div>
+
+      {/* ── Review Modal ───────────────────────────────────────────────────── */}
+      {reviewModalOpen && (() => {
+        const isLight = reviewTheme === 'light'
+
+        // ── Theme token map ──────────────────────────────────────────────────
+        const t = {
+          // overlay
+          overlayClass: isLight ? 'bg-black/40 backdrop-blur-sm' : 'bg-black/75 backdrop-blur-md',
+          // sidebar
+          sidebarBg:     isLight
+            ? 'linear-gradient(160deg,#f5f0ff 0%,#ede6ff 60%,#e8e0ff 100%)'
+            : 'linear-gradient(160deg,#1e1040 0%,#0f0a2a 60%,#0a0a1a 100%)',
+          sidebarDivider: isLight ? 'rgba(124,58,237,0.15)' : 'rgba(139,92,246,0.2)',
+          sidebarTitle:   isLight ? '#2e1065' : '#ffffff',
+          progressCardBg: isLight ? 'rgba(124,58,237,0.07)' : 'rgba(139,92,246,0.12)',
+          progressCardBorder: isLight ? '1px solid rgba(124,58,237,0.15)' : '1px solid rgba(139,92,246,0.25)',
+          progressLabelCls:   isLight ? 'text-violet-700' : 'text-violet-300',
+          progressCountCls:   (done: boolean) => done
+            ? (isLight ? 'text-emerald-600' : 'text-emerald-400')
+            : (isLight ? 'text-violet-700'  : 'text-violet-300'),
+          progressTrackBg: isLight ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.08)',
+          // search
+          searchBg:     isLight ? 'rgba(255,255,255,0.7)'  : 'rgba(255,255,255,0.07)',
+          searchBorder: isLight ? 'rgba(124,58,237,0.2)'   : 'rgba(255,255,255,0.1)',
+          searchCls:    isLight ? 'text-violet-900 placeholder-violet-900/30' : 'text-white placeholder-white/25',
+          searchIconCls: isLight ? 'text-violet-400' : 'text-white/30',
+          // list item
+          listItemSelBg:     isLight
+            ? 'linear-gradient(90deg,rgba(124,58,237,0.12),rgba(79,70,229,0.04))'
+            : 'linear-gradient(90deg,rgba(124,58,237,0.25),rgba(79,70,229,0.1))',
+          listItemSelBorder: isLight ? '#7c3aed' : '#a78bfa',
+          listItemIdCls:     isLight ? 'text-violet-600' : 'text-violet-400',
+          listItemKompCls:   isLight ? 'text-violet-900/40' : 'text-white/30',
+          listItemTextSel:   isLight ? 'text-violet-950' : 'text-white',
+          listItemText:      isLight ? 'text-violet-900/65' : 'text-white/60',
+          listEmptyCls:      isLight ? 'text-violet-900/35' : 'text-white/30',
+          // close btn
+          closeBg:   isLight ? 'rgba(124,58,237,0.07)' : 'rgba(255,255,255,0.05)',
+          closeCls:  isLight ? 'text-violet-600/60 hover:text-violet-700' : 'text-white/50 hover:text-white/80',
+          // right panel
+          rightBg: isLight
+            ? 'linear-gradient(160deg,#fdfcff 0%,#f7f4ff 100%)'
+            : 'linear-gradient(160deg,#0f1729 0%,#0a0f1e 100%)',
+          rightHeaderDivider: isLight ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.07)',
+          // breadcrumb
+          seksiBg:   isLight ? 'rgba(124,58,237,0.06)' : 'rgba(255,255,255,0.07)',
+          seksiBdr:  isLight ? '1px solid rgba(124,58,237,0.12)' : '1px solid rgba(255,255,255,0.1)',
+          seksiCls:  isLight ? 'text-violet-600/60' : 'text-white/40',
+          kompBg:    isLight ? 'rgba(124,58,237,0.1)'  : 'rgba(167,139,250,0.15)',
+          kompBdr:   isLight ? '1px solid rgba(124,58,237,0.2)' : '1px solid rgba(167,139,250,0.3)',
+          kompColor: isLight ? '#6d28d9' : '#c4b5fd',
+          qidCls:    isLight ? 'text-violet-400' : 'text-white/30',
+          questionCls: isLight ? 'text-violet-950' : 'text-white/90',
+          // PANRB / Standar cards
+          panrbBg:    isLight ? 'rgba(59,130,246,0.05)' : 'rgba(59,130,246,0.08)',
+          panrbBdr:   isLight ? '1px solid rgba(59,130,246,0.15)' : '1px solid rgba(59,130,246,0.2)',
+          panrbTitle: isLight ? 'text-blue-600' : 'text-blue-400',
+          panrbText:  isLight ? 'text-blue-800' : 'text-blue-200/80',
+          standarBg:  isLight ? 'rgba(245,158,11,0.05)' : 'rgba(245,158,11,0.08)',
+          standarBdr: isLight ? '1px solid rgba(245,158,11,0.15)' : '1px solid rgba(245,158,11,0.2)',
+          standarTitle: isLight ? 'text-amber-600' : 'text-amber-400',
+          standarText:  isLight ? 'text-amber-800' : 'text-amber-200/80',
+          // Score outer card
+          scoreCardBg:  isLight ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.04)',
+          scoreCardBdr: isLight ? '1px solid rgba(139,92,246,0.12)' : '1px solid rgba(255,255,255,0.09)',
+          scoreCardShd: isLight ? '0 1px 4px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.9)' : 'inset 0 1px 0 rgba(255,255,255,0.06)',
+          scoreLabelCls: isLight ? 'text-slate-400' : 'text-white/40',
+          // Score tiles
+          unitTileBg:   isLight ? 'rgba(59,130,246,0.07)'  : 'rgba(59,130,246,0.12)',
+          unitTileBdr:  isLight ? '1px solid rgba(59,130,246,0.15)' : '1px solid rgba(59,130,246,0.2)',
+          unitValCls:   isLight ? 'text-blue-700'  : 'text-blue-300',
+          tpiuTileBg:   isLight ? 'rgba(245,158,11,0.07)'  : 'rgba(245,158,11,0.12)',
+          tpiuTileBdr:  isLight ? '1px solid rgba(245,158,11,0.15)' : '1px solid rgba(245,158,11,0.2)',
+          tpiuValCls:   isLight ? 'text-amber-700' : 'text-amber-300',
+          itjenTileBg:  isLight ? 'rgba(139,92,246,0.08)'  : 'rgba(139,92,246,0.15)',
+          itjenTileBdr: isLight ? '1px solid rgba(139,92,246,0.2)'  : '1px solid rgba(139,92,246,0.3)',
+          itjenTitleCls: isLight ? 'text-violet-600' : 'text-violet-400',
+          itjenInputBg:  isLight ? 'rgba(255,255,255,0.9)' : 'rgba(139,92,246,0.2)',
+          itjenInputBdr: isLight ? '1px solid rgba(139,92,246,0.3)' : '1px solid rgba(139,92,246,0.4)',
+          itjenInputCls: isLight ? 'text-violet-800' : 'text-violet-200',
+          emptyValCls:  isLight ? 'text-slate-300' : 'text-white/25',
+          // Data Dukung
+          ddBg:     isLight ? 'rgba(20,184,166,0.05)'  : 'rgba(20,184,166,0.07)',
+          ddBdr:    isLight ? '1px solid rgba(20,184,166,0.15)' : '1px solid rgba(20,184,166,0.2)',
+          ddTitleCls: isLight ? 'text-teal-600' : 'text-teal-400',
+          ddSubCls:   isLight ? 'text-teal-600' : 'text-teal-500',
+          ddTextCls:  isLight ? 'text-teal-800' : 'text-teal-200/80',
+          ddDisbBg:   isLight ? 'rgba(0,0,0,0.04)'    : 'rgba(255,255,255,0.05)',
+          ddDisbBdr:  isLight ? 'rgba(0,0,0,0.08)'    : 'rgba(255,255,255,0.08)',
+          ddDisbColor:isLight ? 'rgba(0,0,0,0.22)'    : 'rgba(255,255,255,0.2)',
+          ddLinkCls:  isLight ? 'text-teal-300'        : 'text-teal-300/70',
+          // Catatan Unit (Narasi)
+          cuBg:    isLight ? 'rgba(59,130,246,0.04)' : 'rgba(59,130,246,0.06)',
+          cuBdr:   isLight ? '1px solid rgba(59,130,246,0.12)' : '1px solid rgba(59,130,246,0.15)',
+          cuTitle: isLight ? 'text-blue-600' : 'text-blue-400',
+          cuText:  isLight ? 'text-blue-800' : 'text-blue-200/75',
+          // Catatan TPI Unit (existing review)
+          ctuBg:    isLight ? 'rgba(245,158,11,0.04)' : 'rgba(245,158,11,0.06)',
+          ctuBdr:   isLight ? '1px solid rgba(245,158,11,0.15)' : '1px solid rgba(245,158,11,0.18)',
+          ctuTitle: isLight ? 'text-amber-600' : 'text-amber-400',
+          ctuText:  isLight ? 'text-amber-800' : 'text-amber-200/75',
+          // Catatan Itjen
+          ciCardBg:   isLight ? 'rgba(139,92,246,0.04)' : 'rgba(139,92,246,0.08)',
+          ciCardBdr:  isLight ? '1px solid rgba(139,92,246,0.15)' : '1px solid rgba(139,92,246,0.25)',
+          ciTitle:    isLight ? 'text-violet-600' : 'text-violet-400',
+          ciTaBg:     isLight ? 'rgba(255,255,255,0.9)' : 'rgba(139,92,246,0.12)',
+          ciTaBdr:    isLight ? '1px solid rgba(139,92,246,0.2)' : '1px solid rgba(139,92,246,0.3)',
+          ciTaCls:    isLight ? 'text-violet-900 placeholder-violet-900/30' : 'text-violet-100 placeholder-white/20',
+          // Catatan Visa
+          cvCardBg:   isLight ? 'rgba(16,185,129,0.04)' : 'rgba(16,185,129,0.07)',
+          cvCardBdr:  isLight ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(16,185,129,0.22)',
+          cvTitle:    isLight ? 'text-emerald-600' : 'text-emerald-400',
+          cvInnerBg:  isLight ? 'rgba(16,185,129,0.05)'  : 'rgba(16,185,129,0.08)',
+          cvInnerBdr: isLight ? '1px solid rgba(16,185,129,0.12)' : '1px solid rgba(16,185,129,0.2)',
+          cvText:     isLight ? 'text-emerald-800' : 'text-emerald-200/80',
+          cvEmptyCls: isLight ? 'text-slate-300'   : 'text-white/25',
+          // Scrollbar
+          scrollThumb:      isLight ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.14)',
+          scrollThumbHover: isLight ? 'rgba(124,58,237,0.4)'  : 'rgba(255,255,255,0.28)',
+          // Empty state
+          emptyIconBg:  isLight ? 'rgba(124,58,237,0.08)'  : 'rgba(139,92,246,0.1)',
+          emptyIconBdr: isLight ? '1px solid rgba(124,58,237,0.15)' : '1px solid rgba(139,92,246,0.2)',
+          emptyTitleCls:  isLight ? 'text-violet-900/60' : 'text-white/60',
+          emptyBodyCls:   isLight ? 'text-violet-900/35' : 'text-white/30',
+        }
+
+        return (
+        <div className={`fixed inset-0 z-50 flex ${t.overlayClass}`}>
+          <style>{`
+            .review-scroll { scrollbar-width: thin; scrollbar-color: ${t.scrollThumb} transparent; }
+            .review-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+            .review-scroll::-webkit-scrollbar-track { background: transparent; }
+            .review-scroll::-webkit-scrollbar-thumb { background-color: ${t.scrollThumb}; border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+            .review-scroll::-webkit-scrollbar-thumb:hover { background-color: ${t.scrollThumbHover}; }
+            .review-scroll::-webkit-scrollbar-corner { background: transparent; }
+          `}</style>
+
+          {/* ── Left sidebar: kriteria navigator ── */}
+          <div className="w-[22rem] flex-shrink-0 flex flex-col overflow-hidden"
+            style={{ background: t.sidebarBg }}>
+
+            {/* Sidebar header */}
+            <div className="px-4 pt-5 pb-4 shrink-0"
+              style={{ borderBottom: `1px solid ${t.sidebarDivider}` }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 0 12px rgba(124,58,237,0.5)' }}>
+                    <MessageSquareDiff size={14} className="text-white" />
+                  </div>
+                  <p className="text-sm font-bold" style={{ color: t.sidebarTitle }}>Panel Review</p>
+                </div>
+                {/* Theme toggle */}
+                <button
+                  type="button"
+                  onClick={() => setReviewTheme(isLight ? 'dark' : 'light')}
+                  title={isLight ? 'Ganti ke mode gelap' : 'Ganti ke mode terang'}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                  style={{
+                    background: isLight ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.1)',
+                    border: `1px solid ${isLight ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.12)'}`,
+                  }}
+                >
+                  {isLight
+                    ? <Moon size={13} style={{ color: '#6d28d9' }} />
+                    : <Sun  size={13} className="text-amber-300" />}
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="rounded-xl px-3 py-2.5"
+                style={{ background: t.progressCardBg, border: t.progressCardBorder }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`text-[10px] font-medium uppercase tracking-wider ${t.progressLabelCls}`}>Progress Review</span>
+                  <span className={`text-[11px] font-bold tabular-nums ${t.progressCountCls(reviewedItjenCount === allReviewEntries.length && allReviewEntries.length > 0)}`}>
+                    {reviewedItjenCount}/{allReviewEntries.length}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: t.progressTrackBg }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: allReviewEntries.length > 0 ? `${Math.round((reviewedItjenCount / allReviewEntries.length) * 100)}%` : '0%',
+                      background: reviewedItjenCount === allReviewEntries.length && allReviewEntries.length > 0
+                        ? 'linear-gradient(90deg,#10b981,#34d399)'
+                        : 'linear-gradient(90deg,#7c3aed,#a78bfa)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Search bar */}
+              <div className="mt-3 relative">
+                <Search size={12} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${t.searchIconCls}`} />
+                <input
+                  type="text"
+                  value={reviewSearch}
+                  onChange={(e) => setReviewSearch(e.target.value)}
+                  placeholder="Cari ID atau nama kriteria..."
+                  className={`w-full pl-7 pr-3 py-2 text-[11px] rounded-lg focus:outline-none ${t.searchCls}`}
+                  style={{ background: t.searchBg, border: `1px solid ${t.searchBorder}` }}
+                />
+                {reviewSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setReviewSearch('')}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 ${t.searchIconCls} hover:opacity-80`}
+                  >
+                    <X size={11} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Kriteria list */}
+            <div className="review-scroll overflow-auto flex-1 py-1">
+              {filteredReviewEntries.map(({ entry, komponen }) => {
+                const qid        = entry.kriteria.question_id
+                const vals       = localData[qid] ?? defaultLocal()
+                const isReviewed = hasText(vals.jawaban_tpi_itjen) && hasText(vals.catatan_tpi_itjen)
+                const hasScore   = hasText(vals.jawaban_tpi_itjen)
+                const isSelected = reviewQid === qid
+                return (
+                  <button
+                    key={qid}
+                    type="button"
+                    onClick={() => setReviewQid(qid)}
+                    className="w-full flex items-start gap-2.5 px-3.5 py-2.5 text-left transition-all"
+                    style={isSelected
+                      ? { background: t.listItemSelBg, borderLeft: `2px solid ${t.listItemSelBorder}` }
+                      : { borderLeft: '2px solid transparent' }
+                    }
+                  >
+                    <span className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      isReviewed ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]'
+                      : hasScore  ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]'
+                      : isLight   ? 'bg-violet-300' : 'bg-white/20'
+                    }`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className={`text-[9px] font-mono ${t.listItemIdCls}`}>{qid}</span>
+                        <span className={`text-[9px] uppercase tracking-wide truncate ${t.listItemKompCls}`}>
+                          {KOMPONEN_LABEL[komponen]?.split(' ').slice(0, 2).join(' ') ?? komponen}
+                        </span>
+                      </div>
+                      <p className={`text-[11px] leading-snug line-clamp-2 ${isSelected ? t.listItemTextSel : t.listItemText}`}>
+                        {entry.kriteria.pertanyaan || '—'}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+              {filteredReviewEntries.length === 0 && (
+                <p className={`px-4 py-8 text-center text-xs ${t.listEmptyCls}`}>
+                  {reviewSearch ? 'Tidak ada kriteria yang cocok.' : 'Belum ada kriteria.'}
+                </p>
+              )}
+            </div>
+
+            {/* Close button at bottom */}
+            <div className="p-3 shrink-0" style={{ borderTop: `1px solid ${t.sidebarDivider}` }}>
+              <button
+                type="button"
+                onClick={() => setReviewModalOpen(false)}
+                className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors ${t.closeCls}`}
+                style={{ background: t.closeBg }}
+              >
+                <X size={13} />
+                Tutup Panel
+              </button>
+            </div>
+          </div>
+
+          {/* ── Right: detail panel ── */}
+          <div className="flex-1 flex flex-col overflow-hidden"
+            style={{ background: t.rightBg }}>
+
+            {selectedReviewEntry ? (() => {
+              const { entry, komponen, seksi } = selectedReviewEntry
+              const { kriteria, jawaban }       = entry
+              const qid                         = kriteria.question_id
+              const vals                         = localData[qid] ?? defaultLocal()
+              const visaComment                  = visaComments[qid] ?? getVisaCatatan(jawaban?.ai_result)
+              const isVisaLoading                = visaLoading.has(qid)
+              const isSheetLoading               = addToSheetQidLoading.has(qid)
+              const sheetResult                  = addToSheetQidResult[qid]
+              const isReviewed                   = hasText(vals.jawaban_tpi_itjen) && hasText(vals.catatan_tpi_itjen)
+
+              return (
+                <>
+                  {/* Detail header */}
+                  <div className="px-6 pt-5 pb-4 shrink-0"
+                    style={{ borderBottom: `1px solid ${t.rightHeaderDivider}` }}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${t.seksiCls}`}
+                            style={{ background: t.seksiBg, border: t.seksiBdr }}>
+                            {seksi}
+                          </span>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
+                            style={{ background: t.kompBg, border: t.kompBdr, color: t.kompColor }}>
+                            {KOMPONEN_LABEL[komponen] ?? komponen}
+                          </span>
+                          <span className={`text-[9px] font-mono ${t.qidCls}`}>#{qid}</span>
+                          {isReviewed && (
+                            <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', color: '#6ee7b7' }}>
+                              <CheckCircle2 size={9} /> Sudah Review Itjen
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-sm font-medium leading-relaxed ${t.questionCls}`}>{kriteria.pertanyaan || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scrollable content */}
+                  <div className="review-scroll flex-1 overflow-auto px-6 py-5 space-y-4">
+
+                    {/* Row 1: Kriteria PANRB + Standarisasi Data */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl p-4" style={{ background: t.panrbBg, border: t.panrbBdr }}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#60a5fa,#3b82f6)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.panrbTitle}`}>Kriteria PANRB</p>
+                        </div>
+                        <p className={`text-xs leading-relaxed whitespace-pre-wrap ${t.panrbText}`}>
+                          {kriteria.kriteria_panrb || <span className={`italic ${t.emptyValCls}`}>Tidak tersedia</span>}
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{ background: t.standarBg, border: t.standarBdr }}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#fbbf24,#f59e0b)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.standarTitle}`}>Standarisasi Data</p>
+                        </div>
+                        <p className={`text-xs leading-relaxed whitespace-pre-wrap ${t.standarText}`}>
+                          {kriteria.standar_dokumen || <span className={`italic ${t.emptyValCls}`}>Tidak tersedia</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Score — full width, 3 large tiles */}
+                    <div className="rounded-xl p-4" style={{ background: t.scoreCardBg, border: t.scoreCardBdr, boxShadow: t.scoreCardShd }}>
+                      <p className={`text-[9px] font-bold uppercase tracking-widest mb-3 ${t.scoreLabelCls}`}>Score</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* UNIT tile */}
+                        <div className="rounded-xl py-5 px-4 flex flex-col items-center justify-between gap-3" style={{ background: t.unitTileBg, border: t.unitTileBdr }}>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <p className="text-[9px] text-blue-500 font-bold uppercase tracking-widest">Unit</p>
+                          </div>
+                          <p className={`text-4xl font-black font-mono leading-none ${t.unitValCls}`}>
+                            {vals.jawaban_unit || <span className={`text-2xl font-normal ${t.emptyValCls}`}>—</span>}
+                          </p>
+                          <p className={`text-[9px] ${t.emptyValCls}`}>Jawaban dari unit</p>
+                        </div>
+
+                        {/* TPI UNIT tile */}
+                        <div className="rounded-xl py-5 px-4 flex flex-col items-center justify-between gap-3" style={{ background: t.tpiuTileBg, border: t.tpiuTileBdr }}>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            <p className="text-[9px] text-amber-500 font-bold uppercase tracking-widest">TPI Unit</p>
+                          </div>
+                          <p className={`text-4xl font-black font-mono leading-none ${t.tpiuValCls}`}>
+                            {vals.jawaban_tpi_unit || <span className={`text-2xl font-normal ${t.emptyValCls}`}>—</span>}
+                          </p>
+                          {vals.jawaban_unit && vals.jawaban_tpi_unit ? (
+                            vals.jawaban_unit === vals.jawaban_tpi_unit
+                              ? <p className="text-[9px] font-medium text-emerald-500">= Sama dengan Unit</p>
+                              : <p className="text-[9px] font-medium text-rose-500">≠ Beda dengan Unit</p>
+                          ) : (
+                            <p className={`text-[9px] ${t.emptyValCls}`}>Review TPI Unit</p>
+                          )}
+                        </div>
+
+                        {/* TPI ITJEN tile — clickable, same look as Unit/TPI Unit */}
+                        <div
+                          className={`relative rounded-xl py-5 px-4 flex flex-col items-center justify-between gap-3 transition ${canEditTpiItjen ? 'hover:brightness-110' : ''}`}
+                          style={{ background: t.itjenTileBg, border: t.itjenTileBdr }}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                            <p className={`text-[9px] font-bold uppercase tracking-widest ${t.itjenTitleCls}`}>TPI Itjen</p>
+                          </div>
+
+                          {['ya_tidak', 'abc', 'abcd', 'abcde'].includes(kriteria.answer_type) ? (
+                            <>
+                              <p className={`text-4xl font-black font-mono leading-none ${t.itjenTitleCls}`}>
+                                {vals.jawaban_tpi_itjen || <span className={`text-2xl font-normal ${t.emptyValCls}`}>—</span>}
+                              </p>
+                              {canEditTpiItjen && (
+                                <select
+                                  value={vals.jawaban_tpi_itjen}
+                                  onChange={(e) => handleChange(qid, 'jawaban_tpi_itjen', e.target.value)}
+                                  aria-label="Pilih jawaban TPI Itjen"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                >
+                                  <option value="">—</option>
+                                  {(ANSWER_OPTIONS[kriteria.answer_type as keyof typeof ANSWER_OPTIONS] ?? []).map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </>
+                          ) : (
+                            <input
+                              type={['persen', 'nilai_04', 'jumlah'].includes(kriteria.answer_type) ? 'number' : 'text'}
+                              value={vals.jawaban_tpi_itjen}
+                              onChange={(e) => handleChange(qid, 'jawaban_tpi_itjen', e.target.value)}
+                              disabled={!canEditTpiItjen}
+                              placeholder="—"
+                              className={`w-full bg-transparent border-0 p-0 text-4xl font-black font-mono leading-none text-center focus:outline-none focus:ring-2 focus:ring-violet-400/40 rounded-md disabled:opacity-50 ${t.itjenTitleCls}`}
+                            />
+                          )}
+
+                          {vals.jawaban_tpi_unit && vals.jawaban_tpi_itjen ? (
+                            vals.jawaban_tpi_unit === vals.jawaban_tpi_itjen
+                              ? <p className="text-[9px] font-medium text-emerald-500 relative pointer-events-none">= Setuju TPI Unit</p>
+                              : <p className="text-[9px] font-medium text-rose-500 relative pointer-events-none">≠ Beda dari TPI Unit</p>
+                          ) : (
+                            <p className={`text-[9px] relative pointer-events-none ${canEditTpiItjen ? 'text-violet-400' : t.emptyValCls}`}>
+                              {canEditTpiItjen ? 'Klik untuk pilih' : 'Read-only'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2b: Data Dukung Unit — full width */}
+                    <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: t.ddBg, border: t.ddBdr }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#5eead4,#14b8a6)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.ddTitleCls}`}>Data Dukung Unit</p>
+                        </div>
+                        {vals.link_drive ? (
+                          <a
+                            href={vals.link_drive}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97]"
+                            style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', boxShadow: '0 0 14px rgba(20,184,166,0.4),inset 0 1px 0 rgba(255,255,255,0.15)' }}
+                          >
+                            <ExternalLink size={11} />
+                            Buka Drive
+                          </a>
+                        ) : (
+                          <button type="button" disabled
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-not-allowed"
+                            style={{ background: t.ddDisbBg, border: `1px solid ${t.ddDisbBdr}`, color: t.ddDisbColor }}>
+                            <ExternalLink size={11} />
+                            Buka Drive
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className={`text-[9px] font-medium mb-1 uppercase tracking-wide ${t.ddSubCls}`}>Bukti</p>
+                          <p className={`text-xs leading-relaxed whitespace-pre-wrap break-words ${t.ddTextCls}`}>
+                            {vals.bukti || <span className={`italic ${t.emptyValCls}`}>Unit tidak melampirkan bukti</span>}
+                          </p>
+                        </div>
+                        {vals.link_drive && (
+                          <div>
+                            <p className={`text-[9px] font-medium mb-0.5 uppercase tracking-wide ${t.ddSubCls}`}>Link</p>
+                            <p className={`text-[10px] break-all leading-relaxed ${t.ddLinkCls}`}>{vals.link_drive}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Catatan Unit (Narasi) + Catatan TPI Unit (read-only context) */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl p-4" style={{ background: t.cuBg, border: t.cuBdr }}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#93c5fd,#3b82f6)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.cuTitle}`}>Catatan Unit (Narasi)</p>
+                        </div>
+                        <p className={`text-xs leading-relaxed whitespace-pre-wrap ${t.cuText}`}>
+                          {vals.narasi || <span className={`italic ${t.emptyValCls}`}>Unit tidak memberikan narasi</span>}
+                        </p>
+                      </div>
+                      <div className="rounded-xl p-4" style={{ background: t.ctuBg, border: t.ctuBdr }}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#fcd34d,#f59e0b)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.ctuTitle}`}>Catatan TPI Unit</p>
+                        </div>
+                        <p className={`text-xs leading-relaxed whitespace-pre-wrap ${t.ctuText}`}>
+                          {vals.catatan_tpi_unit || <span className={`italic ${t.emptyValCls}`}>TPI Unit belum memberikan catatan review</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Row 4: Catatan Itjen + Catatan Visa */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Catatan Itjen */}
+                      <div className="rounded-xl p-4 flex flex-col" style={{ background: t.ciCardBg, border: t.ciCardBdr }}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#c4b5fd,#8b5cf6)' }} />
+                          <p className={`text-[9px] font-bold uppercase tracking-widest ${t.ciTitle}`}>Catatan Itjen</p>
+                        </div>
+                        <textarea
+                          value={vals.catatan_tpi_itjen}
+                          onChange={(e) => handleChange(qid, 'catatan_tpi_itjen', e.target.value)}
+                          disabled={!canEditTpiItjen}
+                          placeholder="Tulis catatan review TPI Itjen di sini..."
+                          rows={6}
+                          className={`flex-1 w-full px-3 py-2.5 text-xs rounded-lg resize-none focus:outline-none disabled:opacity-50 leading-relaxed ${t.ciTaCls}`}
+                          style={{ background: t.ciTaBg, border: t.ciTaBdr }}
+                        />
+                      </div>
+
+                      {/* Catatan Visa */}
+                      <div className="rounded-xl p-4 flex flex-col" style={{ background: t.cvCardBg, border: t.cvCardBdr }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-3 rounded-full" style={{ background: 'linear-gradient(180deg,#6ee7b7,#10b981)' }} />
+                            <p className={`text-[9px] font-bold uppercase tracking-widest ${t.cvTitle}`}>Catatan Visa</p>
+                          </div>
+                          {isVisaLoading && (
+                            <span className="flex items-center gap-1 text-[9px] text-emerald-500">
+                              <Loader2 size={9} className="animate-spin" /> Generating...
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className={`flex-1 rounded-lg px-3 py-2.5 overflow-auto ${isVisaLoading ? 'animate-pulse' : ''}`}
+                          style={{ background: t.cvInnerBg, border: t.cvInnerBdr, minHeight: '120px' }}
+                        >
+                          <p className={`text-xs leading-relaxed whitespace-pre-wrap ${t.cvText}`}>
+                            {visaComment || (
+                              <span className={`italic ${t.cvEmptyCls}`}>
+                                Belum ada catatan visa. Klik &quot;Tanya Visa&quot; untuk generate otomatis menggunakan AI.
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 5: Action bar */}
+                    <div className="flex items-center gap-3 pt-1 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTanyaVisa(qid)}
+                        disabled={isVisaLoading}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 0 20px rgba(16,185,129,0.35),inset 0 1px 0 rgba(255,255,255,0.15)' }}
+                      >
+                        {isVisaLoading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                        Tanya Visa
+                      </button>
+                      {canEditTpiItjen && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddToSheetSingle(qid)}
+                          disabled={isSheetLoading}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{ background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', boxShadow: '0 0 20px rgba(124,58,237,0.4),inset 0 1px 0 rgba(255,255,255,0.15)' }}
+                        >
+                          {isSheetLoading ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />}
+                          Add to Sheet
+                        </button>
+                      )}
+                      {sheetResult === 'ok' && (
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+                          <CheckCircle2 size={13} /> Berhasil ditulis ke Sheet
+                        </span>
+                      )}
+                      {sheetResult === 'error' && (
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-rose-500">
+                          <XCircle size={13} /> Gagal menulis ke Sheet
+                        </span>
+                      )}
+                    </div>
+
+                  </div>
+                </>
+              )
+            })() : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: t.emptyIconBg, border: t.emptyIconBdr }}>
+                  <MessageSquareDiff size={28} className="text-violet-500" />
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold mb-1 ${t.emptyTitleCls}`}>Pilih Kriteria</p>
+                  <p className={`text-xs ${t.emptyBodyCls}`}>Pilih kriteria di panel kiri untuk mulai mengisi review TPI Itjen.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        )
+      })()}
     </div>
   )
 }
