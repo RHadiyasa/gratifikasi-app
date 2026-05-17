@@ -21,13 +21,18 @@ const ElearningParticipantSchema = new mongoose.Schema({
   unit_eselon_i: {
     type: String,
   },
-  // Bidang tambahan: batch
   batch: {
     type: String,
+    index: true,
+  },
+  tahun: {
+    type: Number,
+    index: true,
   },
   statusCourse: {
     type: String,
-    enum: ["Belum", "Sudah"],
+    enum: ["Belum", "Sudah", "Diverifikasi"],
+    default: "Belum",
   },
   s3_key: {
     type: String,
@@ -36,7 +41,18 @@ const ElearningParticipantSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  // Bidang tambahan: timestamp (opsional, tetapi baik untuk tracking)
+  verified_at: {
+    type: Date,
+    default: null,
+  },
+  verified_by: {
+    type: String,
+    default: null,
+  },
+  verify_note: {
+    type: String,
+    default: "",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

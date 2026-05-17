@@ -61,6 +61,27 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith("/dashboard/elearning/settings")) {
+    if (!hasPermission(role, "elearning:settings:manage")) {
+      return redirectToRoleHome(request, role);
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/dashboard/elearning/participants")) {
+    if (!hasPermission(role, "elearning:participants:manage")) {
+      return redirectToRoleHome(request, role);
+    }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/dashboard/elearning")) {
+    if (!hasPermission(role, "dashboard:elearning")) {
+      return redirectToRoleHome(request, role);
+    }
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/dashboard/zi")) {
     if (!hasPermission(role, "dashboard:zi")) {
       return redirectToRoleHome(request, role);

@@ -13,7 +13,9 @@
       "Bash(npx eslint *)",
       "Bash(cat .prettierrc)",
       "Bash(cat prettier.config.js)",
-      "Bash(cat prettier.config.mjs)"
+      "Bash(cat prettier.config.mjs)",
+      "Bash(npx --no-install tsc --noEmit)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

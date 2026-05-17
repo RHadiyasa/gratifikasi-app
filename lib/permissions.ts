@@ -73,6 +73,8 @@ const PERMISSIONS = {
   // E-learning
   "elearning:track": ["developer", "admin", "admin_elearning", "upg"],
   "elearning:participants": ["developer", "admin", "admin_elearning", "upg"],
+  "elearning:settings:manage": ["developer", "admin", "admin_elearning"],
+  "elearning:participants:manage": ["developer", "admin", "admin_elearning"],
 
   // Zona Integritas
   "zi:access": ["developer", "admin", "admin_zi", "tpi_kesdm", "tpi_unit", "unit_zi", "zi"],
@@ -111,7 +113,7 @@ export function getDashboardHref(role: string | null | undefined): string {
   if (hasPermission(role, "dashboard:admin")) return "/dashboard";
   if (hasPermission(role, "dashboard:zi")) return "/dashboard/zi";
   if (hasPermission(role, "dashboard:gratifikasi")) return "/dashboard/upg";
-  if (hasPermission(role, "dashboard:elearning")) return "/e-learning/tracker";
+  if (hasPermission(role, "dashboard:elearning")) return "/dashboard/elearning";
   return "/login";
 }
 

@@ -12,6 +12,9 @@ const s3Client = new S3Client({
   },
 });
 
+const ALLOWED_TYPES = ["application/pdf"];
+const ALLOWED_EXTENSIONS = ["pdf"];
+
 export async function POST(req) {
   try {
     const { filename, filetype, unit, name } = await req.json();
@@ -23,20 +26,35 @@ export async function POST(req) {
       );
     }
 
-    const bucketName = process.env.AWS_S3_BUCKET_NAME;
+    if (!ALLOWED_TYPES.includes(filetype)) {
+      return NextResponse.json(
+        { error: "Tipe file tidak didukung. Hanya PDF yang diperbolehkan." },
+        { status: 400 }
+      );
+    }
 
-    // Buat nama file yang unik dan terstruktur
-    // Format: sertifikat/NAMA_UNIT/NAMA_PESERTA-UUID.pdf
-    const safeUnit = unit.replace(/[^a-zA-Z0-9]/g, "_");
-    const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
-    const uniqueID = randomUUID().split("-")[0]; // ID unik singkat
-    const fileExtension = filename.split(".").pop();
-    
-    // Ini akan menjadi path file di S3
+    const fileExtension = (filename.split(".").pop() || "").toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+      return NextResponse.json(
+        { error: "Ekstensi file tidak didukung. Hanya .pdf yang diperbolehkan." },
+        { status: 400 }
+      );
+    }
+
+    const bucketName = process.env.AWS_S3_BUCKET_NAME;
+    if (!bucketName) {
+      return NextResponse.json(
+        { error: "AWS_S3_BUCKET_NAME belum dikonfigurasi di server." },
+        { status: 500 }
+      );
+    }
+
+    const safeUnit = unit.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60);
+    const safeName = name.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60);
+    const uniqueID = randomUUID().split("-")[0];
+
     const key = `sertifikat/${safeUnit}/${safeName}-${uniqueID}.${fileExtension}`;
 
-
-    // Buat command untuk S3
     const putObjectCommand = new PutObjectCommand({
       Bucket: bucketName,
       Key: key,

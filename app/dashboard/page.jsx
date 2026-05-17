@@ -105,7 +105,7 @@ export default function DashboardPage() {
 
             {/* E-Learning */}
             <button
-              onClick={() => router.push("/e-learning/tracker")}
+              onClick={() => router.push("/dashboard/elearning")}
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
             >
               <div className="flex items-center gap-3">
