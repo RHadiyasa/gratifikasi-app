@@ -1006,6 +1006,48 @@ File `.jsx` lolos karena `allowJs` tidak strict-check JSX children.
 
 ---
 
+### Error 3 (Build berikutnya): jsx-a11y/no-static-element-interactions
+
+**File:** [app/dashboard/elearning/participants/import/page.tsx](app/dashboard/elearning/participants/import/page.tsx) line 201
+
+```
+Error: Avoid non-native interactive elements...
+```
+
+Drop-zone pakai `<div onClick={...}>` — jsx-a11y rule menolak non-native
+interactive elements di file `.tsx`. Rule ini tidak set explicit di config,
+jadi inherit dari `plugin:jsx-a11y/recommended` sebagai **error** (bukan warn).
+
+**Fix:**
+1. Ganti `<div>` → `<button type="button">` — native interactive element,
+   keyboard accessible by default
+2. Pindah `<input type="file">` keluar dari `<button>` karena HTML tidak
+   boleh ada interactive element nested di button
+
+```tsx
+<button
+  type="button"
+  onClick={...}
+  onDragOver={...}
+  onDragLeave={...}
+  onDrop={...}
+  className="w-full ... text-left"
+>
+  {/* content */}
+</button>
+<input ref={inputRef} type="file" className="hidden" onChange={...} />
+```
+
+`text-left` ditambahkan karena `<button>` default `text-align: center`.
+
+### Kenapa Upload Page (.jsx) Tidak Kena?
+
+eslint.config.mjs: `files: ["**/*.ts", "**/*.tsx"]` — jsx-a11y rules cuma
+jalan di file TypeScript. File `.jsx` (upload page) lolos walau pola
+divnya sama. Tidak perlu diubah.
+
+---
+
 ## ⚠️ Tindakan Penting Setelah Deploy Phase 6
 
 ### 1. Migrasi Otomatis Jalan Sendiri ✅

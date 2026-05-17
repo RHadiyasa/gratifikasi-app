@@ -198,7 +198,8 @@ export default function ImportParticipantsPage() {
           </p>
         </CardHeader>
         <CardBody>
-          <div
+          <button
+            type="button"
             onClick={() => inputRef.current?.click()}
             onDragOver={(e) => {
               e.preventDefault();
@@ -211,7 +212,7 @@ export default function ImportParticipantsPage() {
               const f = e.dataTransfer.files?.[0];
               if (f) handleFileSelect(f);
             }}
-            className={`flex flex-col items-center justify-center gap-2 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-colors ${
+            className={`w-full flex flex-col items-center justify-center gap-2 p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-colors text-left ${
               dragOver
                 ? "border-primary bg-primary/5"
                 : "border-default-200 hover:border-default-300"
@@ -235,14 +236,14 @@ export default function ImportParticipantsPage() {
                 </p>
               </>
             )}
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              className="hidden"
-              onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
-            />
-          </div>
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+          />
         </CardBody>
       </Card>
 
