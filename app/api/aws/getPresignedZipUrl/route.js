@@ -3,6 +3,8 @@ import { connect } from "@/config/dbconfig";
 import ElearningParticipant from "@/modules/models/ParticipantModel";
 import AWS from "aws-sdk";
 import JSZip from "jszip";
+import { getSessionUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -12,6 +14,17 @@ const s3 = new AWS.S3({
 
 export async function GET(request) {
   try {
+    const session = await getSessionUser();
+    if (!hasPermission(session?.role, "elearning:participants")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Anda tidak punya akses untuk mengunduh ZIP sertifikat.",
+        },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const unitName = searchParams.get("unit");
 
@@ -27,7 +40,7 @@ export async function GET(request) {
     // Ambil peserta
     const participants = await ElearningParticipant.find({
       unit_eselon_i: unitName,
-      statusCourse: "Sudah",
+      statusCourse: { $in: ["Sudah", "Diverifikasi"] },
       s3_key: { $exists: true, $ne: null },
     }).select("s3_key nama");
 
