@@ -27,8 +27,6 @@ import {
   FileSpreadsheet,
   ListChecks,
   Loader2,
-  Upload,
-  Eye,
 } from "lucide-react";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/react";
@@ -288,9 +286,14 @@ export default function DashboardElearning() {
               }}
               className="min-w-[160px]"
             >
-              <SelectItem key="all">Semua Tahun</SelectItem>
-              {(cohorts?.tahun ?? []).map((t) => (
-                <SelectItem key={String(t)}>{String(t)}</SelectItem>
+              {[
+                { k: "all", label: "Semua Tahun" },
+                ...(cohorts?.tahun ?? []).map((t) => ({
+                  k: String(t),
+                  label: String(t),
+                })),
+              ].map((opt) => (
+                <SelectItem key={opt.k}>{opt.label}</SelectItem>
               ))}
             </Select>
             <Select
@@ -301,11 +304,14 @@ export default function DashboardElearning() {
               isDisabled={selectedTahun === "all"}
               className="min-w-[160px]"
             >
-              <SelectItem key="all">Semua Batch</SelectItem>
-              {availableBatches.map((b) => (
-                <SelectItem key={b.batch}>
-                  {`Batch ${b.batch} (${b.count})`}
-                </SelectItem>
+              {[
+                { k: "all", label: "Semua Batch" },
+                ...availableBatches.map((b) => ({
+                  k: b.batch,
+                  label: `Batch ${b.batch} (${b.count})`,
+                })),
+              ].map((opt) => (
+                <SelectItem key={opt.k}>{opt.label}</SelectItem>
               ))}
             </Select>
           </div>

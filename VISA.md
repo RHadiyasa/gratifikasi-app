@@ -23,6 +23,7 @@
 | Phase 9b | Cohort Filter di Halaman Peserta | ✅ **Selesai** |
 | Phase 9c | Cohort Filter di Tracker + Fix 403 | ✅ **Selesai** |
 | Phase 9d | Tracker Streamline + Deep-link ke Participants | ✅ **Selesai** |
+| Hotfix | Vercel Build TS Errors (S3 creds + Select pattern) | ✅ **Selesai** |
 | Phase 5b–d | AI verify · Email reminder · Self-service portal | 🔜 Mini-phase tertunda |
 
 ---
@@ -941,6 +942,67 @@ Participants?unit=Inspektorat%20Jenderal&tahun=2026&batch=1
 4. Subtitle participants page menunjukkan cohort & unit yang sedang difilter
 5. Test deep-link langsung: buka URL `/e-learning/participants?unit=X&tahun=2026`
    di browser → filter otomatis ter-apply
+
+---
+
+## 🛠 Hotfix — Vercel Build Errors (SELESAI)
+
+Vercel build sebelumnya gagal saat tahap **type-check** (bukan saat compile)
+karena 2 TypeScript strict-mode errors:
+
+### Error 1: S3Client credentials type mismatch
+**File:** [app/api/elearning/participants/[id]/reset/route.ts](app/api/elearning/participants/[id]/reset/route.ts)
+
+```
+error TS2345: ... accessKeyId: string | undefined
+              ... is not assignable to type 'string'
+```
+
+`process.env.AWS_ACCESS_KEY_ID` mengembalikan `string | undefined`, tapi
+`@aws-sdk/client-s3` v3 strict-mode menuntut `string`. File `.js` lain
+(upload, download-sertif, dll) lolos karena bukan TypeScript-checked.
+
+**Fix:** Pakai fallback `?? ""`:
+```ts
+credentials: {
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
+},
+```
+
+### Error 2: HeroUI Select mixed children type
+**File:** [app/dashboard/elearning/page.tsx](app/dashboard/elearning/page.tsx)
+
+```
+error TS2322: Type 'Element[]' is not assignable to type 'CollectionElement<object>'
+```
+
+Pola mixed `<SelectItem static />` + `{array.map(...)}` produce tuple
+`[Element, Element[]]` yang HeroUI Collection API tolak di TS strict mode.
+
+**Fix:** Gabung jadi satu array literal, lalu map sekali:
+```tsx
+{[
+  { k: "all", label: "Semua Tahun" },
+  ...(cohorts?.tahun ?? []).map((t) => ({
+    k: String(t),
+    label: String(t),
+  })),
+].map((opt) => (
+  <SelectItem key={opt.k}>{opt.label}</SelectItem>
+))}
+```
+
+### Verifikasi
+
+`npx tsc --noEmit` exit 0 — no TypeScript errors. Vercel build seharusnya
+sekarang lulus.
+
+### Catatan untuk Masa Depan
+
+Kalau muncul build error TS lagi dengan pola mixed `<SelectItem static />` +
+`{array.map}` di file `.tsx`, gunakan pola **array literal + single map**.
+File `.jsx` lolos karena `allowJs` tidak strict-check JSX children.
 
 ---
 

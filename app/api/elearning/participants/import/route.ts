@@ -15,7 +15,6 @@ const REQUIRED_HEADERS = [
   "Batch",
   "Tahun",
 ] as const;
-const OPTIONAL_HEADERS = ["Jabatan"] as const;
 const NIP_REGEX = /^\d{18}$/;
 const BATCH_REGEX = /^\d{1,3}$/;
 
