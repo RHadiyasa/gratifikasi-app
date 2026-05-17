@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
 import { connect } from "@/config/dbconfig";
 import ElearningParticipant from "@/modules/models/ParticipantModel";
+import { getSessionUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 
 export async function GET(request) {
+  let unitName = "(unknown)";
   try {
-    const { searchParams } = new URL(request.url);
-    const unitName = searchParams.get("unit");
+    const session = await getSessionUser();
+    if (!hasPermission(session?.role, "elearning:participants")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Anda harus login dengan akun yang memiliki akses untuk mengakses data ini.",
+        },
+        { status: 403 }
+      );
+    }
 
-    if (!unitName) {
+    const { searchParams } = new URL(request.url);
+    unitName = searchParams.get("unit") ?? "(unknown)";
+
+    if (!unitName || unitName === "(unknown)") {
       return NextResponse.json(
         { success: false, message: "Parameter 'unit' diperlukan." },
         { status: 400 }
@@ -18,13 +33,9 @@ export async function GET(request) {
 
     const participants = await ElearningParticipant.find({
       unit_eselon_i: unitName,
-      statusCourse: "Sudah",
+      statusCourse: { $in: ["Sudah", "Diverifikasi"] },
       s3_key: { $exists: true, $ne: null },
-    }).select("s3_key nama nip unit_eselon_i");
-
-    console.log(
-      `[API] Ditemukan ${participants.length} peserta selesai untuk Unit: ${unitName}`
-    );
+    }).select("s3_key nama nip unit_eselon_i statusCourse");
 
     return NextResponse.json(
       {

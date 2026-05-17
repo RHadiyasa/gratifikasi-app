@@ -2,9 +2,34 @@
 import { downloadZipDirectly } from "@/service/aws/predesignUrl.service";
 import { Button, Progress } from "@heroui/react";
 import { ToastProvider } from "@heroui/toast";
-import { DownloadIcon, Loader2 } from "lucide-react";
+import {
+  DownloadIcon,
+  Loader2,
+  ArrowRight,
+  Users,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import React, { useState } from "react";
+
+const StatBlock = ({ icon: Icon, value, label, accent }) => (
+  <div
+    className="flex flex-col items-center gap-1 py-2 rounded-lg"
+    style={{ background: `${accent}10` }}
+  >
+    <div className="flex items-center gap-1">
+      <Icon size={11} style={{ color: accent }} />
+      <p className="text-xs font-bold tabular-nums" style={{ color: accent }}>
+        {value}
+      </p>
+    </div>
+    <p className="text-[10px] text-default-500 uppercase tracking-wide">
+      {label}
+    </p>
+  </div>
+);
 
 const UnitSummaryCard = ({
   name,
@@ -13,48 +38,91 @@ const UnitSummaryCard = ({
   total,
   percentage,
   onDownload,
-}) => (
-  <div className="p-4 rounded-xl shadow-md border border-gray-100 bg-white hover:shadow-lg transition relative">
-    <h3 className="text-lg font-bold text-gray-800 mb-2 border-b pb-1">
-      {name}
-    </h3>
+  cohort,
+}) => {
+  const params = new URLSearchParams();
+  params.set("unit", name);
+  if (cohort?.tahun && cohort.tahun !== "all") params.set("tahun", cohort.tahun);
+  if (cohort?.batch && cohort.batch !== "all") params.set("batch", cohort.batch);
+  const detailHref = `/e-learning/participants?${params.toString()}`;
+  const goodProgress = percentage > 50;
 
-    <div className="grid grid-cols-3 gap-2 text-sm">
-      <div className="text-center p-2 rounded bg-blue-50">
-        <p className="font-bold text-blue-800">{total}</p>
-        <p className="text-xs text-blue-600">Total</p>
-      </div>
-      <div className="text-center p-2 rounded bg-green-50">
-        <p className="font-bold text-green-800">{uploaded}</p>
-        <p className="text-xs text-green-600">Upload</p>
-      </div>
-      <div className="text-center p-2 rounded bg-red-50">
-        <p className="font-bold text-red-800">{notUploaded}</p>
-        <p className="text-xs text-red-600">Belum</p>
-      </div>
-    </div>
-
-    <p
-      className={`mt-3 text-center text-sm font-semibold ${
-        percentage > 50 ? "text-green-600" : "text-orange-600"
-      }`}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-4 rounded-2xl border border-default-200/60 bg-background hover:border-default-300 transition-all flex flex-col gap-3 min-w-[260px]"
     >
-      {percentage.toFixed(1)}% Selesai
-    </p>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
+          {name}
+        </h3>
+        <span
+          className={`text-xs font-black tabular-nums shrink-0 ${
+            goodProgress ? "text-emerald-500" : "text-amber-500"
+          }`}
+        >
+          {percentage.toFixed(0)}%
+        </span>
+      </div>
 
-    <Button
-      onPress={onDownload}
-      variant="bordered"
-      color="default"
-      className="flex items-center text-black justify-center gap-1 w-full mt-3 text-xs"
-    >
-      <DownloadIcon size={16} />
-      <p>Download Sertifikat ({uploaded})</p>
-    </Button>
-  </div>
-);
+      <div className="h-1.5 rounded-full bg-default-100 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className={`h-full rounded-full ${
+            goodProgress ? "bg-emerald-500" : "bg-amber-500"
+          }`}
+        />
+      </div>
 
-export const UnitSummaryCardsList = ({ unitSummary }) => {
+      <div className="grid grid-cols-3 gap-1.5">
+        <StatBlock icon={Users} value={total} label="Total" accent="#3b82f6" />
+        <StatBlock
+          icon={CheckCircle2}
+          value={uploaded}
+          label="Sudah"
+          accent="#22c55e"
+        />
+        <StatBlock
+          icon={Clock}
+          value={notUploaded}
+          label="Belum"
+          accent="#f43f5e"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <Button
+          as={Link}
+          href={detailHref}
+          variant="flat"
+          color="primary"
+          size="sm"
+          endContent={<ArrowRight size={12} />}
+          className="flex-1 text-xs"
+        >
+          Lihat Detail
+        </Button>
+        <Button
+          onPress={onDownload}
+          variant="flat"
+          color="default"
+          size="sm"
+          isIconOnly
+          className="shrink-0"
+          aria-label={`Download ${uploaded} sertifikat unit ${name}`}
+          isDisabled={uploaded === 0}
+        >
+          <DownloadIcon size={14} />
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
+export const UnitSummaryCardsList = ({ unitSummary, cohort }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [progress, setProgress] = useState(0);
@@ -64,18 +132,18 @@ export const UnitSummaryCardsList = ({ unitSummary }) => {
       setIsLoading(true);
       setProgress(0);
       setLoadingMessage(`Menyiapkan ZIP sertifikat untuk ${unitName}...`);
-      
+
       let simulatedProgress = 0;
       const interval = setInterval(() => {
-        simulatedProgress += Math.random() * 10; // naik random biar realistis
+        simulatedProgress += Math.random() * 10;
         setProgress((prev) => (prev < 95 ? simulatedProgress : prev));
       }, 500);
-      
+
       await downloadZipDirectly(unitName);
 
       clearInterval(interval);
       setProgress(100);
-      setLoadingMessage(`✅ Unduhan siap untuk ${unitName}!`); 
+      setLoadingMessage(`✅ Unduhan siap untuk ${unitName}!`);
 
       setTimeout(() => {
         setIsLoading(false);
@@ -92,9 +160,18 @@ export const UnitSummaryCardsList = ({ unitSummary }) => {
   return (
     <div className="relative">
       <ToastProvider />
-      <h2 className="text-2xl font-semibold mb-4">Monitoring Progress Unit</h2>
+      <div className="flex items-center justify-between mb-4 mt-2">
+        <div>
+          <p className="text-xs font-semibold text-default-400 uppercase tracking-widest">
+            Progres per Unit
+          </p>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">
+            Monitoring Unit Eselon I
+          </h2>
+        </div>
+      </div>
 
-      <div className="sm:flex sm:flex-wrap grid items-center justify-center gap-5 md:gap-6 p-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {unitSummary.map((unit) => (
           <UnitSummaryCard
             key={unit.name}
@@ -103,6 +180,7 @@ export const UnitSummaryCardsList = ({ unitSummary }) => {
             notUploaded={unit.notUploaded}
             total={unit.total}
             percentage={unit.percentage}
+            cohort={cohort}
             onDownload={() => handleDownloadCertificates(unit.name)}
           />
         ))}

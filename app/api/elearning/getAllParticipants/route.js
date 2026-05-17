@@ -1,28 +1,43 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 import { connect } from "@/config/dbconfig";
 import ElearningParticipant from "@/modules/models/ParticipantModel";
+import { getSessionUser } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+
+const PUBLIC_FIELDS = "_id nama unit_eselon_i batch statusCourse";
 
 export async function GET() {
   try {
+    const session = await getSessionUser();
+    const isPrivileged = hasPermission(session?.role, "elearning:participants");
+
     await connect();
 
-    const participants = await ElearningParticipant.find({});
+    const query = ElearningParticipant.find({});
+    if (!isPrivileged) {
+      query.select(PUBLIC_FIELDS);
+    }
 
-    // Menggunakan NextResponse untuk respons JSON
-    return NextResponse.json({
-      success: true,
-      count: participants.length,
-      data: participants,
-    }, { status: 200 }); // Tentukan status code di objek kedua
+    const participants = await query.lean();
 
+    return NextResponse.json(
+      {
+        success: true,
+        count: participants.length,
+        scope: isPrivileged ? "full" : "public",
+        data: participants,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching participants:", error);
-    
-    // Menggunakan NextResponse untuk respons error
-    return NextResponse.json({
-      success: false,
-      message: "Gagal mengambil data peserta dari server.",
-      error: error.message,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal mengambil data peserta dari server.",
+        error: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
