@@ -930,28 +930,23 @@ function Step3Upload({ peserta, selectedUnit, onBack, onReset }) {
     setErrorMsg("");
 
     try {
-      // 1. Get presigned URL
-      const presignRes = await axios.post("/api/upload", {
-        filename: file.name,
-        filetype: file.type,
-        unit: selectedUnit,
-        name: peserta.nama,
-      });
-      const { url, key } = presignRes.data;
-      setProgress(8);
+      // 1. Upload file ke server (server yang upload ke S3)
+      const form = new FormData();
+      form.append("file", file);
+      form.append("unit", selectedUnit);
+      form.append("name", peserta.nama);
 
-      // 2. PUT to S3 with progress tracking
-      await axios.put(url, file, {
-        headers: { "Content-Type": file.type },
+      const uploadRes = await axios.post("/api/upload", form, {
         onUploadProgress: (e) => {
           if (!e.total) return;
           const pct = Math.round((e.loaded / e.total) * 100);
-          setProgress(Math.max(8, Math.min(95, pct)));
+          setProgress(Math.max(0, Math.min(90, pct)));
         },
       });
-      setProgress(96);
+      const { key } = uploadRes.data;
+      setProgress(95);
 
-      // 3. Save status to DB
+      // 2. Simpan status ke DB
       await axios.post("/api/status", { nip: peserta.nip, s3_key: key });
       setProgress(100);
 

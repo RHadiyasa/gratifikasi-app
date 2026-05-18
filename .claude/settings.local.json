@@ -15,7 +15,13 @@
       "Bash(cat prettier.config.js)",
       "Bash(cat prettier.config.mjs)",
       "Bash(npx --no-install tsc --noEmit)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx --no-install next lint --file app/dashboard/elearning/participants/import/page.tsx)",
+      "Bash(npx --no-install next lint --dir app/dashboard/elearning --dir app/api/elearning)",
+      "Bash(npx --no-install next lint)",
+      "Bash(git show *)",
+      "PowerShell(Get-Content \"d:\\\\Kementerian ESDM\\\\Dev\\\\gratifikasi-app\\\\.env.local\" -ErrorAction SilentlyContinue | Where-Object { $_ -match \"AWS|S3\" } | ForEach-Object { \\($_ -split \"=\"\\)[0] + \"=...\" })",
+      "PowerShell(Get-Content \"d:\\\\Kementerian ESDM\\\\Dev\\\\gratifikasi-app\\\\.env.local\" | Where-Object { $_ -match \"AWS|S3\" } | ForEach-Object { \\($_ -split \"=\"\\)[0] })"
     ]
   }
 }
