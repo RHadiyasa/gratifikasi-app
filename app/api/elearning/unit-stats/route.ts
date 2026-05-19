@@ -46,7 +46,7 @@ export async function GET() {
           },
         },
       },
-      { $sort: { pct: -1, uploaded: -1, unit: 1 } },
+      { $sort: { pct: -1 as const, uploaded: -1 as const, unit: 1 as const } },
     ];
 
     const units = await ElearningParticipant.aggregate(pipeline);
