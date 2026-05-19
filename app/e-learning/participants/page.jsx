@@ -678,62 +678,64 @@ function ParticipantList() {
         </div>
       )}
 
-      {/* ── Cohort Master Filter ─────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.03 }}
-        className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4"
-      >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <CalendarRange size={16} className="text-primary" />
+      {/* ── Cohort Master Filter (privileged only) ───────────────── */}
+      {isPrivileged && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.03 }}
+          className="rounded-2xl border border-primary/20 bg-primary/[0.03] p-4"
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <CalendarRange size={16} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-widest mb-0.5">
+                  Cohort Aktif
+                </p>
+                <p className="text-xs text-default-500 leading-relaxed">
+                  Pilih tahun & batch yang ingin ditampilkan. Filter lain
+                  (Status, Unit) bekerja dalam scope cohort ini.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold text-primary uppercase tracking-widest mb-0.5">
-                Cohort Aktif
-              </p>
-              <p className="text-xs text-default-500 leading-relaxed">
-                Pilih tahun & batch yang ingin ditampilkan. Filter lain
-                (Status, Unit) bekerja dalam scope cohort ini.
-              </p>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Select
+                label="Tahun"
+                size="sm"
+                selectedKeys={[selectedTahun]}
+                onChange={(e) => {
+                  setSelectedTahun(e.target.value || "all");
+                  setSelectedBatch("all");
+                }}
+                variant="bordered"
+                className="min-w-[140px]"
+              >
+                <SelectItem key="all">Semua Tahun</SelectItem>
+                {(cohorts?.tahun ?? []).map((t) => (
+                  <SelectItem key={String(t)}>{String(t)}</SelectItem>
+                ))}
+              </Select>
+              <Select
+                label="Batch"
+                size="sm"
+                selectedKeys={[selectedBatch]}
+                onChange={(e) => setSelectedBatch(e.target.value || "all")}
+                isDisabled={selectedTahun === "all"}
+                variant="bordered"
+                className="min-w-[160px]"
+              >
+                <SelectItem key="all">Semua Batch</SelectItem>
+                {availableBatches.map((b) => (
+                  <SelectItem key={b.batch}>{`Batch ${b.batch} (${b.count})`}</SelectItem>
+                ))}
+              </Select>
             </div>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <Select
-              label="Tahun"
-              size="sm"
-              selectedKeys={[selectedTahun]}
-              onChange={(e) => {
-                setSelectedTahun(e.target.value || "all");
-                setSelectedBatch("all");
-              }}
-              variant="bordered"
-              className="min-w-[140px]"
-            >
-              <SelectItem key="all">Semua Tahun</SelectItem>
-              {(cohorts?.tahun ?? []).map((t) => (
-                <SelectItem key={String(t)}>{String(t)}</SelectItem>
-              ))}
-            </Select>
-            <Select
-              label="Batch"
-              size="sm"
-              selectedKeys={[selectedBatch]}
-              onChange={(e) => setSelectedBatch(e.target.value || "all")}
-              isDisabled={selectedTahun === "all"}
-              variant="bordered"
-              className="min-w-[160px]"
-            >
-              <SelectItem key="all">Semua Batch</SelectItem>
-              {availableBatches.map((b) => (
-                <SelectItem key={b.batch}>{`Batch ${b.batch} (${b.count})`}</SelectItem>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* ── Filter & Search Card ──────────────────────────────────── */}
       <motion.div
