@@ -31,6 +31,7 @@ import {
   Eye,
   Heart,
   ExternalLink,
+  Users,
 } from "lucide-react";
 
 // ── Animated counter ───────────────────────────────────────────────────────
@@ -186,12 +187,86 @@ const fadeUp = {
   visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.5, ease: "easeOut" } }),
 };
 
+// ── Unit Progress Card ─────────────────────────────────────────────────────
+
+type UnitStat = { unit: string; total: number; uploaded: number; pct: number };
+
+function UnitProgressCard({ stat, rank, index }: { stat: UnitStat; rank: number; index: number }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(barRef, { once: true });
+
+  const barColor =
+    stat.pct === 100 ? "bg-emerald-500"
+    : stat.pct >= 67  ? "bg-primary"
+    : stat.pct >= 34  ? "bg-amber-500"
+    : "bg-red-400";
+
+  const pctColor =
+    stat.pct === 100 ? "text-emerald-500"
+    : stat.pct >= 67  ? "text-primary"
+    : stat.pct >= 34  ? "text-amber-500"
+    : "text-red-500";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.05, duration: 0.4 }}
+      className="rounded-2xl border border-default-200/60 bg-background p-4 hover:border-default-300 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start gap-2 min-w-0">
+          <span className="text-[11px] font-bold text-default-400 mt-0.5 shrink-0 w-5 tabular-nums">
+            #{rank}
+          </span>
+          <p className="text-sm font-semibold leading-snug line-clamp-2">{stat.unit}</p>
+        </div>
+        <span className={`text-base font-black tabular-nums shrink-0 ${pctColor}`}>
+          {stat.pct}%
+        </span>
+      </div>
+
+      <div ref={barRef} className="h-2 rounded-full bg-default-100 overflow-hidden mb-2.5">
+        <motion.div
+          className={`h-full rounded-full ${barColor}`}
+          initial={{ width: "0%" }}
+          animate={inView ? { width: `${stat.pct}%` } : { width: "0%" }}
+          transition={{ duration: 0.9, ease: "easeOut", delay: 0.1 + index * 0.05 }}
+        />
+      </div>
+
+      <p className="text-xs text-default-500">
+        <span className="font-semibold text-foreground">{stat.uploaded}</span>
+        {" dari "}
+        <span className="font-semibold text-foreground">{stat.total}</span>
+        {" peserta sudah upload"}
+      </p>
+    </motion.div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function ELearningPage() {
   const { isLoggedIn, role } = useAuthStore();
   const canTrack = isLoggedIn && hasPermission(role, "elearning:track");
   const [activeTab, setActiveTab] = useState<"steps" | "issues">("steps");
+
+  const [unitStats, setUnitStats] = useState<UnitStat[]>([]);
+  const [activeCohort, setActiveCohort] = useState<{ tahun: number; batch: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/elearning/unit-stats")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) {
+          setUnitStats(json.units ?? []);
+          setActiveCohort(json.activeCohort ?? null);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -288,6 +363,48 @@ export default function ELearningPage() {
           </motion.div>
         </motion.div>
       </section>
+
+      {/* ── Unit Progress ────────────────────────────────────────────────── */}
+      {unitStats.length > 0 && (
+        <section className="px-6 py-20 border-t border-default-100">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+              className="text-center mb-12"
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3 flex items-center justify-center gap-1.5">
+                <Users size={11} />
+                {activeCohort ? `Batch ${activeCohort.batch} · ${activeCohort.tahun}` : "Cohort Aktif"}
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Progres Upload Sertifikat</h2>
+              <p className="text-default-500 max-w-xl mx-auto leading-relaxed">
+                Ringkasan progres per unit Eselon I, diurutkan dari yang tertinggi.
+              </p>
+            </motion.div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              {unitStats.map((stat, i) => (
+                <UnitProgressCard key={stat.unit} stat={stat} rank={i + 1} index={i} />
+              ))}
+            </div>
+
+            <motion.div
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
+              className="mt-8 text-center"
+            >
+              <Button
+                as={Link}
+                href="/e-learning/participants"
+                variant="bordered"
+                endContent={<ArrowRight size={14} />}
+                className="font-semibold"
+              >
+                Lihat Detail Peserta
+              </Button>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* ── Why Report ────────────────────────────────────────────────────── */}
       <section className="px-6 py-20 border-t border-default-100">
