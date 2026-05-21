@@ -46,6 +46,7 @@ import {
   X,
   AlertTriangle,
   CalendarRange,
+  Pencil,
 } from "lucide-react";
 import { ParticipantsSkeleton } from "./_components/ParticipantsSkeleton";
 import { getAllParticipants } from "@/service/peserta.service";
@@ -229,6 +230,13 @@ function ParticipantList() {
   // Reset confirmation modal
   const resetModal = useDisclosure();
   const [pendingReset, setPendingReset] = useState(null);
+
+  // Edit participant modal
+  const editModal = useDisclosure();
+  const [editingParticipant, setEditingParticipant] = useState(null);
+  const [editForm, setEditForm] = useState({ nama: "", nip: "", jabatan: "", unit_eselon_i: "", unit_eselon_ii: "" });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -495,6 +503,48 @@ function ParticipantList() {
     } finally {
       setResettingId(null);
       setPendingReset(null);
+    }
+  };
+
+  const handleOpenEdit = (p) => {
+    setEditingParticipant(p);
+    setEditForm({
+      nama: p.nama || "",
+      nip: p.nip || "",
+      jabatan: p.jabatan || "",
+      unit_eselon_i: p.unit_eselon_i || "",
+      unit_eselon_ii: p.unit_eselon_ii || "",
+    });
+    setEditError("");
+    editModal.onOpen();
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingParticipant) return;
+    if (!editForm.nama.trim() || !editForm.nip.trim()) {
+      setEditError("Nama dan NIP wajib diisi.");
+      return;
+    }
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const res = await axios.patch(
+        `/api/elearning/participants/${editingParticipant._id}`,
+        editForm
+      );
+      const updated = res.data?.data;
+      setParticipants((list) =>
+        list.map((row) =>
+          row._id === editingParticipant._id
+            ? { ...row, ...updated }
+            : row
+        )
+      );
+      editModal.onClose();
+    } catch (err) {
+      setEditError(err.response?.data?.message || "Gagal menyimpan perubahan.");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -903,6 +953,14 @@ function ParticipantList() {
                           isDisabled={!p.s3_key}
                           onPress={() => handleDownloadPdf(p.s3_key)}
                         />
+                        {canManage && (
+                          <ActionIconButton
+                            tooltip="Edit Data Peserta"
+                            icon={Pencil}
+                            color="default"
+                            onPress={() => handleOpenEdit(p)}
+                          />
+                        )}
                         {canManage && p.s3_key && (
                           <ActionIconButton
                             tooltip={
@@ -1041,6 +1099,96 @@ function ParticipantList() {
                   onPress={confirmReset}
                 >
                   Ya, Reset Sekarang
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+
+      {/* ── Edit Participant Modal ───────────────────────────────── */}
+      <Modal
+        isOpen={editModal.isOpen}
+        onOpenChange={(open) => {
+          editModal.onOpenChange(open);
+          if (!open) setEditError("");
+        }}
+        size="md"
+        backdrop="blur"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Pencil size={18} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-base font-bold">Edit Data Peserta</p>
+                  <p className="text-xs text-default-400 font-normal">
+                    Pergantian peserta mendadak
+                  </p>
+                </div>
+              </ModalHeader>
+              <ModalBody className="gap-3">
+                <Input
+                  label="Nama"
+                  placeholder="Nama lengkap peserta"
+                  value={editForm.nama}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, nama: v }))}
+                  variant="bordered"
+                  size="sm"
+                  isRequired
+                />
+                <Input
+                  label="NIP"
+                  placeholder="Nomor Induk Pegawai"
+                  value={editForm.nip}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, nip: v }))}
+                  variant="bordered"
+                  size="sm"
+                  isRequired
+                />
+                <Input
+                  label="Jabatan"
+                  placeholder="Jabatan peserta"
+                  value={editForm.jabatan}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, jabatan: v }))}
+                  variant="bordered"
+                  size="sm"
+                />
+                <Input
+                  label="Unit Eselon I"
+                  placeholder="Nama unit eselon I"
+                  value={editForm.unit_eselon_i}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, unit_eselon_i: v }))}
+                  variant="bordered"
+                  size="sm"
+                />
+                <Input
+                  label="Unit Eselon II"
+                  placeholder="Nama unit eselon II / satker"
+                  value={editForm.unit_eselon_ii}
+                  onValueChange={(v) => setEditForm((f) => ({ ...f, unit_eselon_ii: v }))}
+                  variant="bordered"
+                  size="sm"
+                />
+                {editError && (
+                  <p className="text-xs text-danger font-medium">{editError}</p>
+                )}
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose} isDisabled={editLoading}>
+                  Batal
+                </Button>
+                <Button
+                  color="primary"
+                  variant="shadow"
+                  startContent={!editLoading && <Pencil size={14} />}
+                  isLoading={editLoading}
+                  onPress={handleSaveEdit}
+                >
+                  Simpan Perubahan
                 </Button>
               </ModalFooter>
             </>
