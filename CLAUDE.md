@@ -22,7 +22,7 @@ Deployed di **Vercel**. Database menggunakan **MongoDB** (via Mongoose).
 | Database | MongoDB (Mongoose) |
 | Auth | JWT (jose + jsonwebtoken), cookie-based |
 | File Storage | AWS S3 |
-| AI Integration | Anthropic Claude SDK (@anthropic-ai/sdk) |
+| AI Integration | DeepSeek API (penilaian LKE, teks hasil OCR) + Anthropic Claude SDK (visa review) |
 | Google Services | Google Sheets API, Google Drive API |
 | PDF Generation | pdf-lib |
 | Excel Export | exceljs, xlsx |
@@ -87,13 +87,14 @@ Role-based routing dikelola di `middleware.js`. Permission checks menggunakan `h
 Fitur utama terbaru. Flow:
 1. User submit link Google Sheets LKE unit kerja
 2. Sistem parsing sheet → menghitung scoring per komponen
-3. AI (Claude) melakukan pengecekan otomatis dokumen pendukung via Google Drive
+3. AI (DeepSeek) melakukan pengecekan otomatis dokumen pendukung via Google Drive — isi PDF diekstrak seluruh halaman: text layer diekstrak lokal (unpdf); PDF hasil scan & gambar di-OCR via upload-konversi Drive memakai **akun OAuth user** (`GOOGLE_OAUTH_*` — service account tidak punya kuota Drive sehingga tidak bisa membuat file temp). Hasil di-cache di MongoDB (model `OcrCache`)
 4. Hasil scoring ditampilkan dengan target WBK (≥60) / WBBM (≥75)
 5. Bisa compare antar unit, export ke Excel
 
 File penting ZI:
 - `lib/zi/scoring.js` — Logika perhitungan nilai LKE
-- `lib/zi/ai-checker.js` — Integrasi Claude AI untuk review dokumen
+- `lib/zi/ai-checker.js` — Integrasi DeepSeek AI untuk review dokumen (semua layer penilaian teks)
+- `lib/zi/deepseek.js` — Klien DeepSeek (OpenAI-compatible, JSON mode)
 - `lib/zi/sheetParser.ts` — Parsing Google Sheets
 - `lib/zi/visa-review.js` — Auto check visa
 - `lib/zi/drive.js` — Akses Google Drive (traversal subfolder rekursif)
@@ -157,7 +158,17 @@ AWS_BUCKET_NAME=
 GOOGLE_CLIENT_EMAIL=
 GOOGLE_PRIVATE_KEY=
 
-# Anthropic AI (for LKE checker)
+# OAuth user untuk OCR dokumen hasil scan (opsional — tanpa ini, PDF scan/gambar
+# dilewati; text layer PDF digital tetap terbaca via unpdf).
+# Ambil refresh token dengan: node scripts/get-google-oauth-token.mjs <ID> <SECRET>
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+GOOGLE_OAUTH_REFRESH_TOKEN=
+
+# DeepSeek AI (for LKE checker — semua layer penilaian teks)
+DEEPSEEK_API_KEY=
+
+# Anthropic AI (for visa review per-jawaban)
 ANTHROPIC_API_KEY=
 ```
 
@@ -206,5 +217,6 @@ ANTHROPIC_API_KEY=
 - `maxDuration` set to 300s (5 min) pada beberapa API routes untuk proses berat (AI checking, batch operations)
 - Google Sheets parsing mendukung traversal subfolder rekursif di Google Drive
 - LKE scoring memiliki fallback ke kriteria PANRB jika skor terlalu rendah
+- **Penilaian mode ketat**: verdict "Sesuai" hanya keluar setelah verifikasi isi dokumen (tahun data dukung harus sesuai periode penilaian & dokumen lengkap). Kecocokan nama file / skor auditor tinggi tidak pernah memfinalkan "Sesuai" — item skor ≥40 selalu lanjut ke verifikasi konten, dan hasil verifikasi bisa menurunkan skor. Kekurangan dicatat di `dokumen_kurang`/catatan reviu.
 - Batch save setiap 5 item pada proses LKE checking untuk prevent data loss
 - Eselon 1 list hardcoded di `types/zi.ts` (10 unit kerja Kementerian ESDM)

@@ -15,7 +15,7 @@ import {
 import { readSheet } from "@/lib/zi/sheets";
 import { ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows, setVisaReviewDropdown } from "@/lib/zi/visa-review";
 import { writeRingkasanAi } from "@/lib/zi/ringkasan-ai";
-import { listFilesInFolder, listFilesRecursive, getFileContent } from "@/lib/zi/drive";
+import { listFilesInFolder, listFilesRecursive, getFileText } from "@/lib/zi/drive";
 import {
   AiCostError, checkByName,
   auditFolderVsNarasi,
@@ -244,7 +244,7 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
   let deepReview = null;
   let exhausted  = false;
   let readableFiles = null;
-  let deepFileContents = null;
+  let fileContents  = null;
 
   if (nameCheck.skip) {
     send("log", { level: "info", message: `ID ${id}: Layer 0 — ${nameCheck.result.detail}` });
@@ -256,29 +256,35 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
     const temuanLog = aiCheck.temuanKritis ? ` ⚠️ ${aiCheck.temuanKritis}` : "";
     send("log", { level: "info", message: `ID ${id}: Auditor — skor ${aiCheck.score}% (${aiCheck.verdict})${temuanLog}` });
 
-    if (aiCheck.score >= 70) {
-      // ── Sesuai: tidak perlu baca konten ──
-      send("log", { level: "success", message: `ID ${id}: Auditor menyimpulkan Sesuai — pengecekan konten dilewati` });
-
-    } else if (aiCheck.score >= 40) {
-      // ── Sebagian Sesuai: lanjut baca isi dokumen ──
-      send("log", { level: "info", message: `ID ${id}: Sebagian sesuai — lanjut ke pengecekan isi dokumen...` });
+    if (aiCheck.score < 40) {
+      // ── Tidak Sesuai: auditor sudah yakin, tidak perlu cek konten ──
+      send("log", { level: "warn", message: `ID ${id}: Auditor menyimpulkan Tidak Sesuai (skor ${aiCheck.score}%) — pengecekan konten tidak diperlukan` });
+    } else {
+      // ── Mode ketat: skor ≥40 WAJIB diverifikasi dari isi dokumen (tahun & kelengkapan);
+      //    hasil verifikasi menggantikan skor auditor — bisa naik maupun turun ──
+      send("log", { level: "info", message: `ID ${id}: verifikasi isi dokumen (tahun & kelengkapan data dukung)...` });
 
       readableFiles = files.filter((f) => isReadableMime(f.mimeType));
-      const fileContents = await Promise.all(
-        readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
+      send("log", { level: "info", message: `ID ${id}: mengekstrak teks ${readableFiles.length} file (OCR seluruh halaman bila perlu)...` });
+      fileContents = await Promise.all(
+        readableFiles.map((f) => getFileText(auth, f)),
       );
       const contentCheck = await checkWithAIContent(files, fileContents, standar, id, readableFiles);
-      if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
+      if (contentCheck.basedOn === "error") {
+        send("log", { level: "warn", message: `ID ${id}: verifikasi konten gagal (${contentCheck.detail}) — memakai skor auditor` });
+      } else {
+        aiCheck = {
+          ...contentCheck,
+          pendapat: aiCheck.pendapat || null,
+          temuanKritis: aiCheck.temuanKritis || null,
+        };
+      }
       send("log", { level: "info", message: `ID ${id}: Layer 3 — skor ${aiCheck.score}%${contentCheck.isTemplate ? " ⚠️ template terdeteksi" : ""}` });
 
       // ── Layer 4 Rescue: deep review vs PANRB jika konten masih rendah ──
       if (aiCheck.score < 40 && kriteria) {
         send("log", { level: "info", message: `ID ${id}: Layer 4 rescue — deep review vs PANRB...` });
-        deepFileContents = await Promise.all(
-          readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
-        );
-        deepReview = await deepContentReview(files, deepFileContents, kriteria, id, readableFiles);
+        deepReview = await deepContentReview(files, fileContents, kriteria, id, readableFiles);
         if (deepReview && deepReview.revisedScore > aiCheck.score) {
           send("log", { level: "info", message: `ID ${id}: skor direvisi ${aiCheck.score}% → ${deepReview.revisedScore}%` });
           aiCheck.score   = deepReview.revisedScore;
@@ -287,22 +293,19 @@ async function processItem({ row, rowNum }, { auth, standarMap, kriteriaMap, vis
       }
 
       if (aiCheck.score < 40) exhausted = true;
-
-    } else {
-      // ── Tidak Sesuai: auditor sudah yakin, tidak perlu cek konten ──
-      send("log", { level: "warn", message: `ID ${id}: Auditor menyimpulkan Tidak Sesuai (skor ${aiCheck.score}%) — pengecekan konten tidak diperlukan` });
     }
 
-    // ── QC Sampling: Sonnet spot-check independen (8% random + flag tertentu) ──
+    // ── QC Sampling: spot-check independen (flag tertentu) ──
     if (!deepReview && kriteria && shouldSampleForQC(heuristic, aiCheck, aiCheck.score)) {
-      send("log", { level: "info", message: `ID ${id}: [QC] Sampling Sonnet...` });
+      send("log", { level: "info", message: `ID ${id}: [QC] Review independen...` });
       if (!readableFiles) readableFiles = files.filter((f) => isReadableMime(f.mimeType));
-      if (!deepFileContents) {
-        deepFileContents = await Promise.all(
-          readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+      if (!fileContents) {
+        send("log", { level: "info", message: `ID ${id}: mengekstrak teks ${readableFiles.length} file (OCR seluruh halaman bila perlu)...` });
+        fileContents = await Promise.all(
+          readableFiles.map((f) => getFileText(auth, f)),
         );
       }
-      const qcReview = await deepContentReview(files, deepFileContents, kriteria, id, readableFiles);
+      const qcReview = await deepContentReview(files, fileContents, kriteria, id, readableFiles);
       if (qcReview) {
         deepReview = { ...qcReview, _qcSampling: true };
         if (qcReview.inconsistencyFlag) {

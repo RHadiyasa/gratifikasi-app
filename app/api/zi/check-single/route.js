@@ -14,7 +14,7 @@ import { readSheet } from "@/lib/zi/sheets";
 import {
   ensureVisaReviewSheet, readVisaReviewMap, writeVisaReviewRows,
 } from "@/lib/zi/visa-review";
-import { listFilesRecursive, getFileContent } from "@/lib/zi/drive";
+import { listFilesRecursive, getFileText } from "@/lib/zi/drive";
 import {
   AiCostError, checkByName,
   checkWithAINames, checkWithAINamesPanrb,
@@ -248,7 +248,7 @@ export async function POST(req) {
         let deepReview = null;
         let exhausted  = false;
         let readableFiles = null;
-        let deepFileContents = null;
+        let fileContents  = null;
 
         if (nameCheck.skip) {
           send("log", { level: "info", message: `ID ${rowId}: Layer 0 — ${nameCheck.result.detail}` });
@@ -279,7 +279,7 @@ export async function POST(req) {
               if (panrbNameCheck.score > aiCheck.score) aiCheck = panrbNameCheck;
             } catch (err) {
               if (err instanceof AiCostError) {
-                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun DeepSeek.` });
                 controller.close();
                 return;
               }
@@ -292,18 +292,26 @@ export async function POST(req) {
           const routing = confidenceRouting(heuristic, aiCheck, existCheck, bobot);
 
           if (routing.needsContentCheck) {
-            // ── Layer 3: isi dokumen vs standar ──
-            send("log", { level: "info", message: `ID ${rowId}: Layer 3 — membaca isi dokumen (alasan: ${routing.reason})...` });
+            // ── Layer 3: verifikasi isi dokumen (mode ketat: tahun & kelengkapan) ──
+            send("log", { level: "info", message: `ID ${rowId}: Layer 3 — verifikasi isi dokumen (tahun & kelengkapan data dukung)...` });
             readableFiles = files.filter((f) => isReadableMime(f.mimeType));
-            const fileContents = await Promise.all(
-              readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 3)),
+            send("log", { level: "info", message: `ID ${rowId}: mengekstrak teks ${readableFiles.length} file (OCR seluruh halaman bila perlu)...` });
+            fileContents = await Promise.all(
+              readableFiles.map((f) => getFileText(auth, f)),
             );
             try {
               const contentCheck = await checkWithAIContent(files, fileContents, standar, rowId, readableFiles);
-              if (contentCheck.score > aiCheck.score) aiCheck = contentCheck;
+
+              // Mode ketat: hasil verifikasi konten menggantikan skor nama file —
+              // bisa naik maupun turun (kecuali verifikasi gagal karena error API).
+              if (contentCheck.basedOn === "error") {
+                send("log", { level: "warn", message: `ID ${rowId}: verifikasi konten gagal (${contentCheck.detail}) — memakai skor sebelumnya` });
+              } else {
+                aiCheck = contentCheck;
+              }
             } catch (err) {
               if (err instanceof AiCostError) {
-                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun DeepSeek.` });
                 controller.close();
                 return;
               }
@@ -314,14 +322,11 @@ export async function POST(req) {
             // ── Layer 4 Rescue: deep review vs PANRB (hanya jika masih rendah & ada kriteria) ──
             if (aiCheck.score < 40 && kriteria) {
               send("log", { level: "info", message: `ID ${rowId}: Layer 4 rescue — deep review vs PANRB...` });
-              deepFileContents = await Promise.all(
-                readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
-              );
               try {
-                deepReview = await deepContentReview(files, deepFileContents, kriteria, rowId, readableFiles);
+                deepReview = await deepContentReview(files, fileContents, kriteria, rowId, readableFiles);
               } catch (err) {
                 if (err instanceof AiCostError) {
-                  send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                  send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun DeepSeek.` });
                   controller.close();
                   return;
                 }
@@ -337,17 +342,18 @@ export async function POST(req) {
             if (aiCheck.score < 40) exhausted = true;
           }
 
-          // ── Layer 4 QC Sampling: Sonnet spot-check (independen dari skor) ──
+          // ── Layer 4 QC Sampling: spot-check independen ──
           if (!deepReview && kriteria && shouldSampleForQC(heuristic, aiCheck, aiCheck.score)) {
-            send("log", { level: "info", message: `ID ${rowId}: [QC] Sampling Sonnet...` });
+            send("log", { level: "info", message: `ID ${rowId}: [QC] Review independen...` });
             if (!readableFiles) readableFiles = files.filter((f) => isReadableMime(f.mimeType));
-            if (!deepFileContents) {
-              deepFileContents = await Promise.all(
-                readableFiles.map((f) => getFileContent(auth, f.id, f.mimeType, 15)),
+            if (!fileContents) {
+              send("log", { level: "info", message: `ID ${rowId}: mengekstrak teks ${readableFiles.length} file (OCR seluruh halaman bila perlu)...` });
+              fileContents = await Promise.all(
+                readableFiles.map((f) => getFileText(auth, f)),
               );
             }
             try {
-              const qcReview = await deepContentReview(files, deepFileContents, kriteria, rowId, readableFiles);
+              const qcReview = await deepContentReview(files, fileContents, kriteria, rowId, readableFiles);
               if (qcReview) {
                 deepReview = { ...qcReview, _qcSampling: true };
                 if (qcReview.inconsistencyFlag) {
@@ -361,7 +367,7 @@ export async function POST(req) {
               }
             } catch (err) {
               if (err instanceof AiCostError) {
-                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun Anthropic.` });
+                send("error", { message: `Kredit AI habis: ${err.message}. Silakan top-up akun DeepSeek.` });
                 controller.close();
                 return;
               }
