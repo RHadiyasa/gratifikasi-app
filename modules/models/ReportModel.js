@@ -22,7 +22,9 @@ const ReportSchema = new mongoose.Schema(
     kabupatenPelapor: { type: String, trim: true },
     provinsiPelapor: { type: String, trim: true },
     noTelpPelapor: { type: String, trim: true },
-    noTelpReferensi: { type: String, trim: true }, // ini optional
+    // Pihak lain yang dapat dihubungi — keduanya optional
+    namaReferensi: { type: String, trim: true },
+    noTelpReferensi: { type: String, trim: true },
 
     // Pemberi Gratifikasi
     namaPemberi: { type: String, trim: true },

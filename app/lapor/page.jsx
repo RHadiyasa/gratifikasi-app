@@ -108,6 +108,7 @@ export default function LaporPage() {
     kabupatenPelapor:               "",
     provinsiPelapor:                "",
     noTelpPelapor:                  "",
+    namaReferensi:                  "",
     noTelpReferensi:                "",
     namaPemberi:                    "",
     instansiPemberi:                "",
@@ -147,7 +148,16 @@ export default function LaporPage() {
         .replace(/-/g, "")}-${Math.floor(Math.random() * 900 + 100)}`;
 
       const dataToSend = { ...form, uniqueId };
-      await reportService(dataToSend);
+      const saved = await reportService(dataToSend);
+
+      // Jangan beri PDF untuk laporan yang tidak masuk database — kalau
+      // dibiarkan, pelapor merasa sudah melapor padahal datanya hilang.
+      if (!saved?.success) {
+        toast.error(saved?.message || "Laporan gagal disimpan. Silakan coba lagi.");
+
+        return;
+      }
+
       const pdfRes = await generatePdfService(dataToSend);
 
       if (pdfRes.success) {
@@ -241,6 +251,14 @@ export default function LaporPage() {
           value={form.emailPelapor} onChange={(e) => set("emailPelapor", e.target.value)} />
         <Input variant="bordered" label="No. Telepon"
           value={form.noTelpPelapor} onChange={(e) => set("noTelpPelapor", e.target.value)} />
+      </Row>
+
+      <SectionLabel>Pihak lain yang dapat dihubungi (opsional)</SectionLabel>
+      <Row>
+        <Input variant="bordered" label="Nama Pihak yang Dapat Dihubungi"
+          value={form.namaReferensi} onChange={(e) => set("namaReferensi", e.target.value)} />
+        <Input variant="bordered" label="No. HP Pihak yang Dapat Dihubungi"
+          value={form.noTelpReferensi} onChange={(e) => set("noTelpReferensi", e.target.value)} />
       </Row>
 
       <Divider className="my-1" />
@@ -362,6 +380,7 @@ export default function LaporPage() {
       <SectionLabel>Uraian kejadian</SectionLabel>
       <Textarea variant="bordered" label="Uraian Gratifikasi" minRows={4}
         placeholder="Jelaskan secara kronologis bagaimana peristiwa gratifikasi terjadi..."
+        description="Jika uraian melebihi ruang pada formulir, teks lengkapnya otomatis dipindah ke halaman Lampiran pada PDF."
         value={form.uraianGratifikasi}
         onChange={(e) => set("uraianGratifikasi", e.target.value)} />
     </FieldGroup>,
@@ -588,6 +607,7 @@ export default function LaporPage() {
                     <ReviewRow label="Jabatan"           value={form.jabatanPelapor} />
                     <ReviewRow label="Email"             value={form.emailPelapor} />
                     <ReviewRow label="No. Telepon"       value={form.noTelpPelapor} />
+                    <ReviewRow label="Kontak Lain"       value={[form.namaReferensi, form.noTelpReferensi].filter(Boolean).join(" - ")} />
                     <ReviewRow label="Alamat"            value={form.alamatPelapor} />
                   </div>
 
