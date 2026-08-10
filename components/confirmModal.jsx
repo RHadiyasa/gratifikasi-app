@@ -15,18 +15,28 @@ export default function ConfirmModal({
   message,
   confirmText = "Ya",
   cancelText = "Batal",
+  // Aksi tidak selalu merusak (mis. ubah status) — biarkan pemanggil memilih.
+  confirmColor = "danger",
+  isLoading = false,
   onConfirm,
 }) {
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} hideCloseButton>
+    <Modal
+      hideCloseButton
+      isDismissable={!isLoading}
+      isOpen={isOpen}
+      onOpenChange={(terbuka) => {
+        if (!terbuka && !isLoading) onClose();
+      }}
+    >
       <ModalContent>
         <ModalHeader className="font-semibold">{title}</ModalHeader>
-        <ModalBody>{message}</ModalBody>
+        <ModalBody className="text-sm text-default-600">{message}</ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <Button isDisabled={isLoading} variant="light" onPress={onClose}>
             {cancelText}
           </Button>
-          <Button color="danger" onPress={onConfirm}>
+          <Button color={confirmColor} isLoading={isLoading} onPress={onConfirm}>
             {confirmText}
           </Button>
         </ModalFooter>

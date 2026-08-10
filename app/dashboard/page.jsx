@@ -7,6 +7,8 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, LayoutGrid, ArrowRight, Users } from "lucide-react";
 
+import DashboardLoading from "./loading";
+
 export default function DashboardPage() {
   const router = useRouter();
   const role = useAuthStore((s) => s.role);
@@ -20,9 +22,9 @@ export default function DashboardPage() {
     }
   }, [role, router]);
 
-  if (!role) return null;
-
-  if (!hasPermission(role, "dashboard:admin")) return null;
+  // Selagi role dibaca dari store (atau saat sedang dialihkan ke home role
+  // lain), tampilkan rangka kartunya — sebelumnya di sini layar kosong total.
+  if (!role || !hasPermission(role, "dashboard:admin")) return <DashboardLoading />;
 
   const isDeveloper = role === "developer";
 
@@ -59,7 +61,7 @@ export default function DashboardPage() {
             {isDeveloper && (
               <button
                 onClick={() => router.push("/dashboard/accounts")}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 border border-transparent hover:border-default-200 transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -83,7 +85,7 @@ export default function DashboardPage() {
             {/* UPG */}
             <button
               onClick={() => router.push("/dashboard/upg")}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 border border-transparent hover:border-default-200 transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -106,7 +108,7 @@ export default function DashboardPage() {
             {/* E-Learning */}
             <button
               onClick={() => router.push("/dashboard/elearning")}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 border border-transparent hover:border-default-200 transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -129,7 +131,7 @@ export default function DashboardPage() {
             {/* ZI */}
             <button
               onClick={() => router.push("/dashboard/zi")}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 transition group cursor-pointer hover:scale-101"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-default-50/50 hover:bg-default-100/60 border border-transparent hover:border-default-200 transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
