@@ -35,7 +35,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Proyek ini memakai npm. package-lock.json SENGAJA di-commit supaya build di
+# Vercel memasang versi dependensi yang sama persis dengan yang sudah diuji —
+# tanpa itu setiap build me-resolve ulang rentang "^" ke versi terbaru.
+# Lockfile milik package manager lain tetap diabaikan agar tidak tercampur.
 pnpm-lock.yaml
 yarn.lock
-package-lock.json
 bun.lockb
